@@ -1,0 +1,442 @@
+{
+	"info": {
+		"_postman_id": "d4847062-4ece-4c58-a694-93f6ab3ed0d3",
+		"name": "weekhour",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "localhost:8000",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/user",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/user/",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"user",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/user/my",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/user/my",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"user",
+						"my"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/user/<user_id>",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/user/1",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"user",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\":\"Archie\",\r\n    \"password\":\"fake_hashed_password\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8000/user",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/user/login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "username",
+							"value": "Archie",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "fake_hashed_password",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:8000/user/login",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"user",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/user/protected",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJBcmNoaWUiLCJleHAiOjE2MTg0NzkzODR9.sTR7afGvYSjK1eH08X2LKzZDcLV0gfPqv41dSx1Mseg",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/user/protected",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"user",
+						"protected"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/task",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/task",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"task"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/task/<task_id>",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/task/1",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"task",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/task",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"taskname\":\"test-task\",\r\n    \"fullname\":\"test-full-name\",\r\n    \"organization\":\"some-company\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8000/task",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"task"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/task/<task_id>",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"taskname\":\"test-task\",\r\n    \"fullname\":\"test-full-name\",\r\n    \"organization\":\"some-company\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8000/task",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"task"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/workhour",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/workhour",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"workhour"
+					],
+					"query": [
+						{
+							"key": "user_id",
+							"value": "1",
+							"disabled": true
+						},
+						{
+							"key": "task_id",
+							"value": "1",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/workhour/<workhour_id>",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/workhour/1",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"workhour",
+						"1"
+					],
+					"query": [
+						{
+							"key": "user_id",
+							"value": "1",
+							"disabled": true
+						},
+						{
+							"key": "task_id",
+							"value": "1",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/workhour/my",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjEsImV4cCI6MTYxODgwMTExOX0.4Yc3_w7CNuPvBAaYlE9L9kREaFj5F4rZgNHWZ8VnVZs",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/workhour/my",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"workhour",
+						"my"
+					],
+					"query": [
+						{
+							"key": "user_id",
+							"value": "1",
+							"disabled": true
+						},
+						{
+							"key": "task_id",
+							"value": "1",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/workhour",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjEsImV4cCI6MTYxODgwMTExOX0.4Yc3_w7CNuPvBAaYlE9L9kREaFj5F4rZgNHWZ8VnVZs",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"task_id\":1,\r\n    \"date\": \"2021-04-13\",\r\n    \"hour\": 3,\r\n    \"description\": \"ASPNex Doc Prep\",\r\n    \"is_overtime\": true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8000/workhour",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"workhour"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/workhour/<workhour_id>",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjEsImV4cCI6MTYxODgwMTExOX0.4Yc3_w7CNuPvBAaYlE9L9kREaFj5F4rZgNHWZ8VnVZs",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"task_id\":1,\r\n    \"date\": \"2021-04-13\",\r\n    \"hour\": 3,\r\n    \"description\": \"ASPNex Doc Prep\",\r\n    \"is_overtime\": true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8000/workhour/1",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"workhour",
+						"1"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 # from app import crud, schemas, config
-from app import crud, schemas
-from app.dependency import get_db
-from app.auth import login_manager
+from .. import crud, schemas
+from ..database import get_db
+from ..auth import login_manager
 from sqlalchemy.orm import Session
 from typing import List
 

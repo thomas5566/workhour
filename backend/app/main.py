@@ -19,6 +19,7 @@ origins = ["*"]
 origins = [
     "http://localhost",
     "http://localhost:8080",
+    "http://localhost:8083",
     "http://192.168.0.123:8080"
 ]
 
@@ -30,10 +31,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api import user, task, workhour
+from .api import user, task, workhour, expentask, expen
 app.include_router(user.router)
 app.include_router(task.router)
 app.include_router(workhour.router)
+app.include_router(expentask.router)
+app.include_router(expen.router)
 
 @app.get("/")
 async def root():

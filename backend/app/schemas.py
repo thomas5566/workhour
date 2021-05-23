@@ -21,6 +21,24 @@ class Workhour(WorkhourBase):
     class Config:
         orm_mode = True
 
+class ExpenditureBase(BaseModel):
+    user_id: Optional[int] = None
+    expentask_id: int
+    date: datetime.date
+    price: int
+    description: Optional[str] = None
+
+class ExpenditureUpdate(ExpenditureBase):
+    pass
+
+class ExpenditureCreate(ExpenditureBase):
+    pass
+
+class Expenditure(ExpenditureBase):
+    id: int
+    class Config:
+        orm_mode = True
+
 class TaskBase(BaseModel):
     taskname: str
     fullname: str
@@ -33,6 +51,20 @@ class TaskUpdate(TaskBase):
     pass
 
 class Task(TaskBase):
+    id: int
+    class Config:
+        orm_mode = True
+
+class ExpenTaskBase(BaseModel):
+    expentask_name: str
+
+class ExpenTaskCreate(ExpenTaskBase):
+    pass
+
+class ExpenTaskUpdate(ExpenTaskBase):
+    pass
+
+class ExpenTask(ExpenTaskBase):
     id: int
     class Config:
         orm_mode = True
@@ -57,10 +89,15 @@ class WorkhourFull(Workhour):
     user: Optional[User]
     task: Optional[Task]
 
+class ExpenditureFull(Expenditure):
+    user: Optional[User]
+    expentask: Optional[ExpenTask]
+
 class UserFull(User):
     workhours: List[WorkhourFull] = []
 
 class TaskFull(Task):
     workhours: List[WorkhourFull] = []
 
-
+class ExpenTaskFull(ExpenTask):
+    expenditures: List[ExpenditureFull] = []

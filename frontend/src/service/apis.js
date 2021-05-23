@@ -59,6 +59,28 @@ export function postTaskAPI(data){
     })
 }
 
+export function getExpentaskAPI(){
+    return axios({
+        url: "/expentask/",
+        method: 'get'
+    })
+}
+
+export function getExpentaskIdAPI(Expentask_id){
+    return axios({
+        url: "/expentask/" + Expentask_id,
+        method: 'get'
+    })
+}
+
+export function postExpentaskAPI(data){
+    return axios({
+        url: "/expentask/",
+        method: 'post',
+        data: data
+    })
+}
+
 export function getWorkhourAPI(){
     return axios({
         url: "/workhour/",
@@ -85,5 +107,35 @@ export function postWorkhourAPI(data){
         url: "/workhour/",
         method: 'post',
         data: data
+    })
+}
+
+
+export function getExpenAPI(){
+    return axios({
+        url: "/expen/",
+        method: 'get'
+    })
+}
+
+export function getExpenIdAPI(expen_id){
+    return axios({
+        url: "/expen/" + expen_id,
+        method: 'get'
+    })
+}
+
+export function postExpenAPI(data){
+    return axios({
+        url: "/expen/",
+        method: 'post',
+        data: data
+    })
+}
+
+export function deleteExpenAPI(expen_id){
+    return axios({
+        url: "/expen/" + expen_id,
+        method: 'delete'
     })
 }

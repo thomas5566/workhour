@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
-from app import models, schemas
+from sqlalchemy import text
+from sqlalchemy.sql import func
+from . import models, schemas
 
 def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
@@ -20,7 +22,6 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.commit()
     db.refresh(db_user)
     return db_user
-''''''
 
 def get_task(db: Session, task_id: int):
     return db.query(models.Task).filter(models.Task.id == task_id).first()
@@ -51,16 +52,46 @@ def update_task(db: Session, task_id: int, task: schemas.TaskUpdate):
     db.commit()
     db.refresh(db_task)
     return db_task
-''''''
+
+def get_expentask(db: Session, expentask_id: int):
+    return db.query(models.ExpenTask).filter(models.ExpenTask.id == expentask_id).first()
+
+def get_expentask_by_expentaskname(db: Session, expentaskname: str):
+    return db.query(models.ExpenTask).filter(models.ExpenTask.expentask_name == expentaskname).first()
+
+def get_expentasks(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.ExpenTask).offset(skip).limit(limit).all()
+
+def create_expentask(db: Session, expentask: schemas.ExpenTaskCreate):
+    db_expentask = models.ExpenTask(
+    	expentaskname=expentask.expentask_name)
+    db.add(db_expentask)
+    db.commit()
+    db.refresh(db_expentask)
+    return db_expentask
+
+def update_expentask(db: Session, expentask_id: int, expentask: schemas.ExpenTaskUpdate):
+    db_expentask = db.query(models.ExpenTask).filter(models.ExpenTask.id == expentask_id).first()
+    if db_expentask is None:
+        return None
+    for var, value in vars(db_expentask).items():
+        setattr(db_expentask, var, value) if value else None
+    db.add(db_expentask)
+    db.commit()
+    db.refresh(db_expentask)
+    return db_expentask
 
 def get_workhour(db: Session, workhour_id: int):
     return db.query(models.Workhour).filter(models.Workhour.id == workhour_id).first()
 
 def get_workhours(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Workhour).offset(skip).limit(limit).all()
+    return db.query(models.Workhour).order_by(text("date desc")).offset(skip).limit(limit).all()
 
-def get_workhours_by_user_id(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+def get_workhours_by_user_id(db: Session, user_id, skip: int = 0, limit: int = 100):
     return db.query(models.Workhour).filter(models.Workhour.user_id == user_id).offset(skip).limit(limit).all()
+
+# def get_totalworkhours_by_user_id(db: Session, skip: int = 0):
+#     return db.query(func.sum(models.Workhour.hour)).offset(skip).first()
 
 def get_workhours_by_task_id(db: Session, task_id: int, skip: int = 0, limit: int = 100):
     return db.query(models.Workhour).filter(models.Workhour.task_id == task_id).offset(skip).limit(limit).all()
@@ -72,7 +103,7 @@ def create_workhour(db: Session, workhour: schemas.WorkhourCreate):
     db_workhour = models.Workhour(
     	user_id=workhour.user_id, 
     	task_id=workhour.task_id, 
-    	date=workhour.date, 
+    	date=workhour.date,
     	hour=workhour.hour, 
     	description=workhour.description,
         is_overtime=workhour.is_overtime)
@@ -91,3 +122,51 @@ def update_workhour(db: Session, workhour_id: int, workhour: schemas.WorkhourUpd
     db.commit()
     db.refresh(db_workhour)
     return db_workhour
+
+def get_expen(db: Session, expen_id: int):
+    return db.query(models.Expenditure).filter(models.Expenditure.id == expen_id).first()
+
+def get_expens(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Expenditure).order_by(text("date desc")).offset(skip).limit(limit).all()
+
+def get_expens_by_user_expentask(db: Session, user_id: int, expentask_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Expenditure).filter(models.Expenditure.user_id == user_id, models.Expenditure.expentask_id == expentask_id).offset(skip).limit(limit).all()
+
+def get_expens_by_user_id(db: Session, user_id, skip: int = 0, limit: int = 100):
+    return db.query(models.Expenditure).filter(models.Expenditure.user_id == user_id).offset(skip).limit(limit).all()
+
+def get_expens_by_expentask_id(db: Session, expentask_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Expenditure).filter(models.Expenditure.expentask_id == expentask_id).offset(skip).limit(limit).all()
+
+def create_expen(db: Session, expen: schemas.ExpenditureCreate):
+    db_expen = models.Expenditure(
+            user_id=expen.user_id,
+    	    expentask_id=expen.expentask_id,
+            date=expen.date,
+            price=expen.price,
+            description=expen.description,
+        )
+    db.add(db_expen)
+    db.commit()
+    db.refresh(db_expen)
+    return db_expen
+
+def update_expen(db: Session, expen_id: int, expen: schemas.ExpenditureUpdate):
+    db_expen = db.query(models.Expenditure).filter(models.Expenditure.id == expen_id).first()
+    if db_expen is None:
+        return None
+    for var, value in vars(expen).items():
+        setattr(db_expen, var, value) if value else None
+    db.add(db_expen)
+    db.commit()
+    db.refresh(db_expen)
+    return db_expen
+
+def delete_expen(db: Session, user_id: int, expen_id: int):
+    db_user_to_delete = db.query(models.Expenditure).filter(
+                                models.Expenditure.user_id == user_id,
+                                models.Expenditure.id == expen_id).first()
+    db.delete(db_user_to_delete)
+    db.commit()
+    db.refresh(db_user_to_delete)
+    return db_user_to_delete

@@ -19,6 +19,7 @@ class User(IdMixin, Base, TimestampMixin):
     password = Column(String(255))
 
     workhours = relationship("Workhour", back_populates="user")
+    expenditures = relationship("Expenditure", back_populates="user")
 
 class Task(IdMixin, Base, TimestampMixin):
 
@@ -28,6 +29,14 @@ class Task(IdMixin, Base, TimestampMixin):
     fullname = Column(String(255))
     organization = Column(String(255))
     workhours = relationship("Workhour", back_populates="task")
+
+class ExpenTask(IdMixin, Base, TimestampMixin):
+    
+    __tablename__ = "expentask"
+
+    expentask_name = Column(String(255), index=True)
+
+    expens = relationship("Expenditure", back_populates="expentask")
 
 class Workhour(IdMixin, Base, TimestampMixin):
 
@@ -43,3 +52,17 @@ class Workhour(IdMixin, Base, TimestampMixin):
 
     user = relationship("User", back_populates="workhours", uselist=False)
     task = relationship("Task", back_populates="workhours", uselist=False)
+
+class Expenditure(IdMixin, Base, TimestampMixin):
+  
+    __tablename__ = "expenditure"
+
+    user_id = Column(Integer, ForeignKey("user.id"))
+    expentask_id = Column(Integer, ForeignKey("expentask.id"))
+    date = Column(Date)
+    price = Column(Integer)
+    description = Column(String(255), index=True)
+    active = Column(Boolean, default=True)
+
+    user = relationship("User", back_populates="expenditures", uselist=False)
+    expentask = relationship("ExpenTask", back_populates="expens", uselist=False)

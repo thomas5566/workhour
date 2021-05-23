@@ -1,13 +1,8 @@
 from app.database import SessionLocal
-from app import models
+from . import models
 import bcrypt
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
 
 def create_default_data():
     pwhash = bcrypt.hashpw(bytes("123", 'utf-8'), bcrypt.gensalt())
@@ -37,6 +32,26 @@ def create_default_data():
 
 	    models.Task(taskname="瑞振工業-盤查及SBTi專案", fullname="瑞振工業溫室氣體管理專案", organization="瑞振工業公司"),
 	    models.Task(taskname="108台電-碳限制計畫", fullname="台電公司碳限制管理及對策研析計畫", organization="台灣電力股份有限公司環境保護處"),
+
+			models.ExpenTask(expentask_name="旅費(出差費)"),
+			models.ExpenTask(expentask_name="廣告費"),
+			models.ExpenTask(expentask_name="折舊"),
+			models.ExpenTask(expentask_name="稅捐"),
+			models.ExpenTask(expentask_name="壞帳支出"),
+			models.ExpenTask(expentask_name="影印費"),
+			models.ExpenTask(expentask_name="文具印刷"),
+			models.ExpenTask(expentask_name="郵電費"),
+			models.ExpenTask(expentask_name="修繕費"),
+			models.ExpenTask(expentask_name="保險費"),
+			models.ExpenTask(expentask_name="自由捐贈"),
+			models.ExpenTask(expentask_name="各項攤提"),
+			models.ExpenTask(expentask_name="職工福利"),
+			models.ExpenTask(expentask_name="租金支出"),
+			models.ExpenTask(expentask_name="教育訓練費"),
+			models.ExpenTask(expentask_name="雜費"),
+			models.ExpenTask(expentask_name="委外費用"),
+			models.ExpenTask(expentask_name="罰款"),
+			models.ExpenTask(expentask_name="扣款"),
 
 	]
     db.bulk_save_objects(objects)

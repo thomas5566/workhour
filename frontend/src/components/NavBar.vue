@@ -38,6 +38,12 @@ export default {
       return this.$store.getters.getFullname;
     },
   },
+  methods: {
+    async logout() {
+      await this.$store.dispatch("LogOut");
+      this.$router.push("/login");
+    },
+  },
 };
 </script>
 <style>

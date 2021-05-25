@@ -4,7 +4,7 @@
       <table class="table table-striped table-bordered">
         <thead>
           <tr>
-            <th colspan="7">home</th>
+            <th colspan="8">home</th>
           </tr>
           <tr>
             <th>id</th>
@@ -30,6 +30,9 @@
             <td>{{ w.description }}</td>
             <td>{{ w.is_overtime }}</td>
             <td>{{ w.hour }}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </td>
           </router-link>
         </tbody>
         <tr>
@@ -43,6 +46,7 @@
             <th>date</th>
             <th>description</th>
             <th>price</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -58,11 +62,11 @@
             <td>{{ e.date }}</td>
             <td>{{ e.description }}</td>
             <td>{{ e.price }}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-danger" v-on:click="delete_expen(e.id)">Delete</button>
+            </td>
           </router-link>
         </tbody>
-        <button class="btn btn-sm btn-outline-danger" @click="delete_expen">
-          Delete
-        </button>
         <tr>
           <th>TotalSpend: {{ totalspends }}</th>
         </tr>
@@ -102,8 +106,8 @@ export default {
   },
   data() {
     return {
-      workhours: null,
-      expens: null,
+      workhours: [],
+      expens: [],
       form: {
         task_id: "",
         hour: 1,

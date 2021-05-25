@@ -31,7 +31,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from .api import user, task, workhour, expentask, expen
+from .api import user, task, workhour, expentask, expen, authentication
+app.include_router(authentication.router)
 app.include_router(user.router)
 app.include_router(task.router)
 app.include_router(workhour.router)

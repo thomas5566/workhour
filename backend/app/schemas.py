@@ -29,7 +29,14 @@ class ExpenditureBase(BaseModel):
     description: Optional[str] = None
 
 class ExpenditureUpdate(ExpenditureBase):
-    pass
+    user_id: int
+    expentask_id: int
+    date: datetime.date
+    price: int
+    description: str
+
+    class Config:
+        orm_mode = True
 
 class ExpenditureCreate(ExpenditureBase):
     pass
@@ -101,3 +108,14 @@ class TaskFull(Task):
 
 class ExpenTaskFull(ExpenTask):
     expenditures: List[ExpenditureFull] = []
+
+class Login(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None

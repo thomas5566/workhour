@@ -8,8 +8,8 @@ def get_expen(db: Session, expen_id: int):
     return db.query(models.Expenditure).filter(models.Expenditure.id == expen_id).first()
 
 
-def get_expens(db: Session):
-    return db.query(models.Expenditure).order_by(text("date desc")).all()
+def get_expens(db: Session, user_id: int):
+    return db.query(models.Expenditure).filter(models.Expenditure.user_id == user_id).order_by(text("date desc")).all()
 
 
 def get_expens_by_user_expentask(db: Session, user_id: int, expentask_id: int, skip: int = 0, limit: int = 100):

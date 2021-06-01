@@ -17,17 +17,20 @@ def create_workhour(workhour: schemas.WorkhourCreate, db: Session = Depends(get_
     workhour.user_id = user.id
     return workhour_crud.create_workhour(db=db, workhour=workhour)
 
-@router.get("/", response_model=List[schemas.WorkhourFull])
-def read_workhours(skip: int = 0, limit: int = 100, user_id: int = None, task_id: int = None, db: Session = Depends(get_db)):
-    if user_id and task_id:
-        workhours = workhour_crud.get_workhours_by_user_task(db, skip=skip, limit=limit, user_id=user_id, task_id=task_id)
-    elif user_id:
-        workhours = workhour_crud.get_workhours_by_user_id(db, skip=skip, limit=limit, user_id=user_id)
-    elif task_id:
-        workhours = workhour_crud.get_workhours_by_task_id(db, skip=skip, limit=limit, task_id=task_id)
-    else:
-        workhours = workhour_crud.get_workhours(db, skip=skip, limit=limit)
-    return workhours
+@router.get("/workhours", response_model=List[schemas.WorkhourFull])
+def read_workhours(db: Session = Depends(get_db), user=Depends(login_manager)):
+    user_id = user.id
+    return workhour_crud.get_workhours(db, user_id)
+# def read_workhours(skip: int = 0, limit: int = 100, user_id: int = None, task_id: int = None, db: Session = Depends(get_db)):
+#     if user_id and task_id:
+#         workhours = workhour_crud.get_workhours_by_user_task(db, skip=skip, limit=limit, user_id=user_id, task_id=task_id)
+#     elif user_id:
+#         workhours = workhour_crud.get_workhours_by_user_id(db, skip=skip, limit=limit, user_id=user_id)
+#     elif task_id:
+#         workhours = workhour_crud.get_workhours_by_task_id(db, skip=skip, limit=limit, task_id=task_id)
+#     else:
+#         workhours = workhour_crud.get_workhours(db, skip=skip, limit=limit)
+#     return workhours
 
 @router.get('/my', response_model=List[schemas.WorkhourFull])
 def read_workhours_my(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), user=Depends(login_manager)):

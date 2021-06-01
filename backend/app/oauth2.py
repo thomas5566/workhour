@@ -1,6 +1,9 @@
+import sys, os
+sys.path.append(os.path.abspath(".."))
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from . import token
+from . import jwttoken
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -12,5 +15,5 @@ def get_current_user(data: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
   )
 
-  return token.verify_token(data, credentials_exception)
+  return jwttoken.verify_token(data, credentials_exception)
 

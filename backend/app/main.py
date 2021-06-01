@@ -15,7 +15,7 @@ create_default_data()
 
 app = FastAPI()
 
-origins = ["*"]
+# origins = ["*"]
 origins = [
     "http://localhost",
     "http://localhost:8080",
@@ -27,11 +27,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=['GET','POST'],
+    allow_methods=["*"],
     allow_headers=["*"],
+    
 )
 
-from .api import user, task, workhour, expentask, expen, authentication
+from app.api import user, task, workhour, expentask, expen, authentication
 app.include_router(authentication.router)
 app.include_router(user.router)
 app.include_router(task.router)

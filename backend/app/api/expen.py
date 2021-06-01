@@ -5,8 +5,8 @@ from typing import List
 # from app import crud, schemas, config
 from .. import schemas, models, oauth2
 from ..database import get_db
-from ..auth import login_manager
 from ..repository import expen_crud
+from ..auth import login_manager
 
 
 router = APIRouter(
@@ -17,17 +17,17 @@ router = APIRouter(
 
 @router.post("/", response_model=schemas.ExpenditureFull)
 def create_expen(expen: schemas.ExpenditureCreate, db: Session = Depends(get_db),
-                 current_user: schemas.User = Depends(oauth2.get_current_user)):
-    # expen.user_id = user.id
+                 user=Depends(login_manager)):
+    expen.user_id = user.id
     return expen_crud.create_expen(db=db, expen=expen)
 
 
-@router.get('/', response_model=List[schemas.ExpenditureFull])
-def all(db: Session = Depends(get_db),
-        current_user: schemas.User = Depends(oauth2.get_current_user)):
-    return expen_crud.get_expens(db)
-# @router.get("/", response_model=List[schemas.ExpenditureFull])
-# def read_expens(skip: int = 0, limit: int = 100, user_id: int = None, expen_id: int = None, db: Session = Depends(get_db)):
+@router.get("/expens", response_model=List[schemas.ExpenditureFull])
+def read_expens(db: Session = Depends(get_db), user=Depends(login_manager)):
+    user_id = user.id
+    return expen_crud.get_expens(db, user_id)
+# def read_expens(skip: int = 0, limit: int = 100, user_id: int = None,
+#                 expen_id: int = None, db: Session = Depends(get_db)):
 #     if user_id and expen_id:
 #         expens = expen_crud.get_expens_by_user_expentask(
 #             db, skip=skip, limit=limit, user_id=user_id, expen_id=expen_id)
@@ -44,21 +44,21 @@ def all(db: Session = Depends(get_db),
 
 @router.get("/{expen_id}", response_model=schemas.ExpenditureFull)
 def read_expen(expen_id: int, db: Session = Depends(get_db),
-            current_user: schemas.User = Depends(oauth2.get_current_user)):
+            user=Depends(login_manager)):
     db_expen = expen_crud.get_expen(db, expen_id=expen_id)
     if db_expen is None:
         raise HTTPException(status_code=404, detail="Expen not found")
     return db_expen
 
 
-@router.put("/{expen_id}", status_code=status.HTTP_202_ACCEPTED)
+@router.put("/{id}", status_code=status.HTTP_202_ACCEPTED)
 def update_expen(id: int, request: schemas.Expenditure,
-                 db: Session = Depends(get_db),
-                 current_user: schemas.User = Depends(oauth2.get_current_user)):
+                 db: Session = Depends(get_db)):
     return expen_crud.update_expen(id, request, db)
 
 
 @router.delete("/{id}", response_class=Response)
-def delete_expen(id: int, db: Session = Depends(get_db),
-                 current_user: schemas.User = Depends(oauth2.get_current_user)):
+def delete_expen(id: int, db: Session = Depends(get_db)):
+    # expen.user_id = user.id
     return expen_crud.delete_expen(id, db)
+

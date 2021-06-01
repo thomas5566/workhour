@@ -3,6 +3,7 @@ import axios from '../service/http'
 export function postUserLogInAPI(data){
     return axios({
         url: "/user/login",
+        // url: "/login",
         method: 'post',
         data: data
     })
@@ -83,7 +84,7 @@ export function postExpentaskAPI(data){
 
 export function getWorkhourAPI(){
     return axios({
-        url: "/workhour/",
+        url: "/workhour/workhours",
         method: 'get'
     })
 }
@@ -113,7 +114,7 @@ export function postWorkhourAPI(data){
 
 export function getExpenAPI(){
     return axios({
-        url: "/expen/",
+        url: "/expen/expens",
         method: 'get'
     })
 }
@@ -135,7 +136,14 @@ export function postExpenAPI(data){
 
 export function deleteExpenAPI(expen_id){
     return axios({
-        url: "/expen/" + expen_id,
+        url: `/expen/${expen_id}`,
         method: 'delete'
+    })
+}
+
+export function updateExpenAPI(expen_id){
+    return axios({
+        url: `/expen/${expen_id}`,
+        method: 'put'
     })
 }

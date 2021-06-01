@@ -1,12 +1,12 @@
 <template>
   <div>
     <div id="nav">
-      <router-link to="/">Home</router-link> |
+      <router-link to="/home">Home</router-link> |
       <router-link to="/workhour">Workhours</router-link> |
       <router-link to="/expen">Expen</router-link> |
-      <router-link to="/user">Users</router-link> |
       <router-link to="/task">Tasks</router-link> |
       <router-link to="/expentask">Expentasks</router-link> |
+      <router-link to="/expenlist">expenlist</router-link> |
       <span v-if="isLoggedIn">
         <a @click="logout">Logout</a> ({{ username }})
       </span>

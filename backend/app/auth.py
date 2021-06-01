@@ -6,7 +6,7 @@ import os
 
 # SECRET = config.settings.SECRET
 SECRET = str(os.urandom(24).hex)
-login_manager = LoginManager(SECRET, '/user/login')
+login_manager = LoginManager(SECRET, '/login')
 
 @login_manager.user_loader
 def get_user(user_id: int):

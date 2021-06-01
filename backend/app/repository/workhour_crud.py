@@ -6,8 +6,10 @@ def get_workhour(db: Session, workhour_id: int):
     return db.query(models.Workhour).filter(models.Workhour.id == workhour_id).first()
 
 
-def get_workhours(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Workhour).order_by(text("date desc")).offset(skip).limit(limit).all()
+# def get_workhours(db: Session, skip: int = 0, limit: int = 100):
+#     return db.query(models.Workhour).order_by(text("date desc")).offset(skip).limit(limit).all()
+def get_workhours(db: Session, user_id: int):
+    return db.query(models.Workhour).order_by(text("date desc")).filter(models.Workhour.user_id == user_id).all()
 
 
 def get_workhours_by_user_id(db: Session, user_id, skip: int = 0, limit: int = 100):

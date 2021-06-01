@@ -113,7 +113,7 @@ export default {
       form: {
         expentask_id: "",
         date: today.toISOString().substring(0, 10),
-        price: 0,
+        price: "",
         description: "",
       },
     };
@@ -143,7 +143,7 @@ export default {
           if (response.status == 200) {
             this.form.expentask_id = "";
             (this.form.date = this.toDate), 
-            (this.form.price = 0);
+            (this.form.price = "");
             this.form.description = "";
           }
         });

@@ -15,7 +15,7 @@ import WorkhourDetail from '../views/WorkhourDetail'
 Vue.use(VueRouter)
 const routes = [
   {
-    path: '/',
+    path: '/home',
     name: 'Home',
     component: Home
   },
@@ -77,5 +77,6 @@ const router = new VueRouter({
   base: process.env.BASE_URL,
   routes
 })
+
 
 export default router

@@ -43,6 +43,7 @@ class ExpenditureCreate(ExpenditureBase):
 
 class Expenditure(ExpenditureBase):
     id: int
+    
     class Config:
         orm_mode = True
 

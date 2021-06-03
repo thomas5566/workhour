@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from fastapi import HTTPException, status
 from .. import models, schemas
+
 
 def get_workhour(db: Session, workhour_id: int):
     return db.query(models.Workhour).filter(models.Workhour.id == workhour_id).first()
@@ -52,3 +54,15 @@ def update_workhour(db: Session, workhour_id: int, workhour: schemas.WorkhourUpd
     db.commit()
     db.refresh(db_workhour)
     return db_workhour
+
+
+def delete_workhour(id: int, db: Session):
+    workhour = db.query(models.Workhour).filter(models.Workhour.id == id)
+
+    if not workhour.first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Expen with id {id} not found")
+
+    workhour.delete(synchronize_session=False)
+    db.commit()
+    return "Workhour hase being delete"

@@ -111,6 +111,20 @@ export function postWorkhourAPI(data){
     })
 }
 
+export function updateWorkhourAPI(workhour_id, data){
+    return axios({
+        url: `/workhour/${workhour_id}`,
+        method: 'put',
+        data: data
+    })
+}
+
+export function deleteWorkhourAPI(workhour_id){
+    return axios({
+        url: `/workhour/${workhour_id}`,
+        method: 'delete'
+    })
+}
 
 export function getExpenAPI(){
     return axios({
@@ -141,9 +155,10 @@ export function deleteExpenAPI(expen_id){
     })
 }
 
-export function updateExpenAPI(expen_id){
+export function updateExpenAPI(expen_id, data){
     return axios({
         url: `/expen/${expen_id}`,
-        method: 'put'
+        method: 'put',
+        data: data
     })
 }

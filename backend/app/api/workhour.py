@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from typing import List
 # from app import crud, schemas, config
@@ -46,9 +46,9 @@ def read_workhour(workhour_id: int, db: Session = Depends(get_db)):
     return db_workhour
 
 @router.put("/{workhour_id}", response_model=schemas.WorkhourFull)
-def edit_workhour(workhour: schemas.WorkhourUpdate, workhour_id: int, db: Session = Depends(get_db), user=Depends(login_manager)):
-    user_id = user.id
-    db_workhour = workhour_crud.update_workhour(db, workhour_id=workhour_id, workhour=workhour, user_id=user_id)
+def edit_workhour(workhour: schemas.WorkhourUpdate, workhour_id: int, db: Session = Depends(get_db)):
+    # user_id = user.id
+    db_workhour = workhour_crud.update_workhour(db, workhour_id=workhour_id, workhour=workhour)
     if db_workhour is None:
         raise HTTPException(status_code=404, detail="Workhour not found")
     return db_workhour
@@ -58,3 +58,8 @@ def edit_workhour(workhour: schemas.WorkhourUpdate, workhour_id: int, db: Sessio
 #     totalworkhours = crud.get_totalworkhours_by_user_id(db, skip=skip)
 #     list_totalhours = [int(number) for number in totalworkhours]
 #     return list_totalhours
+
+@router.delete("/{id}", response_class=Response)
+def delete_workhour(id: int, db: Session = Depends(get_db)):
+    # expen.user_id = user.id
+    return workhour_crud.delete_workhour(id, db)

@@ -25,6 +25,7 @@
   </div>
 </template>
 <script>
+
 export default {
   name: "NavBar",
   computed: {
@@ -40,7 +41,7 @@ export default {
   },
   methods: {
     async logout() {
-      await this.$store.dispatch("LogOut");
+      await this.$store.getters.isAuthenticated;
       this.$router.push("/login");
     },
   },

@@ -113,7 +113,7 @@ export default {
       form: {
         expentask_id: "",
         date: today.toISOString().substring(0, 10),
-        price: "",
+        price: 0,
         description: "",
       },
     };

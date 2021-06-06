@@ -80,6 +80,7 @@ class ExpenTask(ExpenTaskBase):
 class UserBase(BaseModel):
     username: str
     fullname: str
+    password: str
 
 class UserCreate(UserBase):
     password: str

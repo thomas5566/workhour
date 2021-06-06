@@ -8,7 +8,12 @@
               <label for="input-default">Username:</label>
             </b-col>
             <b-col sm="10">
-              <b-form-input id="input-default" placeholder="Enter User Name" v-model="form.username" required></b-form-input>
+              <b-form-input
+                id="input-default"
+                placeholder="Enter User Name"
+                v-model="form.username"
+                required
+              ></b-form-input>
             </b-col>
           </b-row>
           <b-row class="my-2">
@@ -16,12 +21,18 @@
               <label for="input-default-2">Password:</label>
             </b-col>
             <b-col sm="10">
-              <b-form-input id="input-default-2" type="password" placeholder="Enter password" v-model="form.password" required></b-form-input>
+              <b-form-input
+                id="input-default-2"
+                type="password"
+                placeholder="Enter password"
+                v-model="form.password"
+                required
+              ></b-form-input>
             </b-col>
           </b-row>
           <b-button pill variant="primary" type="submit">Submit</b-button>
         </b-container>
-        </form>
+      </form>
       <p v-if="showError" id="error">Username or Password is incorrect</p>
     </div>
   </div>
@@ -38,7 +49,7 @@ export default {
         username: "",
         password: "",
       },
-      showError: false
+      showError: false,
     };
   },
   methods: {
@@ -48,12 +59,19 @@ export default {
       User.append("username", this.form.username);
       User.append("password", this.form.password);
       try {
-          await this.LogIn(User);
-          this.$router.push("/");
-          this.showError = false
+        await this.LogIn(User);
+        this.$router.push("/");
+        this.showError = false;
       } catch (error) {
-        this.showError = true
+        this.showError = true;
       }
+    },
+    login() {
+      this.$store.commit({
+        type: "setUserData",
+        userData: this.user,
+      });
+      this.$router.push("/");
     },
   },
 };

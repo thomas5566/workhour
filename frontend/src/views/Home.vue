@@ -1,7 +1,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
 
 <template>
-  <div>
+  <div> 
     <div class="home" v-if="isLoggedIn">
       <div class="card mt-5">
         <div>
@@ -10,6 +10,39 @@
 
           <label for="">To</label>
           <input type="date" v-model="endDate" />
+          <!-- <div>
+            <FilenameOption v-model="filename" />
+            <AutoWidthOption v-model="autoWidth" />
+            <BookTypeOption v-model="bookType" />
+            <el-button
+              :loading="downloadLoading"
+              style="margin: 0 0 20px 20px"
+              type="primary"
+              icon="el-icon-document"
+              @click="handleDownload"
+            >
+              Export Excel
+            </el-button>
+            <a
+              href="https://panjiachen.github.io/vue-element-admin-site/feature/component/excel.html"
+              target="_blank"
+              style="margin-left: 15px"
+            >
+              <el-tag type="info">Documentation</el-tag>
+            </a>
+            <hr />
+            <h2>Fetch Example</h2>
+            <downloadexcel
+              class="btn"
+              :fetch="fetchData2"
+              :fields="json_fields"
+              :before-generate="startDownload"
+              :before-finish="finishDownload"
+              type="csv"
+            >
+              Download Excel
+            </downloadexcel>
+          </div> -->
         </div>
         <div class="card-header">Work List</div>
         <div class="card-body">
@@ -30,7 +63,10 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="workhour in workhours" v-bind:key="workhour.id">
+                <tr
+                  v-for="workhour in filterWorkhours"
+                  v-bind:key="workhour.id"
+                >
                   <template v-if="editWorkhourId == workhour.id">
                     <td><input v-model="workhour.id" type="text" /></td>
                     <td>
@@ -97,7 +133,7 @@
                       {{ workhour.task.taskname }}
                     </td>
                     <td>
-                      {{ workhour.date }}
+                      {{ formatDate(workhour.date) }}
                     </td>
                     <td>
                       {{ workhour.description }}
@@ -151,7 +187,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="expen in filterItem" v-bind:key="expen.id">
+                <tr v-for="expen in filterExpens" v-bind:key="expen.id">
                   <template v-if="editId == expen.id">
                     <td><input v-model="editExpenData.id" type="text" /></td>
                     <td>
@@ -204,7 +240,7 @@
                       {{ expen.expentask.expentask_name }}
                     </td>
                     <td>
-                      {{ expen.date }}
+                      {{ formatDate(expen.date) }}
                     </td>
                     <td>
                       {{ expen.description }}
@@ -230,9 +266,9 @@
                   </template>
                 </tr>
 
-              <tr>
-                <th>Total Spends: {{ totalspends }}</th>
-              </tr>
+                <tr>
+                  <th>Total Spends: {{ totalspends }}</th>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -240,6 +276,79 @@
       </div>
     </div>
     <div v-else>No workhours</div>
+    <div>
+      <p><b>Whork Hour Lists</b></p>
+      <ejs-grid
+        ref="grid1"
+        id="FirstGrid"
+        :dataSource="workhours"
+        :allowFiltering="true"
+        :toolbar="toolbarOptions"
+        :allowPaging="true"
+        :allowExcelExport="true"
+        :toolbarClick="toolbarClick"
+      >
+        <e-columns>
+          <e-column
+            field="id"
+            headerText="ID"
+            textAlign="Right"
+            width="120"
+          ></e-column>
+          <e-column field="date" headerText="Date" width="150"></e-column>
+          <e-column
+            field="user.username"
+            headerText="User Name"
+            width="150"
+          ></e-column>
+          <e-column
+            field="task.taskname"
+            headerText="Task Name"
+            width="150"
+          ></e-column>
+          <e-column field="hour" headerText="Hour" width="150"></e-column>
+          <e-column
+            field="description"
+            headerText="Description"
+            width="150"
+          ></e-column>
+        </e-columns>
+      </ejs-grid>
+      <p><b>Expen Lists</b></p>
+      <ejs-grid
+        ref="grid2"
+        id="SecondGrid"
+        :allowFiltering="true"
+        :dataSource="expens"
+        :allowExcelExport="true"
+      >
+        <e-columns>
+          <e-column
+            field="id"
+            headerText="Expen ID"
+            textAlign="Right"
+            width="120"
+          ></e-column>
+          <e-column field="date" headerText="Date" width="150"></e-column>
+          <e-column
+            field="user.username"
+            headerText="User Name"
+            width="150"
+          ></e-column>
+          <e-column
+            field="expentask.expentask_name"
+            headerText="ExpenTask Name"
+            width="150"
+          ></e-column>
+          <e-column field="price" headerText="Price" width="150"> </e-column>
+          <e-column
+            field="description"
+            headerText="Description"
+            width="150"
+          ></e-column>
+        </e-columns>
+      </ejs-grid>
+    </div>
   </div>
 </template>
 <script>
@@ -252,64 +361,52 @@ import {
   updateWorkhourAPI,
 } from "../service/apis.js";
 import Vue from "vue";
-import { MonthPicker } from "vue-month-picker";
-import { MonthPickerInput } from "vue-month-picker";
 import axios from "axios";
 
+// options components
+import { parseTime } from "@/utils";
+import FilenameOption from "../components/FilenameOption";
+import AutoWidthOption from "../components/AutoWidthOption";
+import BookTypeOption from "../components/BookTypeOption";
+import downloadexcel from "vue-json-excel";
+
+import {
+  GridPlugin,
+  Toolbar,
+  ExcelExport,
+  Filter,
+  Edit,
+} from "@syncfusion/ej2-vue-grids";
+import { DataManager, UrlAdaptor } from "@syncfusion/ej2-data";
+
 Vue.use(axios);
-Vue.use(MonthPicker);
-Vue.use(MonthPickerInput);
+Vue.use(GridPlugin);
 
 export default {
   name: "Home",
   components: {
-    MonthPickerInput,
+    FilenameOption,
+    AutoWidthOption,
+    BookTypeOption,
+    downloadexcel,
   },
   props: {
     msg: String,
   },
-  computed: {
-    isLoggedIn: function () {
-      return this.$store.getters.isAuthenticated;
-    },
-    totalhours: function () {
-      console.log(this.workhours);
-      return this.workhours.reduce(function (totalhours, item) {
-        return totalhours + item.hour;
-      }, 0);
-    },
-    totalspends: function () {
-      console.log(this.filterItem);
-      return this.filterItem.reduce(
-        function (totalspends, item) {
-          return totalspends + item.price;
-        }, 0);
-    },
-    filterItem() {
-      let filterType = this.selectedType;
-      let startDate = this.localizeDate(this.startDate);
-      let endDate = this.localizeDate(this.endDate);
-
-      const itemsByType = filterType
-        ? this.expens.filter((expen) => expen.type === filterType)
-        : this.expens;
-      return itemsByType.filter((expens) => {
-        const itemDate = new Date(expens.date);
-        if (startDate && endDate) {
-          return startDate <= itemDate && itemDate <= endDate;
-        }
-        if (startDate && !endDate) {
-          return startDate <= itemDate;
-        }
-        if (!startDate && endDate) {
-          return itemDate <= endDate;
-        }
-        return true;
-      });
-    },
-  },
   data() {
     return {
+      fData: this.workhour,
+      sData: this.expens,
+
+      // export Excel
+      list: null,
+      listLoading: true,
+      downloadLoading: false,
+      filename: "",
+      autoWidth: true,
+      bookType: "xlsx",
+
+      // Time Pick
       selectedType: "",
       startDate: null,
       endDate: null,
@@ -345,12 +442,99 @@ export default {
         is_overtime: false,
         hour: "",
       },
+      json_fields: {
+        Date: "date",
+        Username: "user.username",
+        Taskname: "task.fullname",
+        Hour: "hour",
+        Description: "description",
+
+        "Task name2": {
+          field: "task.taskname",
+
+          callback: (value) => {
+            return `Task Name - ${value}`;
+          },
+        },
+      },
+      data: new DataManager({
+        url: "http://0.0.0.0:80/workhour",
+        insertUrl: "/workhour/",
+        removeUrl: "/workhour/",
+        adaptor: new UrlAdaptor(),
+        headers: [{ Authorization: "Bearer" }],
+      }),
+      toolbarOptions: ["ExcelExport"],
     };
+  },
+    computed: {
+    isLoggedIn: function () {
+      return this.$store.getters.isAuthenticated;
+    },
+    totalhours: function () {
+      console.log(this.filterWorkhours);
+      return this.filterWorkhours.reduce(function (totalhours, item) {
+        return totalhours + item.hour;
+      }, 0);
+    },
+    totalspends: function () {
+      console.log(this.filterExpens);
+      return this.filterExpens.reduce(function (totalspends, item) {
+        return totalspends + item.price;
+      }, 0);
+    },
+    filterExpens() {
+      let filterType = this.selectedType;
+      let startDate = this.localizeDate(this.startDate);
+      let endDate = this.localizeDate(this.endDate);
+
+      const itemsByType = filterType
+        ? this.expens.filter((expen) => expen.type === filterType)
+        : this.expens;
+      return itemsByType.filter((expens) => {
+        const itemDate = new Date(expens.date);
+        if (startDate && endDate) {
+          return startDate <= itemDate && itemDate <= endDate;
+        }
+        if (startDate && !endDate) {
+          return startDate <= itemDate;
+        }
+        if (!startDate && endDate) {
+          return itemDate <= endDate;
+        }
+        return true;
+      });
+    },
+    filterWorkhours() {
+      let filterType = this.selectedType;
+      let startDate = this.localizeDate(this.startDate);
+      let endDate = this.localizeDate(this.endDate);
+
+      const itemsByType = filterType
+        ? this.workhours.filter((workhours) => workhours.type === filterType)
+        : this.workhours;
+      return itemsByType.filter((workhours) => {
+        const itemDate = new Date(workhours.date);
+        if (startDate && endDate) {
+          return startDate <= itemDate && itemDate <= endDate;
+        }
+        if (startDate && !endDate) {
+          return startDate <= itemDate;
+        }
+        if (!startDate && endDate) {
+          return itemDate <= endDate;
+        }
+        return true;
+      });
+    },
   },
   mounted: function () {
     this.get_workhour();
     this.get_expen();
     // this.delete_expen();
+  },
+  created() {
+    this.fetchData();
   },
   methods: {
     async get_workhour() {
@@ -472,44 +656,121 @@ export default {
       return new Date(`${mm}/${dd}/${yyyy}`);
     },
     formatDate(date) {
-      return new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(
+      return new Intl.DateTimeFormat("zh-CN", { dateStyle: "long" }).format(
         new Date(date)
       );
     },
-    // checkDate() {
-    //   if (this.fromdate != "") {
-    //     var fromdate = new Date(this.fromdate);
-    //     var todate = new Date(this.todate);
+    fetchData() {
+      this.listLoading = true;
+      getWorkhourAPI().then((response) => {
+        this.list = response.data;
+        this.listLoading = false;
+      });
+    },
+    handleDownload() {
+      this.downloadLoading = true;
+      import("@/vendor/Export2Excel").then((excel) => {
+        const tHeader = ["Id", "User", "Task", "Hours", "Description", "Date"];
+        const filterVal = [
+          "id",
+          "username",
+          "taskname",
+          "hour",
+          "description",
+          "date",
+        ];
+        const list = this.list;
+        const data = this.formatJson(filterVal, list);
+        excel.export_json_to_excel({
+          header: tHeader,
+          data,
+          filename: this.filename,
+          autoWidth: this.autoWidth,
+          bookType: this.bookType,
+        });
+        this.downloadLoading = false;
+      });
+    },
+    formatJson(filterVal, jsonData) {
+      return jsonData.map((v) =>
+        filterVal.map((j) => {
+          if (j === "timestamp") {
+            return parseTime(v[j]);
+          } else {
+            return v[j];
+          }
+        })
+      );
+    },
+    startDownload() {
+      alert("show loading");
+    },
+    finishDownload() {
+      alert("hide loading");
+    },
+    async fetchData2() {
+      const response = await getWorkhourAPI();
+      console.log(response);
+      return response.data;
+    },
+    toolbarClick: function (args) {
+      if (args.item.id === "FirstGrid_excelexport") {
+        // 'Grid_excelexport' -> Grid component id + _ + toolbar item name
+        let appendExcelExportProperties = {
+          enableFilter: true,
+          multipleExport: { type: "NewSheet" },
+        };
 
-    //     if (fromdate.getTime() > todate.getTime()) {
-    //       var currentDate = new Date();
-
-    //       var day = fromdate.getDate();
-    //       var month = fromdate.getMonth();
-    //       var year = fromdate.getFullYear();
-
-    //       this.todate = new Date(year, month, day);
-    //     }
-    //   }
-    // },
-    // fetchRecords() {
-    //   if (this.fromdate != "" && this.todate != "") {
-    //     getExpenAPI(this.fromdate, this.todate)
-    //       .then(function (response) {
-    //         this.expens = response.data;
-
-    //         // Display no record found <tr> if record not found
-    //         if (this.expens.length == 0) {
-    //           app.recordNotFound = true;
-    //         } else {
-    //           app.recordNotFound = false;
-    //         }
-    //       })
-    //       .catch(function (error) {
-    //         console.log(error);
-    //       });
-    //   }
-    // },
+        let firstGridExport = this.$refs.grid1.excelExport(
+          appendExcelExportProperties,
+          true
+        );
+        firstGridExport.then((fData) => {
+          this.$refs.grid2.excelExport(
+            appendExcelExportProperties,
+            false,
+            fData
+          );
+        });
+      }
+    },
+  },
+  change(args) {
+    debugger;
+    var datepicker = document.getElementsByClassName("e-daterangepicker")[0]
+      .ej2_instances[0];
+    var grid = document.getElementsByClassName("e-grid")[0].ej2_instances[0];
+    var dateValue1 = datepicker.value[0];
+    var dataValue2 = datepicker.value[1]; //get date values from date range picker
+    grid.filterSettings.columns = [
+      {
+        value: dateValue1,
+        operator: "greaterthanorequal",
+        field: "OrderDate",
+        predicate: "and",
+      },
+      {
+        value: dataValue2,
+        operator: "lessthanorequal",
+        field: "OrderDate",
+        predicate: "and",
+      },
+    ];
+  },
+  provide: {
+    grid: [Toolbar, ExcelExport, Filter],
   },
 };
 </script>
+
+<style>
+@import '../../node_modules/@syncfusion/ej2-base/styles/material.css';  
+@import '../../node_modules/@syncfusion/ej2-buttons/styles/material.css';  
+@import '../../node_modules/@syncfusion/ej2-calendars/styles/material.css';  
+@import '../../node_modules/@syncfusion/ej2-dropdowns/styles/material.css';  
+@import '../../node_modules/@syncfusion/ej2-inputs/styles/material.css';  
+@import '../../node_modules/@syncfusion/ej2-navigations/styles/material.css';
+@import '../../node_modules/@syncfusion/ej2-popups/styles/material.css';
+@import '../../node_modules/@syncfusion/ej2-splitbuttons/styles/material.css';
+@import "../../node_modules/@syncfusion/ej2-vue-grids/styles/material.css";
+</style>

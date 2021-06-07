@@ -278,8 +278,8 @@ export default {
       this.editExpenData.description = "";
       this.editExpenData.price = "";
     },
-    onEditSubmit() {
-      updateExpenAPI(
+    async onEditSubmit() {
+      await updateExpenAPI(
         this.editId,
         this.editExpenData.id,
         this.editExpenData.username,

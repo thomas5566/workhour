@@ -8,18 +8,19 @@ from app.database import engine
 from app import models
 
 # For DEV only, remove below 4 lines in production
-from app.dependency import create_default_data
-models.Base.metadata.drop_all(bind=engine)
-models.Base.metadata.create_all(bind=engine)
-create_default_data()
+# from app.dependency import create_default_data
+# models.Base.metadata.drop_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine)
+# create_default_data()
 
 app = FastAPI()
 
-# origins = ["*"]
+origins = ["*"]
 origins = [
     "http://localhost",
     "http://localhost:8080",
     "http://localhost:8083",
+    "http://0.0.0.0:8080",
     "http://192.168.0.123:8080"
 ]
 

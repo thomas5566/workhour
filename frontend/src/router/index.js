@@ -11,6 +11,7 @@ import Workhour from '../views/Workhour'
 import UserDetail from '../views/UserDetail'
 import TaskDetail from '../views/TaskDetail'
 import WorkhourDetail from '../views/WorkhourDetail'
+import Excel from '../views/Excel'
 
 Vue.use(VueRouter)
 const routes = [
@@ -55,6 +56,11 @@ const routes = [
     path: '/expen',
     name: "Expen",
     component: Expen,
+  },
+  {
+    path: '/excel',
+    name: "Excel",
+    component: Excel,
   },
   {
     path: '/user/:id',

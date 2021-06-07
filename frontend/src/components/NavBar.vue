@@ -4,9 +4,10 @@
       <router-link to="/home">Home</router-link> |
       <router-link to="/workhour">Workhours</router-link> |
       <router-link to="/expen">Expen</router-link> |
+      <router-link to="/excel">Export Excel</router-link> |
       <router-link to="/task">Tasks</router-link> |
+      <router-link to="/user">User</router-link> |
       <router-link to="/expentask">Expentasks</router-link> |
-      <router-link to="/expenlist">expenlist</router-link> |
       <span v-if="isLoggedIn">
         <a @click="logout">Logout</a> ({{ username }})
       </span>
@@ -25,6 +26,7 @@
   </div>
 </template>
 <script>
+
 export default {
   name: "NavBar",
   computed: {
@@ -40,7 +42,7 @@ export default {
   },
   methods: {
     async logout() {
-      await this.$store.dispatch("LogOut");
+      await this.$store.getters.isAuthenticated;
       this.$router.push("/login");
     },
   },

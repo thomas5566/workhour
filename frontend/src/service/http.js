@@ -18,9 +18,9 @@ function endLoading() {
 }
 
 axios.defaults.withCredentials = true
-// axios.defaults.baseURL = 'http://192.168.0.123:8000/';
-axios.defaults.baseURL = 'http://127.0.0.1:8000/';
-// axios.defaults.baseURL = 'http://0.0.0.0:80/';
+// axios.defaults.baseURL = 'http://127.0.0.1:8000/';
+axios.defaults.baseURL = 'http://192.168.0.123:8000/';
+// axios.defaults.baseURL = 'http://0.0.0.0:8000/';
 
 // 請求攔截
 axios.interceptors.request.use(

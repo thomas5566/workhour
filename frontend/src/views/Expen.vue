@@ -62,19 +62,24 @@
               <label for="input-default">Spend:</label>
             </b-col>
             <b-col sm="10">
-              <b-form-input
-                rows="1"
-                v-model="form.price"
-              ></b-form-input>
+              <b-form-input rows="1" v-model="form.price"></b-form-input>
             </b-col>
           </b-row>
           <b-row class="my-1">
             <b-col sm="9">
-              <b-button pill variant="primary" type="submit"
+              <b-button pill variant="primary" type="submit" @click="showAlert"
                 >Add Expen</b-button
               >
             </b-col>
           </b-row>
+          <b-alert
+            :show="dismissCountDown"
+            variant="success"
+            @dismissed="dismissCountDown = 0"
+            @dismiss-count-down="countDownChanged"
+          >
+            Add Expen Success!!
+          </b-alert>
         </b-container>
       </form>
     </div>
@@ -82,10 +87,7 @@
 </template>
 
 <script>
-import {
-  getExpentaskAPI,
-  postExpenAPI,
-} from "../service/apis.js";
+import { getExpentaskAPI, postExpenAPI } from "../service/apis.js";
 export default {
   components: {},
   props: {
@@ -106,6 +108,9 @@ export default {
     const maxDate = new Date(today);
     maxDate.setMonth(maxDate.getMonth() + 2);
     return {
+      dismissSecs: 2,
+      dismissCountDown: 0,
+      showDismissibleAlert: false,
       expentasks: null,
       toDate: today.toISOString().substring(0, 10),
       minDate: minDate,
@@ -113,7 +118,7 @@ export default {
       form: {
         expentask_id: "",
         date: today.toISOString().substring(0, 10),
-        price: "",
+        price: 0,
         description: "",
       },
     };
@@ -124,7 +129,9 @@ export default {
   },
   methods: {
     async get_expentask() {
-      await getExpentaskAPI().then((response) => (this.expentasks = response.data));
+      await getExpentaskAPI().then(
+        (response) => (this.expentasks = response.data)
+      );
     },
     // async get_workhour() {
     //   await getWorkhourAPI().then(
@@ -142,8 +149,7 @@ export default {
         await postExpenAPI(data).then((response) => {
           if (response.status == 200) {
             this.form.expentask_id = "";
-            (this.form.date = this.toDate), 
-            (this.form.price = "");
+            (this.form.date = this.toDate), (this.form.price = "");
             this.form.description = "";
           }
         });
@@ -153,6 +159,12 @@ export default {
       // await getWorkhourAPI().then(
       //   (response) => (this.workhours = response.data)
       // );
+    },
+    countDownChanged(dismissCountDown) {
+      this.dismissCountDown = dismissCountDown;
+    },
+    showAlert() {
+      this.dismissCountDown = this.dismissSecs;
     },
   },
 };

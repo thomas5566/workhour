@@ -102,19 +102,29 @@
               >
               </b-form-checkbox>
             </b-col>
-
             <b-col sm="9">
-              <b-button pill variant="primary" type="submit"
+              <b-button
+                pill
+                variant="primary"
+                type="submit"
+                @click="showAlert"
+                class="m-1"
                 >Add Workhour</b-button
               >
             </b-col>
           </b-row>
-          <p></p>
+          <b-alert
+            :show="dismissCountDown"
+            variant="success"
+            @dismissed="dismissCountDown = 0"
+            @dismiss-count-down="countDownChanged"
+          >
+            Add WorkHour Success!!
+          </b-alert>
 
-          <p></p>
         </b-container>
       </form>
-      <div class="workhours" v-if="workhours">
+      <!-- <div class="workhours" v-if="workhours">
         <table class="table table-striped table-bordered">
           <thead>
             <tr>
@@ -148,7 +158,7 @@
           </tbody>
         </table>
       </div>
-      <div v-else>No workhours</div>
+      <div v-else>No workhours</div> -->
     </div>
   </div>
 </template>
@@ -159,6 +169,7 @@ import {
   getWorkhourAPI,
   postWorkhourAPI,
 } from "../service/apis.js";
+
 export default {
   components: {},
   props: {
@@ -179,6 +190,10 @@ export default {
     const maxDate = new Date(today);
     maxDate.setMonth(maxDate.getMonth() + 2);
     return {
+      dismissSecs: 2,
+      dismissCountDown: 0,
+      showDismissibleAlert: false,
+
       tasks: null,
       workhours: null,
       toDate: today.toISOString().substring(0, 10),
@@ -229,6 +244,12 @@ export default {
       await getWorkhourAPI().then(
         (response) => (this.workhours = response.data)
       );
+    },
+    countDownChanged(dismissCountDown) {
+      this.dismissCountDown = dismissCountDown;
+    },
+    showAlert() {
+      this.dismissCountDown = this.dismissSecs;
     },
   },
 };

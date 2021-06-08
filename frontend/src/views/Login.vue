@@ -35,6 +35,7 @@
       </form>
       <p v-if="showError" id="error">Username or Password is incorrect</p>
     </div>
+    
   </div>
 </template>
 
@@ -60,7 +61,7 @@ export default {
       User.append("password", this.form.password);
       try {
         await this.LogIn(User);
-        this.$router.push("/");
+        this.$router.push("/home");
         this.showError = false;
       } catch (error) {
         this.showError = true;
@@ -71,7 +72,7 @@ export default {
         type: "setUserData",
         userData: this.user,
       });
-      this.$router.push("/");
+      this.$router.push("/login");
     },
   },
 };

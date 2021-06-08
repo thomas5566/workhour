@@ -10,7 +10,7 @@
             <b-col sm="10">
               <b-form-select
                 v-model="form.expentask_id"
-                :select-size="6"
+                :select-size="20"
                 class="form-control"
                 required
               >

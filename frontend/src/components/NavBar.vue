@@ -5,8 +5,8 @@
       <router-link to="/workhour">Workhours</router-link> |
       <router-link to="/expen">Expen</router-link> |
       <router-link to="/excel">Export Excel</router-link> |
-      <router-link to="/task">Tasks</router-link> |
       <router-link to="/user">User</router-link> |
+      <router-link to="/task">Tasks</router-link> |
       <router-link to="/expentask">Expentasks</router-link> |
       <span v-if="isLoggedIn">
         <a @click="logout">Logout</a> ({{ username }})

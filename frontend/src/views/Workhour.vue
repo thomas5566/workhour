@@ -10,7 +10,7 @@
             <b-col sm="10">
               <b-form-select
                 v-model="form.task_id"
-                :select-size="6"
+                :select-size="20"
                 class="form-control"
                 required
               >
@@ -176,7 +176,7 @@ export default {
     msg: String,
   },
   computed: {
-    isLoggedIn: function () {
+    isLoggedIn () {
       return this.$store.getters.isAuthenticated;
     },
   },
@@ -199,6 +199,7 @@ export default {
       toDate: today.toISOString().substring(0, 10),
       minDate: minDate,
       maxDate: maxDate,
+
       form: {
         task_id: "",
         date: today.toISOString().substring(0, 10),

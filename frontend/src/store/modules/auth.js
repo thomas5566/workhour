@@ -1,8 +1,6 @@
 //store/modules/auth.js
 import { postUserLogInAPI } from "../../service/apis.js";
 
-
-
 const state = {
     token: "",
     expiration: Date.now(),

@@ -1,83 +1,92 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
 
 <template>
-  <div> 
+  <div>
     <div class="home" v-if="isLoggedIn">
-    <div>
-      <p><b>Whork Hour Lists</b></p>
-      <ejs-grid
-        ref="grid1"
-        id="FirstGrid"
-        :dataSource="workhours"
-        :allowFiltering="true"
-        :toolbar="toolbarOptions"
-        :allowPaging="true"
-        :allowExcelExport="true"
-        :toolbarClick="toolbarClick"
-      >
-        <e-columns>
-          <e-column
-            field="id"
-            headerText="ID"
-            textAlign="Right"
-            width="120"
-          ></e-column>
-          <e-column field="date" headerText="Date" width="150"></e-column>
-          <e-column
-            field="user.username"
-            headerText="User Name"
-            width="150"
-          ></e-column>
-          <e-column
-            field="task.taskname"
-            headerText="Task Name"
-            width="150"
-          ></e-column>
-          <e-column field="hour" headerText="Hour" width="150"></e-column>
-          <e-column
-            field="description"
-            headerText="Description"
-            width="150"
-          ></e-column>
-        </e-columns>
-      </ejs-grid>
-      <p><b>Expen Lists</b></p>
-      <ejs-grid
-        ref="grid2"
-        id="SecondGrid"
-        :allowFiltering="true"
-        :dataSource="expens"
-        :allowExcelExport="true"
-      >
-        <e-columns>
-          <e-column
-            field="id"
-            headerText="Expen ID"
-            textAlign="Right"
-            width="120"
-          ></e-column>
-          <e-column field="date" headerText="Date" width="150"></e-column>
-          <e-column
-            field="user.username"
-            headerText="User Name"
-            width="150"
-          ></e-column>
-          <e-column
-            field="expentask.expentask_name"
-            headerText="ExpenTask Name"
-            width="150"
-          ></e-column>
-          <e-column field="price" headerText="Price" width="150"> </e-column>
-          <e-column
-            field="description"
-            headerText="Description"
-            width="150"
-          ></e-column>
-        </e-columns>
-      </ejs-grid>
+      <div>
+        <p><b>工作項目清單</b></p>
+        <ejs-grid
+          ref="grid1"
+          id="FirstGrid"
+          :dataSource="workhours"
+          :allowFiltering="true"
+          :toolbar="toolbarOptions"
+          :allowPaging="true"
+          :allowExcelExport="true"
+          :toolbarClick="toolbarClick"
+          :pageSettings="pageSettings"
+          height="323"
+          :load="load"
+        >
+          <e-columns>
+            <e-column
+              field="id"
+              headerText="ID"
+              textAlign="Right"
+              width="120"
+            ></e-column>
+            <e-column field="date" headerText="Date" width="150"></e-column>
+            <e-column
+              field="user.username"
+              headerText="User Name"
+              width="150"
+            ></e-column>
+            <e-column
+              field="task.taskname"
+              headerText="Task Name"
+              width="150"
+            ></e-column>
+            <e-column field="hour" headerText="Hour" width="150"></e-column>
+            <e-column
+              field="description"
+              headerText="Description"
+              width="150"
+            ></e-column>
+          </e-columns>
+        </ejs-grid>
+      </div>
+
+      <div>
+        <p><b>花費項目清單</b></p>
+        <ejs-grid
+          ref="grid2"
+          id="SecondGrid"
+          :allowFiltering="true"
+          :dataSource="expens"
+          :allowExcelExport="true"
+          :allowPaging="true"
+          :pageSettings="pageSettings"
+          height="323"
+          :load2="load2"
+        >
+          <e-columns>
+            <e-column
+              field="id"
+              headerText="Expen ID"
+              textAlign="Right"
+              width="120"
+            ></e-column>
+            <e-column field="date" headerText="Date" width="150"></e-column>
+            <e-column
+              field="user.username"
+              headerText="User Name"
+              width="150"
+            ></e-column>
+            <e-column
+              field="expentask.expentask_name"
+              headerText="ExpenTask Name"
+              width="150"
+            ></e-column>
+            <e-column field="price" headerText="Price" width="150"> </e-column>
+            <e-column
+              field="description"
+              headerText="Description"
+              width="150"
+            ></e-column>
+          </e-columns>
+        </ejs-grid>
+      </div>
     </div>
-  </div>
-  <div v-else>No workhours</div>
+    <div v-else>No workhours</div>
   </div>
 </template>
 <script>
@@ -89,6 +98,7 @@ import {
   Toolbar,
   ExcelExport,
   Filter,
+  Page,
 } from "@syncfusion/ej2-vue-grids";
 Vue.use(axios);
 Vue.use(GridPlugin);
@@ -98,14 +108,15 @@ export default {
   props: {
     msg: String,
   },
+
   data() {
     return {
       fData: this.workhour,
       sData: this.expens,
-
       workhours: [],
       expens: [],
 
+      pageSettings: { pageSize: 10 },
       toolbarOptions: ["ExcelExport"],
     };
   },
@@ -148,9 +159,27 @@ export default {
         });
       }
     },
+    load: function () {
+      let rowHeight = this.$refs.grid1.ej2Instances.getRowHeight(); //height of the each row
+      let gridHeight = this.$refs.grid1.height; //grid height
+      let pageSize = this.$refs.grid1.pageSettings.pageSize; //initial page size
+      let pageResize = (gridHeight - pageSize * rowHeight) / rowHeight; //new page size is obtained here
+      this.$refs.grid1.pageSettings = {
+        pageSize: pageSize + Math.round(pageResize),
+      };
+    },
+    load2: function () {
+      let rowHeight2 = this.$refs.grid2.ej2Instances.getRowHeight(); //height of the each row
+      let gridHeight2 = this.$refs.grid2.height2; //grid height
+      let pageSize2 = this.$refs.grid2.pageSettings2.pageSize2; //initial page size
+      let pageResize2 = (gridHeight2 - pageSize2 * rowHeight2) / rowHeight2; //new page size is obtained here
+      this.$refs.grid2.pageSettings2 = {
+        pageSize2: pageSize2 + Math.round(pageResize2),
+      };
+    },
   },
   provide: {
-    grid: [Toolbar, ExcelExport, Filter],
+    grid: [Toolbar, ExcelExport, Filter, Page],
   },
 };
 </script>

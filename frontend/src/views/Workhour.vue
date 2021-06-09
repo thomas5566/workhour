@@ -109,7 +109,7 @@
                 type="submit"
                 @click="showAlert"
                 class="m-1"
-                >Add Workhour</b-button
+                >新增</b-button
               >
             </b-col>
           </b-row>
@@ -119,7 +119,7 @@
             @dismissed="dismissCountDown = 0"
             @dismiss-count-down="countDownChanged"
           >
-            Add WorkHour Success!!
+            新增計畫項目 成功!!
           </b-alert>
 
         </b-container>

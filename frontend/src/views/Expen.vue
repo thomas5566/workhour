@@ -68,7 +68,7 @@
           <b-row class="my-1">
             <b-col sm="9">
               <b-button pill variant="primary" type="submit" @click="showAlert"
-                >Add Expen</b-button
+                >新增</b-button
               >
             </b-col>
           </b-row>
@@ -78,7 +78,7 @@
             @dismissed="dismissCountDown = 0"
             @dismiss-count-down="countDownChanged"
           >
-            Add Expen Success!!
+            新增花費項目 成功!!
           </b-alert>
         </b-container>
       </form>

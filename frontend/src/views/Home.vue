@@ -1,12 +1,16 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.17/vue.js"></script>
-
 <template>
   <div>
     <div class="home" v-if="isLoggedIn">
       <div>
-        <button v-for="tab in tabs" :key="tab" @click="component = tab">
-          {{ tab }}
-        </button>
+        <b-button
+          pill
+          variant="outline-info"
+          v-for="tab in tabs"
+          :key="tab"
+          @click="component = tab"
+          >{{ tab }}
+        </b-button>
+
         <keep-alive>
           <component :is="component" />
         </keep-alive>
@@ -19,36 +23,33 @@
 import Vue from "vue";
 import axios from "axios";
 
-import WorkhourLists from "../components/WorkhourLists.vue";
-import ExpenLists from "../components/ExpenLists.vue"
+import 工作項目清單 from "../components/WorkhourLists.vue";
+import 花費項目清單 from "../components/ExpenLists.vue";
 
 Vue.use(axios);
 
 export default {
   name: "Home",
   components: {
-    WorkhourLists,
-    ExpenLists,
+    工作項目清單,
+    花費項目清單,
   },
   props: {
     msg: String,
   },
   data() {
     return {
-      tabs: ["WorkhourLists", "ExpenLists"],
-      component: "WorkhourLists",
-    }
+      tabs: ["工作項目清單", "花費項目清單"],
+      component: "工作項目清單",
+    };
   },
   computed: {
     isLoggedIn: function () {
       return this.$store.getters.isAuthenticated;
     },
   },
-  mounted: function () {
-  },
-  created() {
-  },
-  methods: {
-  },
+  mounted: function () {},
+  created() {},
+  methods: {},
 };
 </script>

@@ -120,7 +120,7 @@
                   </template>
                 </tr>
                 <tr>
-                  <th>Total Spends: {{ totalspends }}</th>
+                  <th>所選日期 總花費: {{ totalspends }}</th>
                 </tr>
               </tbody>
             </table>
@@ -168,17 +168,11 @@ export default {
         // evaluate whatever you need to determine disabled here...
         return this.form.validated;
       },
-      // export Excel
-      list: null,
-      listLoading: true,
-      downloadLoading: false,
-      filename: "",
-      autoWidth: true,
-      bookType: "xlsx",
       // Time Pick
       selectedType: "",
       startDate: null,
       endDate: null,
+
       editId: "",
       expens: [],
       editExpenData: {
@@ -209,8 +203,8 @@ export default {
       return this.$store.getters.isAuthenticated;
     },
     totalspends: function () {
-      console.log(this.pageOfExpens);
-      return this.pageOfExpens.reduce(function (totalspends, item) {
+      console.log(this.filterExpens);
+      return this.filterExpens.reduce(function (totalspends, item) {
         return totalspends + item.price;
       }, 0);
     },

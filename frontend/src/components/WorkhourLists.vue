@@ -8,6 +8,7 @@
 
           <label for="">To</label>
           <input type="date" v-model="endDate" />
+          <td></td>
         </div>
         <div class="card-header">Work List</div>
         <div class="card-body">
@@ -139,7 +140,7 @@
                   </template>
                 </tr>
                 <tr>
-                  <th>Total Hours: {{ totalhours }}</th>
+                  <th>所選日期 總工時: {{ totalhours }}</th>
                 </tr>
               </tbody>
             </table>
@@ -187,13 +188,6 @@ export default {
         // evaluate whatever you need to determine disabled here...
         return this.form.validated;
       },
-      // export Excel
-      list: null,
-      listLoading: true,
-      downloadLoading: false,
-      filename: "",
-      autoWidth: true,
-      bookType: "xlsx",
       // Time Pick
       selectedType: "",
       startDate: null,
@@ -225,8 +219,8 @@ export default {
       return this.$store.getters.isAuthenticated;
     },
     totalhours: function () {
-      console.log(this.pageOfWorkhours);
-      return this.pageOfWorkhours.reduce(function (totalhours, item) {
+      console.log(this.filterWorkhours);
+      return this.filterWorkhours.reduce(function (totalhours, item) {
         return totalhours + item.hour;
       }, 0);
     },
@@ -262,9 +256,7 @@ export default {
   deactivated() {
     console.log("WorkhourLists has been deactivated");
   },
-  created() {
-    this.fetchData();
-  },
+  created() {},
   methods: {
     onChangeWorkhourPage(pageOfWorkhours) {
       // update page of items
@@ -340,13 +332,6 @@ export default {
       return new Intl.DateTimeFormat("zh-CN", { dateStyle: "long" }).format(
         new Date(date)
       );
-    },
-    fetchData() {
-      this.listLoading = true;
-      getWorkhourAPI().then((response) => {
-        this.list = response.data;
-        this.listLoading = false;
-      });
     },
   },
 };

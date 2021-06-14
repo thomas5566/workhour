@@ -7,8 +7,8 @@ class IdMixin(object):
     id = Column(Integer, primary_key=True, index=True)
 
 class TimestampMixin(object):
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at = Column(Date, server_default=func.now())
+    updated_at = Column(Date, server_default=func.now(), onupdate=func.now())
 
 class User(IdMixin, Base, TimestampMixin):
 
@@ -17,6 +17,8 @@ class User(IdMixin, Base, TimestampMixin):
     username = Column(String(100), unique=True, index=True)
     fullname = Column(String(255))
     password = Column(String(255))
+    is_active = Column(Boolean(), default=True)
+    is_superuser = Column(Boolean(), default=False)
 
     workhours = relationship("Workhour", back_populates="user")
     expenditures = relationship("Expenditure", back_populates="user")
@@ -47,6 +49,7 @@ class Workhour(IdMixin, Base, TimestampMixin):
     date = Column(Date)
     hour = Column(Numeric(4,2))
     is_overtime = Column(Boolean, default=False)
+    overtime_hour = Column(Numeric(4,2))
     description = Column(String(255), index=True)
     active = Column(Boolean, default=True)
 

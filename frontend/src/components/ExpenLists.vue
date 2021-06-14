@@ -16,11 +16,11 @@
               <thead>
                 <tr>
                   <th scope="col">Expen ID</th>
-                  <th>User ID/Name</th>
-                  <th>Expen ID/Name</th>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Product Price</th>
+                  <th>姓名</th>
+                  <th>支出項目</th>
+                  <th>日期</th>
+                  <th>支出說明</th>
+                  <th>支出費用</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -58,7 +58,33 @@
                         :disabled="isDisabled"
                       />
                     </td>
-                    <td><input v-model="editExpenData.date" type="text" /></td>
+                    <td>
+                      <!-- <input v-model="editExpenData.date" type="text" /> -->
+                      <th>
+                      <div>
+                        <b-input-group class="mb-3">
+                          <b-form-input
+                            id="example-input"
+                            v-model="editExpenData.date"
+                            type="text"
+                            placeholder="YYYY-MM-DD"
+                            autocomplete="off"
+                          ></b-form-input>
+                          <b-input-group-append>
+                            <b-form-datepicker
+                              v-model="editExpenData.date"
+                              button-only
+                              size="sm"
+                              right
+                              locale="zh-CN"
+                              aria-controls="example-input"
+                              @context="onContext"
+                            ></b-form-datepicker>
+                          </b-input-group-append>
+                        </b-input-group>
+                      </div>
+                      </th>
+                    </td>
                     <td>
                       <input v-model="editExpenData.description" type="text" />
                     </td>
@@ -70,14 +96,14 @@
                         class="btn btn-sm btn-outline-success"
                         @click="onEditSubmit(expen.id)"
                       >
-                        Submit
+                        更新
                       </button>
                       <button
                         type="button"
                         class="btn btn-sm btn-outline-info"
                         @click="onCancel"
                       >
-                        Cancel
+                        取消
                       </button>
                     </td>
                   </template>
@@ -108,13 +134,13 @@
                         class="btn btn-sm btn-outline-warning"
                         v-on:click="onEdit(expen)"
                       >
-                        Edit
+                        編輯
                       </button>
                       <button
                         class="btn btn-sm btn-outline-danger"
                         v-on:click="deleteEpen(expen.id)"
                       >
-                        Delete
+                        刪除
                       </button>
                     </td>
                   </template>
@@ -242,6 +268,12 @@ export default {
   },
   created() {},
   methods: {
+    onContext(ctx) {
+      // The date formatted in the locale, or the `label-no-date-selected` string
+      this.formatted = ctx.selectedFormatted;
+      // The following will be an empty string until a valid date is entered
+      this.selected = ctx.selectedYMD;
+    },
     onChangeExpenPage(pageOfExpens) {
       // update page of items
       this.pageOfExpens = pageOfExpens;

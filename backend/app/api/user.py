@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from typing import List
@@ -7,10 +7,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 import bcrypt
 # from fastapi_login.exceptions import InvalidCredentialsException
 # from app import crud, schemas, config
-from .. import schemas
+from .. import schemas, models
 from ..database import get_db
 from ..auth import login_manager
 from ..repository import user_crud
+from .route_login import get_current_user_from_token
 
 
 router = APIRouter(
@@ -27,10 +28,20 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     user.password = pwhash.decode('utf8')
     return user_crud.create_user(db=db, user=user)
 
-@router.get("/", response_model=List[schemas.User])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = user_crud.get_users(db, skip=skip, limit=limit)
-    return users
+# @router.get("/", response_model=List[schemas.User])
+# def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+#     users = user_crud.get_users(db, skip=skip, limit=limit)
+#     return users
+
+@router.get("/users", response_model=List[schemas.User])
+def read_users(db: Session = Depends(get_db),
+               current_user: models.User = Depends(get_current_user_from_token)):
+    # print(current_user.is_superuser)
+    if current_user.is_superuser:
+        users = user_crud.get_users(db)
+        return users
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                        detail="You are not permitted!!")
 
 @router.get('/my', response_model=schemas.UserFull)
 def read_user_my(user=Depends(login_manager)):

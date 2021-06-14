@@ -5,7 +5,7 @@
         <b-container fluid>
           <b-row class="my-1" v-if="tasks">
             <b-col sm="2">
-              <label for="input-default">Task:</label>
+              <label for="input-default">計劃項目:</label>
             </b-col>
             <b-col sm="10">
               <b-form-select
@@ -27,7 +27,7 @@
 
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">Date:</label>
+              <label for="input-default">日期:</label>
             </b-col>
             <b-col sm="10">
               <b-form-datepicker
@@ -48,7 +48,7 @@
 
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">Hour:</label>
+              <label for="input-default">時間:</label>
             </b-col>
             <b-col sm="1">
               <b-form-input
@@ -78,7 +78,7 @@
 
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">Description:</label>
+              <label for="input-default">工作說明:</label>
             </b-col>
             <b-col sm="10">
               <b-form-textarea
@@ -91,17 +91,50 @@
 
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">is_overtime:</label>
+              <label for="input-default">加班:</label>
             </b-col>
             <b-col sm="1">
               <b-form-checkbox
                 id="checkbox-1"
-                v-model="form.is_overtime"
+                v-model="checked"
                 name="checkbox-1"
                 switch
               >
               </b-form-checkbox>
             </b-col>
+            <div class="container" id="app-container" v-if="checked">
+              <b-row class="my-1">
+                <b-col sm="2">
+                  <label for="input-default">加班時間:</label>
+                </b-col>
+                <b-col sm="1">
+                  <b-form-input
+                    type="number"
+                    min="0.5"
+                    max="8"
+                    step="0.5"
+                    id="input-default"
+                    placeholder="Enter hour(s) of work"
+                    v-model="form.overtime_hour"
+                    required
+                  ></b-form-input>
+                </b-col>
+                <b-col sm="9">
+                  <b-form-input
+                    id="type-range"
+                    type="range"
+                    min="0.5"
+                    max="8"
+                    step="0.5"
+                    class="w-100 p-3 bg-secondary text-light"
+                    v-model="form.overtime_hour"
+                    required
+                  ></b-form-input>
+                </b-col>
+              </b-row>
+            </div>
+          </b-row>
+          <b-row>
             <b-col sm="9">
               <b-button
                 pill
@@ -121,7 +154,6 @@
           >
             新增計畫項目 成功!!
           </b-alert>
-
         </b-container>
       </form>
       <!-- <div class="workhours" v-if="workhours">
@@ -176,7 +208,7 @@ export default {
     msg: String,
   },
   computed: {
-    isLoggedIn () {
+    isLoggedIn() {
       return this.$store.getters.isAuthenticated;
     },
   },
@@ -190,6 +222,8 @@ export default {
     const maxDate = new Date(today);
     maxDate.setMonth(maxDate.getMonth() + 2);
     return {
+      checked: false,
+
       dismissSecs: 2,
       dismissCountDown: 0,
       showDismissibleAlert: false,
@@ -206,6 +240,7 @@ export default {
         hour: 1,
         description: "",
         is_overtime: false,
+        overtime_hour: 0,
       },
     };
   },
@@ -230,6 +265,7 @@ export default {
           hour: this.form.hour,
           description: this.form.description,
           is_overtime: this.form.is_overtime,
+          overtime_hour: this.form.overtime_hour,
         };
         await postWorkhourAPI(data).then((response) => {
           if (response.status == 200) {
@@ -237,6 +273,7 @@ export default {
             (this.form.date = this.toDate), (this.form.hour = 1);
             this.form.description = "";
             this.form.is_overtime = false;
+            this.overtime_hour.hour = 0;
           }
         });
       } catch (error) {

@@ -1,13 +1,13 @@
 <template>
   <div>
     <div id="nav">
-      <router-link to="/home">Home</router-link> |
+      <router-link to="/home">首頁</router-link> |
       <router-link to="/workhour">計畫項目</router-link> |
-      <router-link to="/expen">營業費用</router-link> |
+      <router-link to="/expen">支出費用</router-link> |
       <router-link to="/excel">匯出Excel</router-link> |
       <router-link to="/task">計畫項目清單</router-link> |
-      <router-link to="/expentask">營業費用清單</router-link> |      
-      <router-link to="/user">User</router-link> |
+      <router-link to="/expentask">支出費用清單</router-link> |      
+      <router-link to="/user">Users</router-link> |
       <span v-if="isLoggedIn">
         <a @click="logout">Logout</a> ({{ username }})
       </span>

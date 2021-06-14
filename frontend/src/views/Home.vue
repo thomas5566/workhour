@@ -24,7 +24,7 @@ import Vue from "vue";
 import axios from "axios";
 
 import 工作項目清單 from "../components/WorkhourLists.vue";
-import 花費項目清單 from "../components/ExpenLists.vue";
+import 支出項目清單 from "../components/ExpenLists.vue";
 
 Vue.use(axios);
 
@@ -32,14 +32,14 @@ export default {
   name: "Home",
   components: {
     工作項目清單,
-    花費項目清單,
+    支出項目清單,
   },
   props: {
     msg: String,
   },
   data() {
     return {
-      tabs: ["工作項目清單", "花費項目清單"],
+      tabs: ["工作項目清單", "支出項目清單"],
       component: "工作項目清單",
     };
   },

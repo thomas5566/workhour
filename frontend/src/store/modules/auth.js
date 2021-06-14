@@ -10,6 +10,7 @@ const getters = {
     getToken: (state) => state.token,
     getUsername: (state) => state.username,
     getFullname: (state) => state.fullname,
+    getSuperUser: (state) => state.is_superuser,
     isAuthenticated: (state) => state.token.length > 0 && state.expiration > Date.now()
     
 };
@@ -29,12 +30,14 @@ const mutations = {
     LogIn(state,data){
         state.username = data.username
         state.fullname = data.fullname
+        state.is_superuser = data.is_superuser
         state.token = data.token
         state.expiration = new Date(data.expiration)
     },
     LogOut(state){
         state.username = null
         state.fullname = null
+        state.is_superuser = null
         state.token = ""
         state.expiration = Date.now();
     },

@@ -5,7 +5,7 @@
         <b-container fluid>
           <b-row class="my-1" v-if="expentasks">
             <b-col sm="2">
-              <label for="input-default">ExpenTask:</label>
+              <label for="input-default">支出項目:</label>
             </b-col>
             <b-col sm="10">
               <b-form-select
@@ -27,7 +27,7 @@
 
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">Date:</label>
+              <label for="input-default">日期:</label>
             </b-col>
             <b-col sm="10">
               <b-form-datepicker
@@ -47,7 +47,7 @@
           </b-row>
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">Description:</label>
+              <label for="input-default">支出說明:</label>
             </b-col>
             <b-col sm="10">
               <b-form-textarea
@@ -59,7 +59,7 @@
           </b-row>
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">Spend:</label>
+              <label for="input-default">支出費用:</label>
             </b-col>
             <b-col sm="10">
               <b-form-input rows="1" v-model="form.price"></b-form-input>

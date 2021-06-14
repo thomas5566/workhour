@@ -17,12 +17,12 @@
               <thead>
                 <tr>
                   <th scope="col">Work ID</th>
-                  <th>User ID/Name</th>
-                  <th>Task ID/Name</th>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Hour</th>
-                  <th>is_overtime</th>
+                  <th>姓名</th>
+                  <th>計畫名稱</th>
+                  <th>日期</th>
+                  <th>工作說明</th>
+                  <th>工時</th>
+                  <th>加班</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -64,7 +64,33 @@
                       />
                     </td>
                     <td>
-                      <input v-model="editWorkhourData.date" type="text" />
+                      <!-- <input v-model="editWorkhourData.date" type="text" /> -->
+                      
+                      <th>
+                      <div>
+                        <b-input-group class="mb-3">
+                          <b-form-input
+                            id="example-input"
+                            v-model="editWorkhourData.date"
+                            type="text"
+                            placeholder="YYYY-MM-DD"
+                            autocomplete="off"
+                          ></b-form-input>
+                          <b-input-group-append>
+                            <b-form-datepicker
+                              v-model="editWorkhourData.date"
+                              button-only
+                              size="sm"
+                              right
+                              locale="zh-CN"
+                              aria-controls="example-input"
+                              @context="onContext"
+                            ></b-form-datepicker>
+                          </b-input-group-append>
+                        </b-input-group>
+                      </div>
+                      </th>
+                      
                     </td>
                     <td>
                       <input
@@ -87,14 +113,14 @@
                         class="btn btn-sm btn-outline-success"
                         @click="onEditWorkhourSubmit(workhour.id)"
                       >
-                        Submit
+                        更新
                       </button>
                       <button
                         type="button"
                         class="btn btn-sm btn-outline-info"
                         @click="onWorkhourCancel"
                       >
-                        Cancel
+                        取消
                       </button>
                     </td>
                   </template>
@@ -128,13 +154,13 @@
                         class="btn btn-sm btn-outline-warning"
                         v-on:click="onWorkhourEdit(workhour)"
                       >
-                        Edit
+                        編輯
                       </button>
                       <button
                         class="btn btn-sm btn-outline-danger"
                         v-on:click="deleteWorkhour(workhour.id)"
                       >
-                        Delete
+                        刪除
                       </button>
                     </td>
                   </template>
@@ -258,6 +284,12 @@ export default {
   },
   created() {},
   methods: {
+    onContext(ctx) {
+      // The date formatted in the locale, or the `label-no-date-selected` string
+      this.formatted = ctx.selectedFormatted;
+      // The following will be an empty string until a valid date is entered
+      this.selected = ctx.selectedYMD;
+    },
     onChangeWorkhourPage(pageOfWorkhours) {
       // update page of items
       this.pageOfWorkhours = pageOfWorkhours;

@@ -4,13 +4,13 @@
       <table class="table table-striped table-bordered">
         <thead>
           <tr>
-            <th colspan="4">Tasks</th>
+            <th colspan="4">計劃項目</th>
           </tr>
           <tr>
             <th>id</th>
-            <th>taskname</th>
-            <th>fullname</th>
-            <th>organization</th>
+            <th>簡稱</th>
+            <th>計畫全名</th>
+            <th>單位</th>
           </tr>
         </thead>
         <tbody>
@@ -35,7 +35,7 @@
         <b-container fluid>
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">Task Name:</label>
+              <label for="input-default">簡稱:</label>
             </b-col>
             <b-col sm="10">
               <b-form-input
@@ -49,7 +49,7 @@
 
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">Full Name:</label>
+              <label for="input-default">計畫全名:</label>
             </b-col>
             <b-col sm="10">
               <b-form-input
@@ -63,7 +63,7 @@
 
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">Organization Name:</label>
+              <label for="input-default">單位:</label>
             </b-col>
             <b-col sm="10">
               <b-form-input

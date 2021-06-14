@@ -3,7 +3,7 @@ import axios from '../service/http'
 export function postUserLogInAPI(data){
     return axios({
         url: "/user/login",
-        // url: "/login",
+        // url: "login/token",
         method: 'post',
         data: data
     })

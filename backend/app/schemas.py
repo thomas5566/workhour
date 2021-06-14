@@ -81,6 +81,7 @@ class UserBase(BaseModel):
     username: str
     fullname: str
     password: str
+    is_superuser: bool
 
 class UserCreate(UserBase):
     password: str

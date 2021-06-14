@@ -4,8 +4,8 @@ from fastapi import HTTPException, status
 from .. import models, schemas
 
 
-def get_expen(db: Session, expen_id: int):
-    return db.query(models.Expenditure).filter(models.Expenditure.id == expen_id).first()
+def get_expen(db: Session, id: int):
+    return db.query(models.Expenditure).filter(models.Expenditure.id == id).first()
 
 
 def get_expens(db: Session, user_id: int):

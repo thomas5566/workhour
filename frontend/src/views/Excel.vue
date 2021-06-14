@@ -46,7 +46,7 @@
       </div>
 
       <div>
-        <p><b>花費項目清單</b></p>
+        <p><b>支出項目清單</b></p>
         <ejs-grid
           ref="grid2"
           id="SecondGrid"

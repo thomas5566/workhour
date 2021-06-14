@@ -4,11 +4,11 @@
       <table class="table table-striped table-bordered">
         <thead>
           <tr>
-            <th colspan="4">Expentasks</th>
+            <th colspan="4">支出項目</th>
           </tr>
           <tr>
             <th>id</th>
-            <th>Expentaskname</th>
+            <th>支出項目</th>
           </tr>
         </thead>
         <tbody>
@@ -31,7 +31,7 @@
         <b-container fluid>
           <b-row class="my-1">
             <b-col sm="2">
-              <label for="input-default">Expentask Name:</label>
+              <label for="input-default">支出項目:</label>
             </b-col>
             <b-col sm="10">
               <b-form-input

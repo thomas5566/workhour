@@ -28,17 +28,20 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     user.password = pwhash.decode('utf8')
     return user_crud.create_user(db=db, user=user)
 
-# @router.get("/", response_model=List[schemas.User])
-# def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-#     users = user_crud.get_users(db, skip=skip, limit=limit)
-#     return users
+@router.get("/", response_model=List[schemas.User])
+def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    users = user_crud.get_users(db, skip=skip, limit=limit)
+    return users
 
-@router.get("/users", response_model=List[schemas.User])
-def read_users(db: Session = Depends(get_db),
-               current_user: models.User = Depends(get_current_user_from_token)):
+@router.get("/get-dpuser", response_model=List[schemas.User])
+def get_user_bydp(db: Session = Depends(get_db), user=Depends(login_manager)):
+    user_dp = user.department_id
+    list_dp_p = user.expenlistAll_permission
+    print("department_id:", user_dp)
+    print("permission:", list_dp_p)
     # print(current_user.is_superuser)
-    if current_user.is_superuser:
-        users = user_crud.get_users(db)
+    if list_dp_p == 1:
+        users = user_crud.get_user_by_department(db, user_dp)
         return users
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                         detail="You are not permitted!!")

@@ -16,6 +16,13 @@ export function getUserAPI(){
     })
 }
 
+export function getUserByDpAPI(){
+    return axios({
+        url: "/user/get-dpuser",
+        method: 'get'
+    })
+}
+
 export function getUserIdAPI(user_id){
     return axios({
         url: "/user/" + user_id,

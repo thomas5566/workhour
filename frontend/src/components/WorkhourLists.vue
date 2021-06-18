@@ -17,12 +17,14 @@
               <thead>
                 <tr>
                   <th scope="col">Work ID</th>
+                  <th>部門</th>
                   <th>姓名</th>
                   <th>計畫名稱</th>
                   <th>日期</th>
                   <th>工作說明</th>
                   <th>工時</th>
                   <th>加班</th>
+                  <th>加班工時</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -37,6 +39,13 @@
                         v-model="editWorkhourData.id"
                         type="text"
                         :disabled="isDisabled"
+                      />
+                    </td>
+                    <td>
+                      <input
+                      v-model="editWorkhourData.department_name"
+                      type="text"
+                      :disabled="isDisabled"
                       />
                     </td>
                     <td>
@@ -108,6 +117,12 @@
                       />
                     </td>
                     <td>
+                      <input
+                        v-model="editWorkhourData.overtime_hour"
+                        type="text"
+                      />
+                    </td>
+                    <td>
                       <button
                         type="button"
                         class="btn btn-sm btn-outline-success"
@@ -129,6 +144,9 @@
                       {{ workhour.id }}
                     </td>
                     <td>
+                      {{ workhour.user.department.department_name }}
+                    </td>
+                    <td>
                       {{ workhour.user.id }}.
                       {{ workhour.user.username }}
                     </td>
@@ -148,6 +166,10 @@
                     <td>
                       {{ workhour.is_overtime }}
                     </td>
+                    <td>
+                      {{ workhour.overtime_hour }}
+                    </td>
+                    
                     <td>
                       <button
                         type="button"
@@ -221,22 +243,24 @@ export default {
       editId: "",
       editWorkhourId: "",
       workhours: [],
-      form: {
-        task_id: "",
-        hour: 1,
-        description: "",
-        is_overtime: false,
-      },
+      // form: {
+      //   task_id: "",
+      //   hour: 1,
+      //   description: "",
+      //   is_overtime: false,
+      // },
       editWorkhourData: {
         id: "",
         user_id: "",
         username: "",
+        department_name: "",
         task_id: "",
         task_name: "",
         date: "",
         description: "",
         is_overtime: false,
         hour: "",
+        overtime_hour: "",
       },
     };
   },
@@ -309,6 +333,8 @@ export default {
     onWorkhourEdit(workhour) {
       this.editWorkhourId = workhour.id;
       this.editWorkhourData.id = workhour.id;
+      this.editWorkhourData.department_name =
+        workhour.user.department.department_name;
       this.editWorkhourData.user_id = workhour.user.id;
       this.editWorkhourData.username = workhour.user.username;
       this.editWorkhourData.task_id = workhour.task_id;
@@ -317,9 +343,11 @@ export default {
       this.editWorkhourData.description = workhour.description;
       this.editWorkhourData.hour = workhour.hour;
       this.editWorkhourData.is_overtime = workhour.is_overtime;
+      this.editWorkhourData.overtime_hour = workhour.overtime_hour;
     },
     onWorkhourCancel() {
       this.editWorkhourId = "";
+      this.editWorkhourData.department_name = "";
       this.editWorkhourData.id = "";
       this.editWorkhourData.user_id = "";
       this.editWorkhourData.username = "";
@@ -329,12 +357,14 @@ export default {
       this.editWorkhourData.description = "";
       this.editWorkhourData.hour = "";
       this.editWorkhourData.is_overtime = "";
+      this.editWorkhourData.overtime_hour = "";
     },
     onEditWorkhourSubmit() {
       updateWorkhourAPI(this.editWorkhourData.id, this.editWorkhourData)
         .then((response) => {
           this.get_workhour();
           this.editWorkhourId = "";
+          this.editWorkhourData.department_name = "";
           this.editWorkhourData.id = "";
           this.editWorkhourData.user_id = "";
           this.editWorkhourData.username = "";
@@ -344,6 +374,7 @@ export default {
           this.editWorkhourData.description = "";
           this.editWorkhourData.hour = "";
           this.editWorkhourData.is_overtime = "";
+          this.editWorkhourData.overtime_hour = "";
           console.log(response.data);
           this.message = "The Expen was updated successfully!!";
         })

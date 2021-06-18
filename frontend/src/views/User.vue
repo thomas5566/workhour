@@ -3,12 +3,12 @@
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
-          <th colspan="4">Users</th>
+          <th colspan="4">組員名單</th>
         </tr>
         <tr>
           <th>id</th>
-          <th>username</th>
-          <th>fullname</th>
+          <th>部門名稱</th>
+          <th>Username</th>
         </tr>
       </thead>
       <tbody>
@@ -19,8 +19,8 @@
           tag="tr"
         >
           <td>{{ u.id }}</td>
+          <td>{{ u.department.department_name }}</td>
           <td>{{ u.username }}</td>
-          <td>{{ u.fullname }}</td>
         </router-link>
       </tbody>
     </table>
@@ -29,7 +29,8 @@
 </template>
 
 <script>
-import { getUserAPI } from "../service/apis.js";
+// import { getUserAPI } from "../service/apis.js";
+import { getUserByDpAPI } from "../service/apis.js";
 export default {
   components: {},
   props: {
@@ -47,10 +48,6 @@ export default {
     return {
       user: null,
       users: null,
-      form: {
-        username: "",
-        fullname: "",
-      },
     };
   },
   mounted: function () {
@@ -58,7 +55,7 @@ export default {
   },
   methods: {
     async get_user() {
-      await getUserAPI().then((response) => (this.users = response.data));
+      await getUserByDpAPI().then((response) => (this.users = response.data));
     },
   },
 };

@@ -8,17 +8,19 @@
           </tr>
           <tr>
             <th>id</th>
+            <th>部門</th>
             <th>username</th>
-            <th>fullname</th>
             <th>TotalHours</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>{{ user.id }}</td>
+            <td>{{ user.department.department_name }}</td>
             <td>{{ user.username }}</td>
-            <td>{{ user.fullname }}</td>
             <td>{{ total }}</td>
+            <!-- <td>{{ getworkMonth }}</td> -->
+            
           </tr>
         </tbody>
       </table>
@@ -47,12 +49,13 @@
             <td>{{ w.date }}</td>
             <td>{{ w.hour }}</td>
             <td>{{ w.description }}</td>
-            <td>{{ w.is_overtime }}</td>
+            <td>{{ w.is_overtime }}</td>            
           </tr>
         </tbody>
       </table>
     </div>
     <div v-else>No workhours</div>
+
   </div>
 </template>
 
@@ -76,6 +79,11 @@ export default {
         return total + item.hour;
       }, 0);
     },
+    // getworkMonth() {
+    //   const workMonth = this.user.workhours.date.slice(1, 5);
+    //   console.log(workMonth) // JS starts numbering months from 0
+    //   return workMonth
+    // }
   },
   data() {
     return {

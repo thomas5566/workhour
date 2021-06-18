@@ -21,6 +21,13 @@ def create_workhour(workhour: schemas.WorkhourCreate, db: Session = Depends(get_
 def read_workhours(db: Session = Depends(get_db), user=Depends(login_manager)):
     user_id = user.id
     return workhour_crud.get_workhours(db, user_id)
+
+# @router.get("/worklist-group", response_model=List[schemas.WorkhourFull])
+# def read_workhours(user: schemas.User, db: Session = Depends(get_db)):
+#     group = user.department
+#     return workhour_crud.get_worklist_by_group(db, group)
+
+
 # def read_workhours(skip: int = 0, limit: int = 100, user_id: int = None, task_id: int = None, db: Session = Depends(get_db)):
 #     if user_id and task_id:
 #         workhours = workhour_crud.get_workhours_by_user_task(db, skip=skip, limit=limit, user_id=user_id, task_id=task_id)
@@ -36,6 +43,13 @@ def read_workhours(db: Session = Depends(get_db), user=Depends(login_manager)):
 def read_workhours_my(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), user=Depends(login_manager)):
     user_id = user.id
     workhours = workhour_crud.get_workhours_by_user_id(db, skip=skip, limit=limit, user_id=user_id)
+    return workhours
+
+@router.get('/totalhour', response_model=List[schemas.Workhour])
+def get_totalworkhours_byid(db: Session = Depends(get_db)):
+    user_id = 4
+    workhours = workhour_crud.get_counttotalworkhours_by_user_id(db, user_id=user_id)
+    print(workhours)
     return workhours
 
 @router.get("/{workhour_id}", response_model=schemas.WorkhourFull)

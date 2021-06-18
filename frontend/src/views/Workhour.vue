@@ -270,14 +270,15 @@ export default {
         await postWorkhourAPI(data).then((response) => {
           if (response.status == 200) {
             this.form.task_id = "";
-            (this.form.date = this.toDate), (this.form.hour = 1);
+            (this.form.date = this.toDate), 
+            (this.form.hour = 1);
             this.form.description = "";
-            this.form.is_overtime = false;
-            this.overtime_hour.hour = 0;
+            (this.form.is_overtime = false);
+            (this.form.overtime_hour = 0);
           }
         });
       } catch (error) {
-        throw "Sorry you can't create a new task now!";
+        throw "Sorry you can't create a new 5566 now!";
       }
       await getWorkhourAPI().then(
         (response) => (this.workhours = response.data)

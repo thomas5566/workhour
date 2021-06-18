@@ -8,17 +8,50 @@ def create_default_data():
     hpassword = pwhash.decode('utf8')
     db = SessionLocal()
     objects = [
-        models.User(username="Archie", fullname="Archibald Weng",
-                    password=hpassword),
-        models.User(username="Boris", fullname="Boris Tien",
-                    password=hpassword),
-        models.User(username="Larry", fullname="Larry Chuang",
-                    password=hpassword),
-        models.User(username="Thomas", fullname="Thomas Lin",
-                    password=hpassword, is_superuser=True),
-        models.User(username="Dora", fullname="Dora Yen", password=hpassword),
-        models.User(username="Wimy", fullname="Wimy Kuo", password=hpassword),
-        models.User(username="Kathy", fullname="Kathy Wu", password=hpassword),
+
+        models.Department(department_name="營運策略部"),
+        models.Department(department_name="氣候金融組"),
+        models.Department(department_name="事業發展部(全球行銷組)"),
+        models.Department(department_name="計畫別"),
+
+        models.User(username="Archie", 
+                    fullname="Archibald Weng",
+                    password=hpassword, 
+                    department_id=2
+                    ),
+        models.User(username="Boris", 
+                    fullname="Boris Tien",
+                    password=hpassword,
+                    department_id=2,
+                    expenlistAll_permission=1, 
+                    worklistAll_permission=1),
+        models.User(username="Larry", 
+                    fullname="Larry Chuang",
+                    password=hpassword,
+                    department_id=2 
+                    ),
+        models.User(username="Thomas",
+                    fullname="Thomas Lin",
+                    password=hpassword, 
+                    is_superuser=True,
+                    department_id=2 
+                    ),
+        models.User(username="Dora", 
+                    fullname="Dora Yen",
+                    password=hpassword,
+                    department_id=1
+                    ),
+        models.User(username="Wimy", 
+                    fullname="Wimy Kuo",
+                    password=hpassword,
+                    department_id=1
+                    ),
+        models.User(username="Kathy", 
+                    fullname="Kathy Wu",
+                    password=hpassword,
+                    department_id=1
+                    ),
+
 
         models.Task(taskname="TIIP",
                     fullname="TIIP-全方位減碳系統服務平台開發計畫",

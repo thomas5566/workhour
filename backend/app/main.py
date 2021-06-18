@@ -8,10 +8,10 @@ from app.database import engine
 from app import models
 
 # For DEV only, remove below 4 lines in production
-from app.dependency import create_default_data
-models.Base.metadata.drop_all(bind=engine)
-models.Base.metadata.create_all(bind=engine)
-create_default_data()
+# from app.dependency import create_default_data
+# models.Base.metadata.drop_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine)
+# create_default_data()
 
 app = FastAPI()
 

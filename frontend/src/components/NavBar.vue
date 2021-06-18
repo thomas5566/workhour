@@ -7,7 +7,7 @@
       <router-link to="/excel">匯出Excel</router-link> |
       <router-link to="/task">計畫項目清單</router-link> |
       <router-link to="/expentask">支出費用清單</router-link> |      
-      <router-link to="/user">Users</router-link> |
+      <router-link to="/user">組員名單</router-link> |
       <span v-if="isLoggedIn">
         <a @click="logout">Logout</a> ({{ username }})
       </span>

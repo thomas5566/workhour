@@ -20,6 +20,9 @@ class WorkhourUpdate(WorkhourBase):
 class WorkhourCreate(WorkhourBase):
     pass
 
+class WorkhourTotal(BaseModel):
+    year_month: str
+    total_hour: float
 
 class Workhour(WorkhourBase):
     id: int

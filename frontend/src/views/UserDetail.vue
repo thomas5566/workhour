@@ -25,6 +25,25 @@
         </tbody>
       </table>
     </div>
+        <div>
+      <table class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th colspan="4">Monthly TotalHours</th>
+          </tr>
+          <tr>
+            <th>Year Month</th>
+            <th>TotalHours</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="m in monthlyworkhour" :key="m.year_month">
+            <td>{{ m.year_month }}</td>
+            <td>{{ m.total_hour }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <div class="workhours" v-if="user.workhours.length">
       <table class="table table-striped table-bordered">
         <thead>
@@ -60,7 +79,7 @@
 </template>
 
 <script>
-import { getUserIdAPI } from "../service/apis.js";
+import { getUserIdAPI, getMonthlyWorkhourAPI } from "../service/apis.js";
 export default {
   components: {},
   props: {
@@ -88,6 +107,7 @@ export default {
   data() {
     return {
       user: null,
+      monthlyworkhour: [],
       form: {
         username: "",
         fullname: "",
@@ -96,11 +116,17 @@ export default {
   },
   mounted: function () {
     this.get_user_id();
+    this.get_monthly_workhour();
   },
   methods: {
     async get_user_id() {
       await getUserIdAPI(this.$route.params.id).then(
         (response) => (this.user = response.data)
+      );
+    },
+    get_monthly_workhour() {
+      getMonthlyWorkhourAPI(this.$route.params.id).then(
+        (response) => (this.monthlyworkhour = response.data)
       );
     },
   },

@@ -22,36 +22,38 @@ def get_workhours_by_user_id(db: Session, user_id, skip: int = 0, limit: int = 1
     return db.query(models.Workhour).filter(models.Workhour.user_id == user_id).offset(skip).limit(limit).all()
 
 
-def get_counttotalworkhours_by_user_id(db: Session, user_id):
+def get_monthlyworkhours_by_user_id(db: Session, user_id):
     qry = (db.query(
                     # models.Workhour,
-                    models.Workhour.id,
-                    models.Workhour.task_id,
-                    models.Workhour.date,
-                    models.Workhour.hour,
-                    models.Workhour.overtime_hour,
+                    # models.Workhour.id,
+                    # models.Workhour.task_id,
+                    # models.Workhour.date,
+                    # models.Workhour.hour,
+                    # models.Workhour.overtime_hour,
                     # #strftime* for year-month works on sqlite; 
                     # @todo: find proper function for mysql (as in the question)
                     # Also it is not clear if only MONTH part is enough, so that
                     # May-2001 and May-2009 can be joined, or YEAR-MONTH must be used
-                    # func.date_trunc('%Y-%m-%d', models.Workhour.date),
-                    func.sum(models.Workhour.hour),
+                    func.to_char(models.Workhour.date, 'YYYY-MM').label('year_month'),
+                    func.sum(models.Workhour.hour).label('total_hour'),
                     )
             # optionally check only last 2 month data (could have partial months)
             .filter(models.Workhour.user_id == user_id)
             .group_by(
-                    models.Workhour.id,
-                    models.Workhour.task_id,
-                    models.Workhour.date,
-                    models.Workhour.hour,
-                    models.Workhour.overtime_hour,
+                    func.to_char(models.Workhour.date, 'YYYY-MM').label('year_month'),
+                    # models.Workhour.id,
+                    # models.Workhour.task_id,
+                    # models.Workhour.date,
+                    # models.Workhour.hour,
+                    # models.Workhour.overtime_hour,
                     # func.month(models.Workhour.date),
-                    func.date_trunc('month', models.Workhour.date),
+                    # func.date_trunc('month', models.Workhour.date),
                     )
             .all()
             # comment this line out to see all the groups
             #.having(func.count()>1)
         )
+    # print(qry)
     return qry
 
 

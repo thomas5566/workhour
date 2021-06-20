@@ -103,6 +103,13 @@ export function getWorkhourIdAPI(workhour_id){
     })
 }
 
+export function getMonthlyWorkhourAPI(user_id){
+    return axios({
+        url: "/workhour/totalhour/" + user_id,
+        method: 'get'
+    })
+}
+
 export function getWorkhourMyPI(){
     return axios({
         url: "/workhour/my",

@@ -45,10 +45,10 @@ def read_workhours_my(skip: int = 0, limit: int = 100, db: Session = Depends(get
     workhours = workhour_crud.get_workhours_by_user_id(db, skip=skip, limit=limit, user_id=user_id)
     return workhours
 
-@router.get('/totalhour', response_model=List[schemas.Workhour])
-def get_totalworkhours_byid(db: Session = Depends(get_db)):
-    user_id = 4
-    workhours = workhour_crud.get_counttotalworkhours_by_user_id(db, user_id=user_id)
+@router.get('/totalhour/{user_id}', response_model=List[schemas.WorkhourTotal])
+def get_totalworkhours_byid(user_id: int, db: Session = Depends(get_db)):
+    # user_id = 5
+    workhours = workhour_crud.get_monthlyworkhours_by_user_id(db, user_id=user_id)
     print(workhours)
     return workhours
 

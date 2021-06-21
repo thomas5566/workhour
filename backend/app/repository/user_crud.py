@@ -1,4 +1,6 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import text
+
 from .. import models, schemas
 
 def get_user(db: Session, user_id: int):

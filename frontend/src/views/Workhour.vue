@@ -69,7 +69,7 @@
                 min="0.5"
                 max="8"
                 step="0.5"
-                class="w-100 p-3 bg-secondary text-light"
+                class="w-100 p-3 text-light"
                 v-model="form.hour"
                 required
               ></b-form-input>
@@ -126,7 +126,7 @@
                     min="0.5"
                     max="8"
                     step="0.5"
-                    class="w-100 p-3 bg-secondary text-light"
+                    class="w-100 p-3 text-light"
                     v-model="form.overtime_hour"
                     required
                   ></b-form-input>

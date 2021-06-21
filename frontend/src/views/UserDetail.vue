@@ -4,13 +4,14 @@
       <table class="table table-striped table-bordered">
         <thead>
           <tr>
-            <th colspan="4">User Detail</th>
+            <th colspan="4">
+              <h2>User-Detail</h2></th>
           </tr>
           <tr>
             <th>id</th>
             <th>部門</th>
             <th>username</th>
-            <th>TotalHours</th>
+            <!-- <th>TotalHours</th> -->
           </tr>
         </thead>
         <tbody>
@@ -18,7 +19,7 @@
             <td>{{ user.id }}</td>
             <td>{{ user.department.department_name }}</td>
             <td>{{ user.username }}</td>
-            <td>{{ total }}</td>
+            <!-- <td>{{ total }}</td> -->
             <!-- <td>{{ getworkMonth }}</td> -->
             
           </tr>
@@ -29,7 +30,7 @@
       <table class="table table-striped table-bordered">
         <thead>
           <tr>
-            <th colspan="4">Monthly TotalHours</th>
+            <th colspan="4"><h2>Monthly-Hours</h2></th>
           </tr>
           <tr>
             <th>Year Month</th>
@@ -48,7 +49,7 @@
       <table class="table table-striped table-bordered">
         <thead>
           <tr>
-            <th colspan="7">Workhours</th>
+            <th colspan="7"><h2>Work-Lists</h2></th>
           </tr>
           <tr>
             <th>id</th>

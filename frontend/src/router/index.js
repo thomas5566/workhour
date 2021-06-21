@@ -32,6 +32,7 @@ const routes = [
     component: Login,
     meta: { guest: true },
   },
+  
   {
     path: '/user',
     name: "User",

@@ -10,13 +10,13 @@
           <input type="date" v-model="endDate" />
           <td></td>
         </div>
-        <div class="card-header">Work List</div>
+        <div class="card-header">工作項目清單</div>
         <div class="card-body">
           <div class="table-responsive">
             <table class="table">
               <thead>
                 <tr>
-                  <th scope="col">Work ID</th>
+                  <!-- <th scope="col">Work ID</th> -->
                   <th>部門</th>
                   <th>姓名</th>
                   <th>計畫名稱</th>
@@ -34,13 +34,13 @@
                   v-bind:key="workhour.id"
                 >
                   <template v-if="editWorkhourId == workhour.id">
-                    <td>
+                    <!-- <td>
                       <input
                         v-model="editWorkhourData.id"
                         type="text"
                         :disabled="isDisabled"
                       />
-                    </td>
+                    </td> -->
                     <td>
                       <input
                       v-model="editWorkhourData.department_name"
@@ -140,9 +140,9 @@
                     </td>
                   </template>
                   <template v-else>
-                    <td>
+                    <!-- <td>
                       {{ workhour.id }}
-                    </td>
+                    </td> -->
                     <td>
                       {{ workhour.user.department.department_name }}
                     </td>

@@ -24,6 +24,9 @@ class WorkhourTotal(BaseModel):
     year_month: str
     total_hour: float
 
+    class Config:
+        orm_mode = True
+
 class Workhour(WorkhourBase):
     id: int
 

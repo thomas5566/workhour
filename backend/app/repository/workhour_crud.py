@@ -5,7 +5,7 @@ from .. import models, schemas
 
 
 def get_workhour(db: Session, workhour_id: int):
-    return db.query(models.Workhour).filter(models.Workhour.id == workhour_id).first()
+    return db.query(models.Workhour).order_by(text("date desc")).filter(models.Workhour.id == workhour_id).first()
 
 
 # def get_workhours(db: Session, skip: int = 0, limit: int = 100):
@@ -19,7 +19,7 @@ def get_workhours(db: Session, user_id: int):
 #     groupWorklist = db.query(models.Workhour).all()
 
 def get_workhours_by_user_id(db: Session, user_id, skip: int = 0, limit: int = 100):
-    return db.query(models.Workhour).filter(models.Workhour.user_id == user_id).offset(skip).limit(limit).all()
+    return db.query(models.Workhour).order_by(text("date desc")).filter(models.Workhour.user_id == user_id).offset(skip).limit(limit).all()
 
 
 def get_monthlyworkhours_by_user_id(db: Session, user_id):
@@ -37,6 +37,7 @@ def get_monthlyworkhours_by_user_id(db: Session, user_id):
                     func.to_char(models.Workhour.date, 'YYYY-MM').label('year_month'),
                     func.sum(models.Workhour.hour).label('total_hour'),
                     )
+            .order_by(text("year_month desc"))
             # optionally check only last 2 month data (could have partial months)
             .filter(models.Workhour.user_id == user_id)
             .group_by(
@@ -58,11 +59,11 @@ def get_monthlyworkhours_by_user_id(db: Session, user_id):
 
 
 def get_workhours_by_task_id(db: Session, task_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Workhour).filter(models.Workhour.task_id == task_id).offset(skip).limit(limit).all()
+    return db.query(models.Workhour).order_by(text("date desc")).filter(models.Workhour.task_id == task_id).offset(skip).limit(limit).all()
 
 
 def get_workhours_by_user_task(db: Session, user_id: int, task_id: int, skip: int = 0, limit: int = 100):
-    return db.query(models.Workhour).filter(models.Workhour.user_id == user_id, models.Workhour.task_id == task_id).offset(skip).limit(limit).all()
+    return db.query(models.Workhour).order_by(text("date desc")).filter(models.Workhour.user_id == user_id, models.Workhour.task_id == task_id).offset(skip).limit(limit).all()
 
 
 def create_workhour(db: Session, workhour: schemas.WorkhourCreate):

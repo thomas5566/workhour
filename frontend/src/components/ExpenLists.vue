@@ -9,13 +9,14 @@
           <label for="">To</label>
           <input type="date" v-model="endDate" />
         </div>
-        <div class="card-header">Expen List</div>
+        <div class="card-header">支出項目清單</div>
         <div class="card-body">
           <div class="table-responsive">
             <table class="table">
               <thead>
                 <tr>
-                  <th scope="col">Expen ID</th>
+                  <!-- <th scope="col">Expen ID</th> -->
+                  <th>部門</th>
                   <th>姓名</th>
                   <th>支出項目</th>
                   <th>日期</th>
@@ -27,11 +28,18 @@
               <tbody>
                 <tr v-for="expen in pageOfExpens" v-bind:key="expen.id">
                   <template v-if="editId == expen.id">
-                    <td>
+                    <!-- <td>
                       <input
                         v-model="editExpenData.id"
                         type="text"
                         :disabled="isDisabled"
+                      />
+                    </td> -->
+                                        <td>
+                      <input
+                      v-model="editExpenData.department_name"
+                      type="text"
+                      :disabled="isDisabled"
                       />
                     </td>
                     <td>
@@ -108,8 +116,11 @@
                     </td>
                   </template>
                   <template v-else>
-                    <td>
+                    <!-- <td>
                       {{ expen.id }}
+                    </td> -->
+                    <td>
+                      {{ expen.user.department.department_name }}
                     </td>
                     <td>
                       {{ expen.user.id }}.
@@ -210,18 +221,19 @@ export default {
         date: "",
         description: "",
         price: "",
+        department_name: "",
       },
-      editWorkhourData: {
-        id: "",
-        user_id: "",
-        username: "",
-        task_id: "",
-        task_name: "",
-        date: "",
-        description: "",
-        is_overtime: false,
-        hour: "",
-      },
+      // editWorkhourData: {
+      //   id: "",
+      //   user_id: "",
+      //   username: "",
+      //   task_id: "",
+      //   task_name: "",
+      //   date: "",
+      //   description: "",
+      //   is_overtime: false,
+      //   hour: "",
+      // },
     };
   },
   computed: {
@@ -298,6 +310,7 @@ export default {
       this.editExpenData.description = expen.description;
       this.editExpenData.price = expen.price;
       this.editExpenData.user_id = expen.user.id;
+      this.editExpenData.department_name = expen.user.department.department_name;
     },
     onCancel() {
       this.editId = "";
@@ -309,6 +322,7 @@ export default {
       this.editExpenData.description = "";
       this.editExpenData.price = "";
       this.editExpenData.user_id = "";
+      this.editExpenData.department_name = "";
     },
     onEditSubmit() {
       updateExpenAPI(this.editExpenData.id, this.editExpenData)
@@ -323,6 +337,7 @@ export default {
           this.editExpenData.description = "";
           this.editExpenData.price = "";
           this.editExpenData.user_id = "";
+          this.editExpenData.department_name = "";
           console.log(response.data);
           this.message = "The Expen was updated successfully!!";
         })

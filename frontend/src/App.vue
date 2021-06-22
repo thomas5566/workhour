@@ -7,6 +7,7 @@
 <script>
 // @ is an alias to /src
 import NavBar from '@/components/NavBar.vue'
+
 export default {
   components: {
     NavBar
@@ -8209,7 +8210,7 @@ h1, h2, h3, h4, h5,
 .wrap {
   width: 100%;
   overflow: hidden;
-  background: #fff;
+  background: rgb(253, 251, 251);
   border-radius: 5px;
   -webkit-box-shadow: 0px 10px 34px -15px rgba(0, 0, 0, 0.24);
   -moz-box-shadow: 0px 10px 34px -15px rgba(0, 0, 0, 0.24);
@@ -8230,7 +8231,7 @@ h1, h2, h3, h4, h5,
     color: gray; }
 
 .form-control {
-  height: 48px;
+  height: 50px;
   background: #fff;
   color: #000;
   font-size: 16px;

@@ -8,10 +8,10 @@ from app.database import engine
 from app import models
 
 # For DEV only, remove below 4 lines in production
-# from app.dependency import create_default_data
-# models.Base.metadata.drop_all(bind=engine)
-# models.Base.metadata.create_all(bind=engine)
-# create_default_data()
+from app.dependency import create_default_data
+models.Base.metadata.drop_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
+create_default_data()
 
 app = FastAPI()
 
@@ -33,9 +33,10 @@ app.add_middleware(
     
 )
 
-from app.api import user, task, workhour, expentask, expen, authentication, route_login
+from app.api import user, task, workhour, expentask, expen, authentication, route_login, department
 # app.include_router(authentication.router)
 app.include_router(user.router)
+app.include_router(department.router)
 app.include_router(task.router)
 app.include_router(workhour.router)
 app.include_router(expentask.router)

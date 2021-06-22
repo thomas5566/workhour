@@ -1,88 +1,53 @@
 <template>
   <div>
     <div>
-        <b-navbar>
-          <b-navbar-brand>
-            <img src="../images/YCLogo.jpg" alt="YC" />
-          </b-navbar-brand>
+      <b-navbar>
+        <b-navbar-brand>
+          <img src="../images/YCLogo.jpg" alt="YC" />
+        </b-navbar-brand>
+        <!-- <b-navbar-brand  to="/home">首頁 |</b-navbar-brand>
+        <b-navbar-brand to="/workhour">計畫項目 |</b-navbar-brand>
+        <b-navbar-brand to="/expen">支出費用 |</b-navbar-brand>
+        <b-navbar-brand to="/excel">匯出Excel |</b-navbar-brand>
+        <b-navbar-brand to="/task">計畫項目清單 | </b-navbar-brand>
+        <b-navbar-brand to="/expentask">支出費用清單 |</b-navbar-brand>
+        <b-navbar-brand to="/user">組員名單 |</b-navbar-brand> -->
+      
+        <b-collapse id="nav-collapse" is-nav >
+          <b-navbar-nav class="ml-auto">
+            <b-nav-form>
+              <b-navbar-brand to="/home">首頁 |</b-navbar-brand>
+              <b-navbar-brand to="/workhour">計畫項目 |</b-navbar-brand>
+              <b-navbar-brand to="/expen">支出費用 |</b-navbar-brand>
+              <b-navbar-brand to="/excel">匯出Excel |</b-navbar-brand>
+              <b-navbar-brand to="/task">計畫項目清單 | </b-navbar-brand>
+              <b-navbar-brand to="/expentask">支出費用清單 |</b-navbar-brand>
+              <b-navbar-brand to="/user">組員名單 |</b-navbar-brand>
+            </b-nav-form>
+          </b-navbar-nav>
+        </b-collapse>
 
-          <b-navbar-brand
-            ><router-link to="/home">首頁</router-link> |</b-navbar-brand
-          >
-          <b-navbar-brand
-            ><router-link to="/workhour">計畫項目</router-link>
-            |</b-navbar-brand
-          >
-          <b-navbar-brand
-            ><router-link to="/expen">支出費用</router-link> |</b-navbar-brand
-          >
-          <b-navbar-brand
-            ><router-link to="/excel">匯出Excel</router-link> |</b-navbar-brand
-          >
-          <b-navbar-brand
-            ><router-link to="/excel"
-              ><router-link to="/task">計畫項目清單</router-link></router-link
-            >
-            |
-          </b-navbar-brand>
-          <b-navbar-brand
-            ><router-link to="/excel"
-              ><router-link to="/expentask"
-                >支出費用清單</router-link
-              ></router-link
-            >
-            |</b-navbar-brand
-          >
-          <b-navbar-brand
-            ><router-link to="/excel"
-              ><router-link to="/user">組員名單</router-link></router-link
-            >
-            |</b-navbar-brand
-          >
-
-          <b-collapse id="nav-collapse" is-nav>
-            <!-- Right aligned nav items -->
-
-            <b-navbar-nav class="ml-auto">
-              <b-nav-form>
-                <!-- <b-form-input
-                size="sm"
-                class="mr-sm-2"
-                placeholder="Search"
-              ></b-form-input>
-              <b-button size="sm" class="my-2 my-sm-0" type="submit"
-                >Search</b-button
-              > -->
-                <span v-if="isLoggedIn">
-                  <b-button @click="logout" variant="primary">Logout</b-button> ({{ username }})
-                </span>
-                <span v-else>
-                  <b-navbar-brand>
-                    <router-link to="/register">Register</router-link> |
-                  </b-navbar-brand>
-                  <b-navbar-brand>
-                    <router-link to="/login">Login</router-link> |
-                  </b-navbar-brand>
-                </span>
-              </b-nav-form>
-
-              <!-- <b-nav-item-dropdown text="Lang" right>
-              <b-dropdown-item href="#">EN</b-dropdown-item>
-              <b-dropdown-item href="#">ES</b-dropdown-item>
-              <b-dropdown-item href="#">RU</b-dropdown-item>
-              <b-dropdown-item href="#">FA</b-dropdown-item>
-            </b-nav-item-dropdown> -->
-
-              <!-- <b-nav-item-dropdown right>
-              <template #button-content>
-                <em>User</em>
-              </template>
-              <b-dropdown-item href="#">Profile</b-dropdown-item>
-              <b-dropdown-item href="#">Sign Out</b-dropdown-item>
-            </b-nav-item-dropdown> -->
-            </b-navbar-nav>
-          </b-collapse>
-        </b-navbar>
+        <b-collapse id="nav-collapse" is-nav>
+          <!-- Right aligned nav items -->
+          <b-navbar-nav class="ml-auto">
+            <b-nav-form>
+              <span v-if="isLoggedIn">
+                <b-button @click="logout" variant="primary">Logout</b-button>
+                ({{ username }})
+              </span>
+              <span v-else>
+                <b-button variant="info" to="/register">
+                  Sign Up
+                </b-button>
+                |
+                <b-button variant="success" to="/login">
+                  Login
+                </b-button>
+              </span>
+            </b-nav-form>
+          </b-navbar-nav>
+        </b-collapse>
+      </b-navbar>
     </div>
 
     <!-- <div id="nav">

@@ -8,7 +8,6 @@ def create_default_data():
     hpassword = pwhash.decode('utf8')
     db = SessionLocal()
     objects = [
-
         models.Department(department_name="營運策略部"),
         models.Department(department_name="氣候金融組"),
         models.Department(department_name="事業發展部(全球行銷組)"),
@@ -23,12 +22,11 @@ def create_default_data():
                     fullname="Boris Tien",
                     password=hpassword,
                     department_id=2,
-                    expenlistAll_permission=1, 
-                    worklistAll_permission=1),
+                    checklistAll_permission=1),
         models.User(username="Larry", 
                     fullname="Larry Chuang",
                     password=hpassword,
-                    department_id=2 
+                    department_id=2
                     ),
         models.User(username="Thomas",
                     fullname="Thomas Lin",
@@ -39,17 +37,19 @@ def create_default_data():
         models.User(username="Dora", 
                     fullname="Dora Yen",
                     password=hpassword,
-                    department_id=1
+                    department_id=3,
+                    is_superuser=True,
+                    checklistAll_permission=1
                     ),
         models.User(username="Wimy", 
                     fullname="Wimy Kuo",
                     password=hpassword,
-                    department_id=1
+                    department_id=3
                     ),
         models.User(username="Kathy", 
                     fullname="Kathy Wu",
                     password=hpassword,
-                    department_id=1
+                    department_id=3
                     ),
 
 

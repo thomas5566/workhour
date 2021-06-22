@@ -24,10 +24,11 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(
         username=user.username,
-        fullname=user.fullname,
+        # fullname=user.fullname,
         password=user.password,
-        is_active=True,
-        is_superuser=False
+        department_id=user.department_id,
+        # is_active=True,
+        # is_superuser=False
     )
     db.add(db_user)
     db.commit()

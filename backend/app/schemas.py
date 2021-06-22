@@ -117,17 +117,17 @@ class Department(DepartmentBase):
 
 class UserBase(BaseModel):
     username: str
-    fullname: str
+    fullname: Optional[str] = None
     password: str
-    is_superuser: bool
-    expenlistAll_permission: int
-    worklistAll_permission: int
-    department_id: Optional[int] = None
+    is_superuser: Optional[bool] = None
+    checklistAll_permission: Optional[int] = None
+    # worklistAll_permission: Optional[int] = None
+    department_id: int
     department: Optional[Department]
 
 
 class UserCreate(UserBase):
-    password: str
+    pass
 
 
 class User(UserBase):

@@ -96,13 +96,13 @@
             <b-col sm="1">
               <b-form-checkbox
                 id="checkbox-1"
-                v-model="checked"
+                v-model="form.is_overtime"
                 name="checkbox-1"
                 switch
               >
               </b-form-checkbox>
             </b-col>
-            <div class="container" id="app-container" v-if="checked">
+            <div class="container" id="app-container" v-if="form.is_overtime">
               <b-row class="my-1">
                 <b-col sm="2">
                   <label for="input-default">加班時間:</label>
@@ -270,7 +270,7 @@ export default {
         await postWorkhourAPI(data).then((response) => {
           if (response.status == 200) {
             this.form.task_id = "";
-            (this.form.date = this.toDate), 
+            (this.form.date = this.toDate); 
             (this.form.hour = 1);
             this.form.description = "";
             (this.form.is_overtime = false);
@@ -278,7 +278,7 @@ export default {
           }
         });
       } catch (error) {
-        throw "Sorry you can't create a new 5566 now!";
+        throw "Sorry you can't create a new Work-List now!";
       }
       await getWorkhourAPI().then(
         (response) => (this.workhours = response.data)

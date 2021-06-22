@@ -176,3 +176,10 @@ export function updateExpenAPI(expen_id, data){
         data: data
     })
 }
+
+export function getDepartmentsAPI(){
+    return axios({
+        url: "/department/",
+        method: 'get'
+    })
+}

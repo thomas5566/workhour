@@ -31,8 +31,8 @@ class User(IdMixin, Base, TimestampMixin):
     password = Column(String(255))
     is_active = Column(Boolean(), default=True)
     is_superuser = Column(Boolean(), default=False)
-    expenlistAll_permission = Column(Integer, default=0)  # 0: user, 1: manager
-    worklistAll_permission = Column(Integer, default=0)  # 0: user, 1: manager    
+    checklistAll_permission = Column(Integer, default=0)  # 0: user, 1: manager
+    # worklistAll_permission = Column(Integer, default=0)  # 0: user, 1: manager    
 
     workhours = relationship("Workhour", back_populates="user")
     expenditures = relationship("Expenditure", back_populates="user")

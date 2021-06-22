@@ -44,10 +44,10 @@
           </div>
         </div> -->
         <div class="row justify-content-center">
-          <div class="col-md-7 col-lg-5">
+          <div class="col-md-5 col-lg-4">
             <div class="wrap">
               <div class="img">
-                <img src="../images/YC.jpg">
+                <img src="../images/5566.gif" height="230px" width="430px" />
               </div>
               <div class="login-wrap p-4 p-md-5">
                 <div class="d-flex">
@@ -120,7 +120,8 @@
                   </div> -->
                 </form>
                 <p class="text-center">
-                  Not a member? <a data-toggle="tab" href="/register">Sign Up</a>
+                  Not a member?
+                  <a data-toggle="tab" href="/register">Sign Up</a>
                 </p>
               </div>
             </div>
@@ -133,9 +134,10 @@
 
 <script>
 import { mapActions } from "vuex";
+
 export default {
   name: "Login",
-  components: {},
+  components: {  },
   data() {
     return {
       form: {
@@ -169,4 +171,3 @@ export default {
   },
 };
 </script>
-

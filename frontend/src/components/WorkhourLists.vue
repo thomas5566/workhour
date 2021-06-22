@@ -114,6 +114,8 @@
                       <input
                         v-model="editWorkhourData.is_overtime"
                         type="checkbox"
+                        :true-value="true"
+                        :false-value="false"
                       />
                     </td>
                     <td>
@@ -164,7 +166,7 @@
                       {{ workhour.hour }}
                     </td>
                     <td>
-                      {{ workhour.is_overtime }}
+                      {{ workhour.is_overtime ? "是" : "否" }}
                     </td>
                     <td>
                       {{ workhour.overtime_hour }}
@@ -243,12 +245,14 @@ export default {
       editId: "",
       editWorkhourId: "",
       workhours: [],
+
       // form: {
       //   task_id: "",
       //   hour: 1,
       //   description: "",
       //   is_overtime: false,
       // },
+      
       editWorkhourData: {
         id: "",
         user_id: "",
@@ -356,7 +360,7 @@ export default {
       this.editWorkhourData.date = "";
       this.editWorkhourData.description = "";
       this.editWorkhourData.hour = "";
-      this.editWorkhourData.is_overtime = "";
+      this.editWorkhourData.is_overtime = false;
       this.editWorkhourData.overtime_hour = "";
     },
     onEditWorkhourSubmit() {
@@ -373,7 +377,7 @@ export default {
           this.editWorkhourData.date = "";
           this.editWorkhourData.description = "";
           this.editWorkhourData.hour = "";
-          this.editWorkhourData.is_overtime = "";
+          this.editWorkhourData.is_overtime = false;
           this.editWorkhourData.overtime_hour = "";
           console.log(response.data);
           this.message = "The Expen was updated successfully!!";

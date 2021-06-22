@@ -5,7 +5,8 @@
         <thead>
           <tr>
             <th colspan="4">
-              <h2>User-Detail</h2></th>
+              <h3>User-Detail</h3>
+            </th>
           </tr>
           <tr>
             <th>id</th>
@@ -21,35 +22,35 @@
             <td>{{ user.username }}</td>
             <!-- <td>{{ total }}</td> -->
             <!-- <td>{{ getworkMonth }}</td> -->
-            
           </tr>
         </tbody>
       </table>
     </div>
-        <div>
-      <table class="table table-striped table-bordered">
-        <thead>
-          <tr>
-            <th colspan="4"><h2>Monthly-Hours</h2></th>
-          </tr>
-          <tr>
-            <th>Year Month</th>
-            <th>TotalHours</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="m in monthlyworkhour" :key="m.year_month">
-            <td>{{ m.year_month }}</td>
-            <td>{{ m.total_hour }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+
     <div class="workhours" v-if="user.workhours.length">
+      <div>
+        <table class="table table-striped table-bordered">
+          <thead>
+            <tr>
+              <th colspan="4"><h3>Monthly-Hours</h3></th>
+            </tr>
+            <tr>
+              <th>Year Month</th>
+              <th>TotalHours</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="m in monthlyworkhour" :key="m.year_month">
+              <td>{{ m.year_month }}</td>
+              <td>{{ m.total_hour }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <table class="table table-striped table-bordered">
         <thead>
           <tr>
-            <th colspan="7"><h2>Work-Lists</h2></th>
+            <th colspan="7"><h3>Work-Lists</h3></th>
           </tr>
           <tr>
             <th>id</th>
@@ -69,13 +70,12 @@
             <td>{{ w.date }}</td>
             <td>{{ w.hour }}</td>
             <td>{{ w.description }}</td>
-            <td>{{ w.is_overtime }}</td>            
+            <td>{{ w.is_overtime }}</td>
           </tr>
         </tbody>
       </table>
     </div>
     <div v-else>No workhours</div>
-
   </div>
 </template>
 
@@ -87,15 +87,15 @@ export default {
     msg: String,
   },
   computed: {
-    isLoggedIn: function () {
+    isLoggedIn: function() {
       return this.$store.getters.isAuthenticated;
     },
-    isUser: function () {
+    isUser: function() {
       return this.user != null;
     },
-    total: function () {
+    total: function() {
       console.log(this.user.workhours);
-      return this.user.workhours.reduce(function (total, item) {
+      return this.user.workhours.reduce(function(total, item) {
         return total + item.hour;
       }, 0);
     },
@@ -115,7 +115,7 @@ export default {
       },
     };
   },
-  mounted: function () {
+  mounted: function() {
     this.get_user_id();
     this.get_monthly_workhour();
   },

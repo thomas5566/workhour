@@ -36,7 +36,7 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 @router.get("/get-dpuser", response_model=List[schemas.User])
 def get_user_bydp(db: Session = Depends(get_db), user=Depends(login_manager)):
     user_dp = user.department_id
-    list_dp_p = user.expenlistAll_permission
+    list_dp_p = user.checklistAll_permission
     print("department_id:", user_dp)
     print("permission:", list_dp_p)
     # print(current_user.is_superuser)

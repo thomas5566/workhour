@@ -11,6 +11,7 @@ const getters = {
     getUsername: (state) => state.username,
     getFullname: (state) => state.fullname,
     getSuperUser: (state) => state.is_superuser,
+    getchecklistAll_permission: (state) => state.checklistAll_permission,
     isAuthenticated: (state) => state.token.length > 0 && state.expiration > Date.now()
     
 };
@@ -31,6 +32,7 @@ const mutations = {
         state.username = data.username
         state.fullname = data.fullname
         state.is_superuser = data.is_superuser
+        state.checklistAll_permission = data.checklistAll_permission
         state.token = data.token
         state.expiration = new Date(data.expiration)
     },
@@ -38,6 +40,7 @@ const mutations = {
         state.username = null
         state.fullname = null
         state.is_superuser = null
+        state.checklistAll_permission = null
         state.token = ""
         state.expiration = Date.now();
     },

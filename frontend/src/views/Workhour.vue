@@ -36,7 +36,7 @@
                 :min="minDate"
                 :max="maxDate"
                 required
-                locale="zh"
+                locale="zh-CN"
                 menu-class="w-100"
                 calendar-width="100%"
                 today-button
@@ -214,7 +214,7 @@ export default {
   },
   data() {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     // 15th two months prior
     const minDate = new Date(today);
     minDate.setMonth(minDate.getMonth() - 2);
@@ -244,7 +244,7 @@ export default {
       },
     };
   },
-  mounted: function () {
+  mounted: function() {
     this.get_workhour();
     this.get_task();
   },
@@ -270,11 +270,11 @@ export default {
         await postWorkhourAPI(data).then((response) => {
           if (response.status == 200) {
             this.form.task_id = "";
-            (this.form.date = this.toDate); 
-            (this.form.hour = 1);
+            this.form.date = this.toDate;
+            this.form.hour = 1;
             this.form.description = "";
-            (this.form.is_overtime = false);
-            (this.form.overtime_hour = 0);
+            this.form.is_overtime = false;
+            this.form.overtime_hour = 0;
           }
         });
       } catch (error) {

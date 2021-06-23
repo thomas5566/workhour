@@ -36,7 +36,7 @@
                 :min="minDate"
                 :max="maxDate"
                 required
-                locale="zh"
+                locale="zh-CN"
                 menu-class="w-100"
                 calendar-width="100%"
                 today-button
@@ -100,21 +100,24 @@ export default {
   },
   data() {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     // 15th two months prior
     const minDate = new Date(today);
     minDate.setMonth(minDate.getMonth() - 2);
     // 15th in two months
     const maxDate = new Date(today);
     maxDate.setMonth(maxDate.getMonth() + 2);
+
     return {
       dismissSecs: 2,
       dismissCountDown: 0,
       showDismissibleAlert: false,
       expentasks: null,
+
       toDate: today.toISOString().substring(0, 10),
       minDate: minDate,
       maxDate: maxDate,
+
       form: {
         expentask_id: "",
         date: today.toISOString().substring(0, 10),
@@ -149,7 +152,8 @@ export default {
         await postExpenAPI(data).then((response) => {
           if (response.status == 200) {
             this.form.expentask_id = "";
-            (this.form.date = this.toDate), (this.form.price = "");
+            this.form.date = this.toDate;
+            this.form.price = "";
             this.form.description = "";
           }
         });

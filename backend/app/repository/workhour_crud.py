@@ -82,17 +82,24 @@ def create_workhour(db: Session, workhour: schemas.WorkhourCreate):
     return db_workhour
 
 
-def update_workhour(db: Session, workhour_id: int, workhour: schemas.WorkhourUpdate):
+def update_workhour(workhour_id: int, workhour: schemas.WorkhourUpdate, db: Session,  user_id:int):
     db_workhour = db.query(models.Workhour).filter(
-        models.Workhour.id == workhour_id).first()
-    if db_workhour is None:
-        return None
-    for var, value in vars(workhour).items():
-        setattr(db_workhour, var, value) if value else None
-    db.add(db_workhour)
+        models.Workhour.id == workhour_id)
+
+    if not db_workhour.first():
+        return 0
+    workhour.__dict__.update(user_id=user_id)
+    db_workhour.update(workhour.__dict__)
     db.commit()
-    db.refresh(db_workhour)
-    return db_workhour
+    return 1
+    # if db_workhour is None:
+    #     return None
+    # for var, value in vars(workhour).items():
+    #     setattr(db_workhour, var, value) if value else None
+    # db.add(db_workhour)
+    # db.commit()
+    # db.refresh(db_workhour)
+    # return db_workhour
 
 
 def delete_workhour(id: int, db: Session):

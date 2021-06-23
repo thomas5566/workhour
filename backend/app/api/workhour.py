@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from typing import List
 # from app import crud, schemas, config
@@ -59,13 +59,27 @@ def read_workhour(workhour_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Workhour not found")
     return db_workhour
 
-@router.put("/{workhour_id}", response_model=schemas.WorkhourFull)
-def edit_workhour(workhour: schemas.WorkhourUpdate, workhour_id: int, db: Session = Depends(get_db)):
-    # user_id = user.id
-    db_workhour = workhour_crud.update_workhour(db, workhour_id=workhour_id, workhour=workhour)
-    if db_workhour is None:
-        raise HTTPException(status_code=404, detail="Workhour not found")
-    return db_workhour
+# @router.put("/{workhour_id}", response_model=schemas.WorkhourFull)
+# def edit_workhour(workhour: schemas.WorkhourUpdate, workhour_id: int, db: Session = Depends(get_db)):
+#     # user_id = user.id
+#     db_workhour = workhour_crud.update_workhour(db, workhour_id=workhour_id, workhour=workhour)
+#     if db_workhour is None:
+#         raise HTTPException(status_code=404, detail="Workhour not found")
+#     return db_workhour
+
+@router.put("/{workhour_id}")
+def edit_workhour(workhour_id: int, workhour: schemas.WorkhourUpdate, db:Session=Depends(get_db), user=Depends(login_manager)):
+    user_id = user.id
+    workhour_retrieved = workhour_crud.get_workhour(db=db, workhour_id=workhour_id)
+    if not workhour_retrieved:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Workhour with id {id} does not exist")
+    if workhour_retrieved.user_id == user.id:
+        message = workhour_crud.update_workhour(workhour_id=workhour_id, workhour=workhour, db=db, user_id=user_id)
+    else:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+        detail=f"You are not authorized to update.")
+    return {"detail":"Successfully updated data."}
 
 # @router.get("/totalhours", response_model=List[schemas.WorkhourFull])
 # def read_totalworkhours(skip: int=0, db: Session = Depends(get_db)):

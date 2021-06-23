@@ -4,6 +4,12 @@
       <b-navbar>
         <b-navbar-brand>
           <img src="../images/YCLogo.jpg" alt="YC" />
+          <img
+            src="../images/7788.gif"
+            height="110px"
+            width="200px"
+            alt="YC2"
+          />
         </b-navbar-brand>
         <!-- <b-navbar-brand  to="/home">首頁 |</b-navbar-brand>
         <b-navbar-brand to="/workhour">計畫項目 |</b-navbar-brand>
@@ -12,8 +18,8 @@
         <b-navbar-brand to="/task">計畫項目清單 | </b-navbar-brand>
         <b-navbar-brand to="/expentask">支出費用清單 |</b-navbar-brand>
         <b-navbar-brand to="/user">組員名單 |</b-navbar-brand> -->
-      
-        <b-collapse id="nav-collapse" is-nav >
+
+        <b-collapse id="nav-collapse" is-nav>
           <b-navbar-nav class="ml-auto">
             <b-nav-form>
               <b-navbar-brand to="/home">首頁 |</b-navbar-brand>
@@ -22,7 +28,9 @@
               <b-navbar-brand to="/excel">匯出Excel |</b-navbar-brand>
               <b-navbar-brand to="/task">計畫項目清單 | </b-navbar-brand>
               <b-navbar-brand to="/expentask">支出費用清單 |</b-navbar-brand>
-              <b-navbar-brand to="/user">組員名單 |</b-navbar-brand>
+              <div v-show="checklistAll_permission === 1">
+                <b-navbar-brand to="/user">組員名單 |</b-navbar-brand>
+              </div>
             </b-nav-form>
           </b-navbar-nav>
         </b-collapse>
@@ -38,8 +46,7 @@
               <span v-else>
                 <b-button variant="info" to="/register">
                   Sign Up
-                </b-button>
-                |
+                </b-button>                |
                 <b-button variant="success" to="/login">
                   Login
                 </b-button>
@@ -92,6 +99,10 @@
 <script>
 export default {
   name: "NavBar",
+  data() {
+    return {
+    };
+  },
   computed: {
     isLoggedIn: function() {
       return this.$store.getters.isAuthenticated;
@@ -102,10 +113,13 @@ export default {
     fullname: function() {
       return this.$store.getters.getFullname;
     },
+    checklistAll_permission() {
+      return this.$store.getters.getchecklistAll_permission;
+    },
   },
   methods: {
     async logout() {
-      await this.$store.getters.isAuthenticated;
+      await this.$store.dispatch('LogOut');
       this.$router.push("/login");
     },
   },

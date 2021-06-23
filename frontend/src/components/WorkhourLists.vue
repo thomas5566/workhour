@@ -3,12 +3,28 @@
     <div v-if="isLoggedIn">
       <div class="card mt-5">
         <div>
-          <label for="">From</label>
+          <label for="">From:</label>
           <input type="date" v-model="startDate" />
+          <label for="">To:</label>
+          <input type="date" v-model="endDate"  />
 
-          <label for="">To</label>
-          <input type="date" v-model="endDate" />
-          <td></td>
+    <!-- <date-range-picker
+            ref="picker"
+            :opens="opens"
+            :locale-data="{ firstDay: 1, format: 'yyyy-mm-dd' }"
+            :minDate="minDate" 
+            :maxDate="maxDate"
+            :singleDatePicker="singleDatePicker"
+            :showWeekNumbers="showWeekNumbers"
+            :showDropdowns="showDropdowns"
+            :autoApply="autoApply"
+            v-model="dateRange"
+            :linkedCalendars="linkedCalendars"
+    >
+        <template v-slot:input="picker" style="min-width: 350px;">
+            {{ picker.startDate | date }} - {{ picker.endDate | date }}
+        </template>
+    </date-range-picker> -->
         </div>
         <div class="card-header">工作項目清單</div>
         <div class="card-body">
@@ -114,9 +130,8 @@
                       <input
                         v-model="editWorkhourData.is_overtime"
                         type="checkbox"
-                        :true-value="true"
-                        :false-value="false"
                       />
+                      <label>{{ editWorkhourData.is_overtime ? "是" : "否" }}</label>
                     </td>
                     <td>
                       <input
@@ -217,18 +232,60 @@ import Vue from "vue";
 import axios from "axios";
 // options components
 import { PaginationPlugin } from "bootstrap-vue";
+// import DateRangePicker from 'vue2-daterange-picker'
+import 'vue2-daterange-picker/dist/vue2-daterange-picker.css'
 
 Vue.use(PaginationPlugin);
 Vue.use(axios);
 
 export default {
   name: "WorkhourLists",
+
   components: {},
   props: {
     msg: String,
   },
   data() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    // 15th two months prior
+    const minDate = new Date(today);
+    minDate.setMonth(minDate.getMonth() - 2);
+    // 15th in two months
+    const maxDate = new Date(today);
+    maxDate.setMonth(maxDate.getMonth() + 2);
+
+    let dpstartDate = new Date();
+    let dpendDate = new Date();
+    dpendDate.setDate(dpendDate.getDate())
+
     return {
+      direction: 'ltr',
+      format: 'yyyy/mm/dd/',
+      separator: ' - ',
+      applyLabel: 'Apply',
+      cancelLabel: 'Cancel',
+      weekLabel: 'W',
+      customRangeLabel: 'Custom Range',
+      daysOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      firstDay: 0,
+      opens:'right',
+      singleDatePicker:'range',
+      showWeekNumbers: true,
+      showDropdowns: true,
+      autoApply: true,
+      linkedCalendars: true,
+
+      
+      
+
+      toDate: today.toISOString().substring(0, 10),
+      minDate: minDate,
+      maxDate: maxDate,
+      
+      dateRange: { dpstartDate, dpendDate },
+
       pageOfExpens: [],
       pageOfWorkhours: [],
       rows: 100,
@@ -267,6 +324,16 @@ export default {
         overtime_hour: "",
       },
     };
+  },
+  filters: {
+    dateCell (value) {
+      let dt = new Date(value)
+
+      return dt.getDate()
+    },
+    date (val) {
+      return val ? val.toLocaleString() : ''
+    }
   },
   computed: {
     isLoggedIn: function () {
@@ -378,7 +445,7 @@ export default {
           this.editWorkhourData.description = "";
           this.editWorkhourData.hour = "";
           this.editWorkhourData.is_overtime = false;
-          this.editWorkhourData.overtime_hour = "";
+          this.editWorkhourData.overtime_hour = null;
           console.log(response.data);
           this.message = "The Expen was updated successfully!!";
         })
@@ -400,6 +467,12 @@ export default {
         new Date(date)
       );
     },
+    dateFormat (classes) {
+      // if (!classes.disabled) {
+      //   classes.disabled = date.getTime() < new Date()
+      // }
+      return classes
+    }
   },
 };
 </script>

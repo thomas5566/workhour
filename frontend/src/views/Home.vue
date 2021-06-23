@@ -1,6 +1,7 @@
 <template>
   <div>
     <div class="home" v-if="isLoggedIn">
+  
       <div>
         <b-button
           pill

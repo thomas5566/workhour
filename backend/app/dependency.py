@@ -34,13 +34,13 @@ def create_default_data():
                     is_superuser=True,
                     department_id=2 
                     ),
-        models.User(username="Dora", 
-                    fullname="Dora Yen",
-                    password=hpassword,
-                    department_id=3,
-                    is_superuser=True,
-                    checklistAll_permission=1
-                    ),
+        # models.User(username="Dora", 
+        #             fullname="Dora Yen",
+        #             password=hpassword,
+        #             department_id=3,
+        #             is_superuser=True,
+        #             checklistAll_permission=1
+        #             ),
         models.User(username="Wimy", 
                     fullname="Wimy Kuo",
                     password=hpassword,
@@ -55,7 +55,7 @@ def create_default_data():
 
         models.Task(taskname="TIIP",
                     fullname="TIIP-全方位減碳系統服務平台開發計畫",
-                    organization="永智"),
+                    organization="永智顧問"),
         models.Task(taskname="108高雄溫管",
                     fullname="108年高雄市溫室氣體管理計畫",
                     organization="高雄市政府環境保護局"),

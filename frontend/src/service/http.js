@@ -38,7 +38,6 @@ axios.interceptors.request.use(
 )
 
 //響應攔截
-
 axios.interceptors.response.use(
     (response) => {
         endLoading()
@@ -53,6 +52,13 @@ axios.interceptors.response.use(
 
         if (status === 401) {
             Message.error('請重新登入')
+                //清楚token
+            this.$store.dispatch('LogOut')
+                //跳轉到登入頁面
+            router.push('/login')
+        }
+        if (status === 400) {
+            Message.error('You are not authorized')
                 //清楚token
             this.$store.dispatch('LogOut')
                 //跳轉到登入頁面

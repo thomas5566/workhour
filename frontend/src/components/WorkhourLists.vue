@@ -3,28 +3,18 @@
     <div v-if="isLoggedIn">
       <div class="card mt-5">
         <div>
-          <label for="">From:</label>
+          <!-- <label for="">From:</label>
           <input type="date" v-model="startDate" />
           <label for="">To:</label>
-          <input type="date" v-model="endDate"  />
+          <input type="date" v-model="endDate"  /> -->
 
-    <!-- <date-range-picker
-            ref="picker"
-            :opens="opens"
-            :locale-data="{ firstDay: 1, format: 'yyyy-mm-dd' }"
-            :minDate="minDate" 
-            :maxDate="maxDate"
-            :singleDatePicker="singleDatePicker"
-            :showWeekNumbers="showWeekNumbers"
-            :showDropdowns="showDropdowns"
-            :autoApply="autoApply"
-            v-model="dateRange"
-            :linkedCalendars="linkedCalendars"
-    >
-        <template v-slot:input="picker" style="min-width: 350px;">
-            {{ picker.startDate | date }} - {{ picker.endDate | date }}
-        </template>
-    </date-range-picker> -->
+          <input
+            class="form-control"
+            type="text"
+            v-model="search"
+            placeholder="Search"
+          />
+          <date-picker v-model="datefilter" range></date-picker>
         </div>
         <div class="card-header">工作項目清單</div>
         <div class="card-body">
@@ -171,8 +161,11 @@
                       {{ workhour.task.id }}.
                       {{ workhour.task.taskname }}
                     </td>
-                    <td>
+                    <!-- <td>
                       {{ formatDate(workhour.date) }}
+                    </td> -->
+                    <td>
+                      {{ workhour.date }}
                     </td>
                     <td>
                       {{ workhour.description }}
@@ -213,7 +206,7 @@
         </div>
         <div class="card-footer pb-0 pt-3">
           <jw-pagination
-            :items="filterWorkhours"
+            :items="resultQuery"
             @changePage="onChangeWorkhourPage"
           ></jw-pagination>
         </div>
@@ -232,8 +225,8 @@ import Vue from "vue";
 import axios from "axios";
 // options components
 import { PaginationPlugin } from "bootstrap-vue";
-// import DateRangePicker from 'vue2-daterange-picker'
-import 'vue2-daterange-picker/dist/vue2-daterange-picker.css'
+import DatePicker from "vue2-datepicker";
+import "vue2-datepicker/index.css";
 
 Vue.use(PaginationPlugin);
 Vue.use(axios);
@@ -241,50 +234,14 @@ Vue.use(axios);
 export default {
   name: "WorkhourLists",
 
-  components: {},
+  components: { DatePicker },
   props: {
     msg: String,
   },
   data() {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    // 15th two months prior
-    const minDate = new Date(today);
-    minDate.setMonth(minDate.getMonth() - 2);
-    // 15th in two months
-    const maxDate = new Date(today);
-    maxDate.setMonth(maxDate.getMonth() + 2);
-
-    let dpstartDate = new Date();
-    let dpendDate = new Date();
-    dpendDate.setDate(dpendDate.getDate())
-
     return {
-      direction: 'ltr',
-      format: 'yyyy/mm/dd/',
-      separator: ' - ',
-      applyLabel: 'Apply',
-      cancelLabel: 'Cancel',
-      weekLabel: 'W',
-      customRangeLabel: 'Custom Range',
-      daysOfWeek: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      monthNames: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      firstDay: 0,
-      opens:'right',
-      singleDatePicker:'range',
-      showWeekNumbers: true,
-      showDropdowns: true,
-      autoApply: true,
-      linkedCalendars: true,
-
-      
-      
-
-      toDate: today.toISOString().substring(0, 10),
-      minDate: minDate,
-      maxDate: maxDate,
-      
-      dateRange: { dpstartDate, dpendDate },
+      search: null,
+      datefilter: null,
 
       pageOfExpens: [],
       pageOfWorkhours: [],
@@ -309,7 +266,7 @@ export default {
       //   description: "",
       //   is_overtime: false,
       // },
-      
+
       editWorkhourData: {
         id: "",
         user_id: "",
@@ -325,47 +282,77 @@ export default {
       },
     };
   },
-  filters: {
-    dateCell (value) {
-      let dt = new Date(value)
+  // filters: {
+  //   dateCell(value) {
+  //     let dt = new Date(value);
 
-      return dt.getDate()
-    },
-    date (val) {
-      return val ? val.toLocaleString() : ''
-    }
-  },
+  //     return dt.getDate();
+  //   },
+  //   date(val) {
+  //     return val ? val.toLocaleString() : "";
+  //   },
+  // },
   computed: {
+    resultQuery() {
+      const byDate = (workhour) => {
+        const workhourDate = new Date(workhour.date);
+        const startDate = new Date(this.datefilter[0]);
+        const endDate = new Date(this.datefilter[1]);
+        return (
+          workhourDate >= startDate &&
+          workhourDate <= endDate.setDate(endDate.getDate() + 1)
+        );
+      };
+
+      const byTitle = (workhour) =>
+        workhour.task.taskname.includes(this.search);
+
+      let workhours = this.workhours;
+
+      if (this.search) {
+        workhours = workhours.filter(byTitle);
+      }
+
+      const hasDateFilter =
+        this.datefilter?.length >= 2 &&
+        this.datefilter[0] &&
+        this.datefilter[1];
+      if (hasDateFilter) {
+        workhours = workhours.filter(byDate);
+      }
+
+      return workhours;
+    },
     isLoggedIn: function () {
       return this.$store.getters.isAuthenticated;
     },
     totalhours: function () {
-      console.log(this.filterWorkhours);
-      return this.filterWorkhours.reduce(function (totalhours, item) {
+      console.log(this.resultQuery);
+      return this.resultQuery.reduce(function (totalhours, item) {
         return totalhours + item.hour;
       }, 0);
     },
-    filterWorkhours() {
-      let filterType = this.selectedType;
-      let startDate = this.localizeDate(this.startDate);
-      let endDate = this.localizeDate(this.endDate);
-      const itemsByType = filterType
-        ? this.workhours.filter((workhours) => workhours.type === filterType)
-        : this.workhours;
-      return itemsByType.filter((workhours) => {
-        const itemDate = new Date(workhours.date);
-        if (startDate && endDate) {
-          return startDate <= itemDate && itemDate <= endDate;
-        }
-        if (startDate && !endDate) {
-          return startDate <= itemDate;
-        }
-        if (!startDate && endDate) {
-          return itemDate <= endDate;
-        }
-        return true;
-      });
-    },
+    // filterWorkhours() {
+    //   let filterType = this.selectedType;
+    //   let startDate = this.localizeDate(this.startDate);
+    //   let endDate = this.localizeDate(this.endDate);
+    //   const itemsByType = filterType
+    //     ? this.workhours.filter((workhours) => workhours.type === filterType)
+    //     : this.workhours;
+    //   return itemsByType.filter((workhours) => {
+    //     const itemDate = new Date(workhours.date);
+    //     if (startDate && endDate) {
+    //       return startDate <= itemDate && itemDate <= endDate;
+    //     }
+    //     if (startDate && !endDate) {
+    //       return startDate <= itemDate;
+    //     }
+    //     if (!startDate && endDate) {
+    //       return itemDate <= endDate;
+    //     }
+    //     return true;
+    //   });
+    // },
   },
   mounted: function () {
     this.get_workhour();
@@ -453,26 +440,20 @@ export default {
           console.log(e);
         });
     },
-    localizeDate(date) {
-      // Date picker uses ISO format (yyyy-mm-dd), which is UTC. The data
-      // contains locale specific date strings (mm/dd/yyyy), which `Date`
-      // parses with local time-zone offset instead of UTC. Normalize the
-      // ISO date so we're comparing local times.
-      if (!date || !date.includes("-")) return date;
-      const [yyyy, mm, dd] = date.split("-");
-      return new Date(`${mm}/${dd}/${yyyy}`);
-    },
-    formatDate(date) {
-      return new Intl.DateTimeFormat("zh-CN", { dateStyle: "long" }).format(
-        new Date(date)
-      );
-    },
-    dateFormat (classes) {
-      // if (!classes.disabled) {
-      //   classes.disabled = date.getTime() < new Date()
-      // }
-      return classes
-    }
+    // localizeDate(date) {
+    //   // Date picker uses ISO format (yyyy-mm-dd), which is UTC. The data
+    //   // contains locale specific date strings (mm/dd/yyyy), which `Date`
+    //   // parses with local time-zone offset instead of UTC. Normalize the
+    //   // ISO date so we're comparing local times.
+    //   if (!date || !date.includes("-")) return date;
+    //   const [yyyy, mm, dd] = date.split("-");
+    //   return new Date(`${mm}/${dd}/${yyyy}`);
+    // },
+    // formatDate(date) {
+    //   return new Intl.DateTimeFormat("zh-CN", { dateStyle: "long" }).format(
+    //     new Date(date)
+    //   );
+    // },
   },
 };
 </script>

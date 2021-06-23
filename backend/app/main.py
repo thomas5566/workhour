@@ -19,7 +19,7 @@ origins = ["*"]
 origins = [
     "http://localhost",
     "http://localhost:8080",
-    "http://localhost:8083",
+    "http://localhost:8081",
     "http://0.0.0.0:8080",
     "http://192.168.0.123:8080"
 ]

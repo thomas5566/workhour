@@ -1,32 +1,33 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-
-from .. import models, schemas
+# from .. import models
+from ..models import user
+from ..schemas import users
 
 def get_user(db: Session, user_id: int):
-    return db.query(models.User).filter(models.User.id == user_id).first()
+    return db.query(user.User).filter(user.User.id == user_id).first()
 # def get_user(db: Session, username: str):
 #     return db.query(models.User).filter(models.User.username == username).first()
 
 
 def get_user_by_username(db: Session, username: str):
-    return db.query(models.User).filter(models.User.username == username).first()
+    return db.query(user.User).filter(user.User.username == username).first()
 
 
 def get_user_by_department(db: Session, department_id: str):
-    return db.query(models.User).filter(models.User.department_id == department_id).all()
+    return db.query(user.User).filter(user.User.department_id == department_id).all()
 
 
 def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.User).offset(skip).limit(limit).all()
+    return db.query(user.User).offset(skip).limit(limit).all()
 
 
-def create_user(db: Session, user: schemas.UserCreate):
-    db_user = models.User(
-        username=user.username,
+def create_user(db: Session, user_item: users.UserCreate):
+    db_user = user.User(
+        username=user_item.username,
         # fullname=user.fullname,
-        password=user.password,
-        department_id=user.department_id,
+        password=user_item.password,
+        department_id=user_item.department_id,
         # is_active=True,
         # is_superuser=False
     )

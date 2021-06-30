@@ -1,38 +1,38 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
-import Register from '../views/Register'
-import Login from '../views/Login'
-import User from '../views/User'
-import Task from '../views/Task'
-import Expen from '../views/Expen'
-import Expentask from '../views/Expentask'
-import Workhour from '../views/Workhour'
-import UserDetail from '../views/UserDetail'
-import TaskDetail from '../views/TaskDetail'
-import WorkhourDetail from '../views/WorkhourDetail'
-import Excel from '../views/Excel'
+import HomePage from '../components/loginpage/HomePage.vue'
+import RegisterPage from '../components/loginpage/RegisterPage'
+import LoginPage from '../components/loginpage/LoginPage'
+import User from '../components/user/UserList'
+import UserDetail from '../components/user/UserDetail'
+import Task from '../components/task/AddTask'
+import TaskDetail from '../components/task/TaskDetail'
+import Expen from '../components/expenlist/AddExpen'
+import Expentask from '../components/expenlist/AddExpentask'
+import Workhour from '../components/worklist/AddWorkhour'
+import WorkhourDetail from '../components/worklist/WorkhourDetail'
+import Excel from '@/components/Excel.vue'
 
 Vue.use(VueRouter)
 const routes = [
   {
     path: '/home',
-    name: 'Home',
-    component: Home
+    name: 'HomePage',
+    component: HomePage
   },
   {
     path: '/register',
-    name: "Register",
-    component: Register,
+    name: "RegisterPage",
+    component: RegisterPage,
     meta: { guest: true },
   },
   {
     path: '/login',
-    name: "Login",
-    component: Login,
+    name: "LoginPage",
+    component: LoginPage,
     meta: { guest: true },
   },
-  
+
   {
     path: '/user',
     name: "User",

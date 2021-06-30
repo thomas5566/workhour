@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 
 
-from .. import schemas
+# from .. import schemas
+from ..schemas import departments
 from ..database import get_db
 from ..repository import department_crud
 
@@ -13,7 +14,7 @@ router = APIRouter(
     tags=["Department"],
 )
 
-@router.get("/", response_model=List[schemas.Department])
+@router.get("/", response_model=List[departments.Department])
 def read_departments(db: Session = Depends(get_db)):
     departments = department_crud.get_departments(db)
     if departments is None:

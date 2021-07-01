@@ -17,8 +17,9 @@
           </b-nav-item>
           <b-nav pills>
             <span v-if="isLoggedIn">
-              <b-button variant="outline-info" class="mb-2">
-                <b-icon icon="power" aria-hidden="true"></b-icon> Logout
+              <b-button variant="outline-info" class="mb-2" @click="logout">
+                <b-icon icon="power" aria-hidden="true"></b-icon>
+                Logout
               </b-button>
               ({{ username }})
             </span>
@@ -60,12 +61,6 @@ export default {
       await this.$store.dispatch("LogOut");
       this.$router.push("/login");
     },
-    // linkpdf() {
-    //   window.open(require("../../assets/123.pdf"), "_blank");
-    // },
-    // readFile() {
-    //   window.open("../../assets/123.pdf", "_blank"); //to open in new tab
-    // },
   },
 };
 </script>

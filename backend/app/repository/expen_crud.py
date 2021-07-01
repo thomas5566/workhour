@@ -11,10 +11,11 @@ def get_expen(db: Session, id: int):
         expen.Expenditure.id == id).first()
 
 
-def get_expens(db: Session, user_id: int):
+def get_expens(db: Session, user_id: int, skip: int = 0, limit: int = 100):
     return db.query(expen.Expenditure).filter(
         expen.Expenditure.user_id == user_id).order_by(
-            text("date desc")).all()
+            text("date desc")).offset(
+            skip).limit(limit).all()
 
 
 def get_expens_by_user_expentask(db: Session, user_id: int, expentask_id: int, skip: int = 0, limit: int = 100):
@@ -69,7 +70,7 @@ def create_expen(db: Session, expen_item: expens.ExpenditureCreate):
 def delete_expen(id: int, db: Session):
     expen_item = db.query(expen.Expenditure).filter(expen.Expenditure.id == id)
 
-    if not expen.first():
+    if not expen_item.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Expen with id {id} not found")
 

@@ -1,89 +1,94 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
-import HomePage from '../components/loginpage/HomePage.vue'
-import RegisterPage from '../components/loginpage/RegisterPage'
-import LoginPage from '../components/loginpage/LoginPage'
-import User from '../components/user/UserList'
-import UserDetail from '../components/user/UserDetail'
-import Task from '../components/task/AddTask'
-import TaskDetail from '../components/task/TaskDetail'
-import Expen from '../components/expenlist/AddExpen'
-import Expentask from '../components/expenlist/AddExpentask'
-import Workhour from '../components/worklist/AddWorkhour'
-import WorkhourDetail from '../components/worklist/WorkhourDetail'
-import Excel from '@/components/Excel.vue'
+import Vue from "vue";
+import VueRouter from "vue-router";
+import HomePage from "../components/loginpage/HomePage.vue";
+import RegisterPage from "../components/loginpage/RegisterPage";
+import LoginPage from "../components/loginpage/LoginPage";
+import User from "../components/user/UserList";
+import UserDetail from "../components/user/UserDetail";
+import Task from "../components/task/AddTask";
+import TaskDetail from "../components/task/TaskDetail";
+import Expen from "../components/expenlist/AddExpen";
+import Expentask from "../components/expenlist/AddExpentask";
+import Workhour from "../components/worklist/AddWorkhour";
+import WorkhourDetail from "../components/worklist/WorkhourDetail";
+import Excel from "@/components/Excel.vue";
+import PdfPage from "@/components/layouts/PdfPage.vue";
 
-Vue.use(VueRouter)
+Vue.use(VueRouter);
 const routes = [
   {
-    path: '/home',
-    name: 'HomePage',
-    component: HomePage
+    path: "/home",
+    name: "HomePage",
+    component: HomePage,
   },
   {
-    path: '/register',
+    path: "/register",
     name: "RegisterPage",
     component: RegisterPage,
     meta: { guest: true },
   },
   {
-    path: '/login',
+    path: "/login",
     name: "LoginPage",
     component: LoginPage,
     meta: { guest: true },
   },
 
   {
-    path: '/user',
+    path: "/user",
     name: "User",
     component: User,
   },
   {
-    path: '/task',
+    path: "/task",
     name: "Task",
     component: Task,
   },
   {
-    path: '/expentask',
+    path: "/expentask",
     name: "Expentask",
     component: Expentask,
   },
   {
-    path: '/workhour',
+    path: "/workhour",
     name: "Workhour",
     component: Workhour,
   },
   {
-    path: '/expen',
+    path: "/expen",
     name: "Expen",
     component: Expen,
   },
   {
-    path: '/excel',
+    path: "/excel",
     name: "Excel",
     component: Excel,
   },
   {
-    path: '/user/:id',
+    path: "/user/:id",
     name: "UserDetail",
     component: UserDetail,
   },
   {
-    path: '/task/:id',
+    path: "/task/:id",
     name: "TaskDetail",
     component: TaskDetail,
   },
   {
-    path: '/workhour/:id',
+    path: "/workhour/:id",
     name: "WorkhourDetail",
     component: WorkhourDetail,
   },
-]
+  {
+    path: "/pdfpage",
+    name: "PdfPage",
+    component: PdfPage,
+  },
+];
 const router = new VueRouter({
-  mode: 'history',
+  mode: "history",
   base: process.env.BASE_URL,
-  routes
-})
+  routes,
+});
 
-
-export default router
+export default router;

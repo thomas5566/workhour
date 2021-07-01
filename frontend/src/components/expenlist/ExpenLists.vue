@@ -91,13 +91,13 @@
                       <th>
                       <div>
                         <b-input-group class="mb-3">
-                          <b-form-input
+                          <!-- <b-form-input
                             id="example-input"
                             v-model="editExpenData.date"
                             type="text"
                             placeholder="YYYY-MM-DD"
                             autocomplete="off"
-                          ></b-form-input>
+                          ></b-form-input> -->
                           <b-input-group-append>
                             <b-form-datepicker
                               v-model="editExpenData.date"
@@ -143,11 +143,11 @@
                       {{ expen.user.department.department_name }}
                     </td>
                     <td>
-                      {{ expen.user.id }}.
+                      <!-- {{ expen.user.id }}. -->
                       {{ expen.user.username }}
                     </td>
                     <td>
-                      {{ expen.expentask.id }}.
+                      <!-- {{ expen.expentask.id }}. -->
                       {{ expen.expentask.expentask_name }}
                     </td>
                     <td>

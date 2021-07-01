@@ -5,12 +5,12 @@ import uvicorn as uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
-from app import models
+from app import model
 
 # For DEV only, remove below 4 lines in production
 # from app.dependency import create_default_data
-# models.Base.metadata.drop_all(bind=engine)
-# models.Base.metadata.create_all(bind=engine)
+# model.Base.metadata.drop_all(bind=engine)
+# model.Base.metadata.create_all(bind=engine)
 # create_default_data()
 
 app = FastAPI()

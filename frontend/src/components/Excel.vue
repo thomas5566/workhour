@@ -1,7 +1,7 @@
 <template>
   <div v-if="isLoggedIn">
     <div>
-      <p><b>工作項目清單</b></p>
+      <h4 style="text-align: center">工作項目清單</h4>
       <ejs-grid
         ref="grid1"
         id="FirstGrid"
@@ -43,8 +43,8 @@
       </ejs-grid>
     </div>
 
-    <div>
-      <p><b>支出項目清單</b></p>
+    <div style="text-align: center">
+      <h4>支出項目清單</h4>
       <ejs-grid
         ref="grid2"
         id="SecondGrid"
@@ -122,11 +122,11 @@ export default {
     };
   },
   computed: {
-    isLoggedIn: function () {
+    isLoggedIn: function() {
       return this.$store.getters.isAuthenticated;
     },
   },
-  mounted: function () {
+  mounted: function() {
     this.get_workhour();
     this.get_expen();
   },
@@ -140,7 +140,7 @@ export default {
     async get_expen() {
       await getExpenAPI().then((response) => (this.expens = response.data));
     },
-    toolbarClick: function (args) {
+    toolbarClick: function(args) {
       if (args.item.id === "FirstGrid_excelexport") {
         // 'Grid_excelexport' -> Grid component id + _ + toolbar item name
         let appendExcelExportProperties = {
@@ -160,7 +160,7 @@ export default {
         });
       }
     },
-    load: function () {
+    load: function() {
       let rowHeight = this.$refs.grid1.ej2Instances.getRowHeight(); //height of the each row
       let gridHeight = this.$refs.grid1.height; //grid height
       let pageSize = this.$refs.grid1.pageSettings.pageSize; //initial page size
@@ -169,7 +169,7 @@ export default {
         pageSize: pageSize + Math.round(pageResize),
       };
     },
-    load2: function () {
+    load2: function() {
       let rowHeight2 = this.$refs.grid2.ej2Instances.getRowHeight(); //height of the each row
       let gridHeight2 = this.$refs.grid2.height2; //grid height
       let pageSize2 = this.$refs.grid2.pageSettings2.pageSize2; //initial page size

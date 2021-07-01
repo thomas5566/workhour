@@ -98,13 +98,13 @@
                       <!-- <input v-model="editWorkhourData.date" type="text" /> -->
                     <div>
                       <b-input-group class="mb-3">
-                        <b-form-input
+                        <!-- <b-form-input
                           id="example-input"
                           v-model="editWorkhourData.date"
                           type="text"
                           placeholder="YYYY-MM-DD"
                           autocomplete="off"
-                        ></b-form-input>
+                        ></b-form-input> -->
                         <b-input-group-append>
                           <b-form-datepicker
                             v-model="editWorkhourData.date"
@@ -127,7 +127,9 @@
                     <input
                       size="2"
                       v-model="editWorkhourData.hour"
-                      type="text"
+                      type="number"
+                      :max="8"
+                      :min="0.5"
                     />
                   </td>
                   <td>
@@ -143,7 +145,9 @@
                     <input
                       size="2"
                       v-model="editWorkhourData.overtime_hour"
-                      type="text"
+                      type="number"
+                      :max="8"
+                      :min="0.5"
                     />
                   </td>
                   <td>
@@ -171,11 +175,11 @@
                     {{ workhour.user.department.department_name }}
                   </td>
                   <td>
-                    {{ workhour.user.id }}.
+                    <!-- {{ workhour.user.id }}. -->
                     {{ workhour.user.username }}
                   </td>
                   <td>
-                    {{ workhour.task.id }}.
+                    <!-- {{ workhour.task.id }}. -->
                     {{ workhour.task.taskname }}
                   </td>
                   <!-- <td>

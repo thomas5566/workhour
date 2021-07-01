@@ -61,7 +61,19 @@
             <h5 for="input-default">支出費用($):</h5>
           </b-col>
           <b-col sm="10">
-            <b-form-input rows="1" v-model="form.price"></b-form-input>
+            <b-form-input
+              rows="1"
+              v-model="form.price"
+              :state="pricState"
+            ></b-form-input>
+
+            <!-- This will only be shown if the preceding input has an invalid state -->
+            <b-form-invalid-feedback id="input-live-feedback">
+              請輸入金額
+            </b-form-invalid-feedback>
+
+            <!-- This is a form text block (formerly known as help block) -->
+            <b-form-text id="input-live-help">金額至少大於0$</b-form-text>
           </b-col>
         </b-row>
         <b-row class="my-1">
@@ -97,8 +109,11 @@ export default {
     msg: String,
   },
   computed: {
-    isLoggedIn: function () {
+    isLoggedIn: function() {
       return this.$store.getters.isAuthenticated;
+    },
+    pricState() {
+      return this.form.price != 0 ? true : false;
     },
   },
   data() {
@@ -133,7 +148,7 @@ export default {
       },
     };
   },
-  mounted: function () {
+  mounted: function() {
     // this.get_workhour();
     this.get_expentask();
   },

@@ -12,12 +12,12 @@
             >組員名單</b-nav-item
           >
           <b-nav-item to="/excel">匯出Excel</b-nav-item>
-          <b-nav-item to="">
-            <b-icon icon="info-circle-fill" variant="info"></b-icon>
+          <b-nav-item href="./123.pdf" target="_blank">
+            <b-icon icon="info-circle-fill" variant="info"> </b-icon>
           </b-nav-item>
           <b-nav pills>
             <span v-if="isLoggedIn">
-              <b-button variant="outline-info" class="mb-2" @click="logout">
+              <b-button variant="outline-info" class="mb-2">
                 <b-icon icon="power" aria-hidden="true"></b-icon> Logout
               </b-button>
               ({{ username }})
@@ -35,14 +35,20 @@
 
 <script>
 export default {
+  components: {},
+  data() {
+    return {
+      // pdfLink: require("../../assets/系統操作手冊.pdf"),
+    };
+  },
   computed: {
-    isLoggedIn: function () {
+    isLoggedIn: function() {
       return this.$store.getters.isAuthenticated;
     },
-    username: function () {
+    username: function() {
       return this.$store.getters.getUsername;
     },
-    fullname: function () {
+    fullname: function() {
       return this.$store.getters.getFullname;
     },
     checklistAll_permission() {
@@ -54,6 +60,12 @@ export default {
       await this.$store.dispatch("LogOut");
       this.$router.push("/login");
     },
+    // linkpdf() {
+    //   window.open(require("../../assets/123.pdf"), "_blank");
+    // },
+    // readFile() {
+    //   window.open("../../assets/123.pdf", "_blank"); //to open in new tab
+    // },
   },
 };
 </script>

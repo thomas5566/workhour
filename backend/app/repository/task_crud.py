@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
 # from .. import models, schemas
 
 from ..models import task
@@ -37,3 +38,16 @@ def update_task(db: Session, task_id: int, task_items: tasks.TaskUpdate):
     db.commit()
     db.refresh(db_task)
     return db_task
+
+
+def delete_task(id: int, db: Session):
+    task_item = db.query(task.Task).filter(
+        task.Task.id == id)
+
+    if not task_item.first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Expen with id {id} not found")
+
+    task_item.delete(synchronize_session=False)
+    db.commit()
+    return "Task hase being delete"

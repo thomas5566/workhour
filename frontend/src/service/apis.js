@@ -67,6 +67,13 @@ export function postTaskAPI(data) {
     })
 }
 
+export function deleteTaskAPI(task_id) {
+    return axios({
+        url: `/task/${task_id}`,
+        method: 'delete'
+    })
+}
+
 export function getExpentaskAPI() {
     return axios({
         url: "/expentask/",

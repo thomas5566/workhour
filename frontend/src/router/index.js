@@ -6,13 +6,14 @@ import LoginPage from "../components/loginpage/LoginPage";
 import User from "../components/user/UserList";
 import UserDetail from "../components/user/UserDetail";
 import Task from "../components/task/AddTask";
-import TaskDetail from "../components/task/TaskDetail";
+// import TaskDetail from "../components/task/TaskDetail";
 import Expen from "../components/expenlist/AddExpen";
 import Expentask from "../components/expenlist/AddExpentask";
 import Workhour from "../components/worklist/AddWorkhour";
 import WorkhourDetail from "../components/worklist/WorkhourDetail";
 import Excel from "@/components/Excel.vue";
 import PdfPage from "@/components/layouts/PdfPage.vue";
+import StoredMembers from '../components/hr/StoredMembers.vue'
 
 Vue.use(VueRouter);
 const routes = [
@@ -69,11 +70,11 @@ const routes = [
     name: "UserDetail",
     component: UserDetail,
   },
-  {
-    path: "/task/:id",
-    name: "TaskDetail",
-    component: TaskDetail,
-  },
+  // {
+  //   path: "/task/:id",
+  //   name: "TaskDetail",
+  //   component: TaskDetail,
+  // },
   {
     path: "/workhour/:id",
     name: "WorkhourDetail",
@@ -83,6 +84,11 @@ const routes = [
     path: "/pdfpage",
     name: "PdfPage",
     component: PdfPage,
+  },
+  {
+    path: "/members",
+    name: "StoredMembers",
+    component: StoredMembers,
   },
 ];
 const router = new VueRouter({

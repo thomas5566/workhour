@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from sqlalchemy.sql.expression import true
 # from .. import models, schemas
 
 from ..models import task
@@ -14,7 +15,7 @@ def get_task_by_taskname(db: Session, taskname: str):
 
 
 def get_tasks(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(task.Task).offset(skip).limit(limit).all()
+    return db.query(task.Task).filter(task.Task.is_active == "true").offset(skip).limit(limit).all()
 
 
 def create_task(db: Session, task_items: tasks.TaskCreate):

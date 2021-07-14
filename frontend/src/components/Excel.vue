@@ -1,7 +1,7 @@
 <template>
   <div v-if="isLoggedIn">
-    <div>
-      <h4 style="text-align: center">工作項目清單</h4>
+    <div style="text-align: center">
+      <h4>工作項目清單</h4>
       <ejs-grid
         ref="grid1"
         id="FirstGrid"
@@ -11,33 +11,38 @@
         :allowPaging="true"
         :allowExcelExport="true"
         :toolbarClick="toolbarClick"
-        :pageSettings="pageSettings"
+        :pageSettings="pageSettings1"
         height="323"
         :load="load"
       >
         <e-columns>
-          <e-column
+          <!-- <e-column
             field="id"
-            headerText="ID"
+            headerText="工作項目 ID"
             textAlign="Right"
             width="120"
-          ></e-column>
-          <e-column field="date" headerText="Date" width="150"></e-column>
+          ></e-column> -->
+          <e-column field="date" headerText="日期" width="150"></e-column>
           <e-column
             field="user.username"
-            headerText="User Name"
+            headerText="姓名"
             width="150"
           ></e-column>
           <e-column
             field="task.taskname"
-            headerText="Task Name"
+            headerText="計劃項目"
             width="150"
           ></e-column>
-          <e-column field="hour" headerText="Hour" width="150"></e-column>
+          <e-column field="hour" headerText="工時" width="80"></e-column>
+          <e-column
+            field="overtime_hour"
+            headerText="加班"
+            width="80"
+          ></e-column>
           <e-column
             field="description"
-            headerText="Description"
-            width="150"
+            headerText="工作說明"
+            width="200"
           ></e-column>
         </e-columns>
       </ejs-grid>
@@ -52,33 +57,33 @@
         :dataSource="expens"
         :allowExcelExport="true"
         :allowPaging="true"
-        :pageSettings="pageSettings"
+        :pageSettings="pageSettings2"
         height="323"
         :load2="load2"
       >
         <e-columns>
-          <e-column
+          <!-- <e-column
             field="id"
-            headerText="Expen ID"
+            headerText="支出項目 ID"
             textAlign="Right"
             width="120"
-          ></e-column>
-          <e-column field="date" headerText="Date" width="150"></e-column>
+          ></e-column> -->
+          <e-column field="date" headerText="日期" width="150"></e-column>
           <e-column
             field="user.username"
-            headerText="User Name"
+            headerText="姓名"
             width="150"
           ></e-column>
           <e-column
             field="expentask.expentask_name"
-            headerText="ExpenTask Name"
+            headerText="支出項目"
             width="150"
           ></e-column>
-          <e-column field="price" headerText="Price" width="150"> </e-column>
+          <e-column field="price" headerText="金額" width="100"></e-column>
           <e-column
             field="description"
-            headerText="Description"
-            width="150"
+            headerText="支出說明"
+            width="200"
           ></e-column>
         </e-columns>
       </ejs-grid>
@@ -118,15 +123,17 @@ export default {
       expens: [],
 
       pageSettings: { pageSize: 10 },
+      pageSettings1: { pageSize: 10 },
+      pageSettings2: { pageSize: 10 },
       toolbarOptions: ["ExcelExport"],
     };
   },
   computed: {
-    isLoggedIn: function() {
+    isLoggedIn: function () {
       return this.$store.getters.isAuthenticated;
     },
   },
-  mounted: function() {
+  mounted: function () {
     this.get_workhour();
     this.get_expen();
   },
@@ -140,7 +147,7 @@ export default {
     async get_expen() {
       await getExpenAPI().then((response) => (this.expens = response.data));
     },
-    toolbarClick: function(args) {
+    toolbarClick: function (args) {
       if (args.item.id === "FirstGrid_excelexport") {
         // 'Grid_excelexport' -> Grid component id + _ + toolbar item name
         let appendExcelExportProperties = {
@@ -160,7 +167,7 @@ export default {
         });
       }
     },
-    load: function() {
+    load: function () {
       let rowHeight = this.$refs.grid1.ej2Instances.getRowHeight(); //height of the each row
       let gridHeight = this.$refs.grid1.height; //grid height
       let pageSize = this.$refs.grid1.pageSettings.pageSize; //initial page size
@@ -169,7 +176,7 @@ export default {
         pageSize: pageSize + Math.round(pageResize),
       };
     },
-    load2: function() {
+    load2: function () {
       let rowHeight2 = this.$refs.grid2.ej2Instances.getRowHeight(); //height of the each row
       let gridHeight2 = this.$refs.grid2.height2; //grid height
       let pageSize2 = this.$refs.grid2.pageSettings2.pageSize2; //initial page size

@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 
 # from .. import models
-from ..models import department
+from ..models import Department
+
 
 def get_departments(db: Session):
-    return db.query(department.Department).all()
+    return db.query(Department).all()

@@ -5,6 +5,7 @@ from .expens import Expenditure
 from .expentasks import ExpenTask
 from .tasks import Task
 from .whorkhours import Workhour
+from .daysoff import Daysoff
 
 
 class WorkhourFull(Workhour):
@@ -27,3 +28,7 @@ class TaskFull(Task):
 
 class UserFull(User):
     workhours: List[WorkhourFull] = []
+
+
+class DaysoffFull(Daysoff):
+    user: Optional[User]

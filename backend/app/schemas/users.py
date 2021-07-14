@@ -8,7 +8,7 @@ from .departments import Department
 class UserBase(BaseModel):
     username: str
     fullname: Optional[str] = None
-    password: str
+    # password: str
     is_superuser: Optional[bool] = None
     checklistAll_permission: Optional[int] = None
     department_id: int
@@ -31,4 +31,15 @@ class UserToken(User):
     expiration: Optional[datetime.datetime] = None
 
 
+class DataTotal(BaseModel):
+    year_month: str
+    # department_name: str
+    # user_name: str
+    total_hour: float
+    total_overtime_hour: float
+    total_pric: Optional[int] = None
+    total_pric2: Optional[int] = None
+
+    class Config:
+        orm_mode = True
 

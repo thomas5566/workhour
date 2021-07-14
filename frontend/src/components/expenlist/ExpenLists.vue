@@ -168,6 +168,14 @@
                         編輯
                       </button>
                       <button
+                        type="button"
+                        class="btn btn-sm btn-outline-warning"
+                        @click="toggleEditExpen"
+                      >
+                        編輯2
+                        
+                      </button>
+                      <button
                         class="btn btn-sm btn-outline-danger"
                         v-on:click="deleteEpen(expen.id)"
                       >
@@ -181,6 +189,7 @@
                 </tr>
               </tbody>
             </table>
+            <edit-expen v-if="showEditExpencmp"></edit-expen>
           </div>
         </div>
         <div class="card-footer pb-0 pt-3">
@@ -202,6 +211,7 @@ import {
   deleteExpenAPI,
   updateExpenAPI,
 } from "../../service/apis.js";
+import EditExpen from './EditExpen.vue'
 import Vue from "vue";
 import axios from "axios";
 // options components
@@ -215,12 +225,14 @@ Vue.use(axios);
 
 export default {
   name: "ExpenLists",
-  components: { DatePicker },
+  components: { DatePicker, EditExpen },
   props: {
     msg: String,
   },
   data() {
     return {
+      showEditExpencmp: false,
+
       search: null,
       datefilter: null,
 
@@ -338,6 +350,9 @@ export default {
   },
   created() {},
   methods: {
+    toggleEditExpen () {
+      this.showEditExpencmp = !this.showEditExpencmp;
+    },
     onContext(ctx) {
       // The date formatted in the locale, or the `label-no-date-selected` string
       this.formatted = ctx.selectedFormatted;

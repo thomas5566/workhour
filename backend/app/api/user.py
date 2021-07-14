@@ -34,6 +34,13 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = user_crud.get_users(db, skip=skip, limit=limit)
     return users
 
+
+@router.get("/alldata", response_model=List[users.DataTotal])
+def read_users(db: Session = Depends(get_db)):
+    countall = user_crud.get_allusers_monthly(db)
+    return countall
+
+
 @router.get("/get-dpuser", response_model=List[users.User])
 def get_user_bydp(db: Session = Depends(get_db), user=Depends(login_manager)):
     user_dp = user.department_id

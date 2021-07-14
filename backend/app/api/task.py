@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from typing import List
 # from app import crud, schemas, config
@@ -24,10 +24,24 @@ def create_task(task_items: tasks.TaskCreate, db: Session = Depends(get_db)):
     return task_crud.create_task(db=db, task_items=task_items)
 
 
-@router.get("/", response_model=List[tasks.Task])
+@router.get("/", response_model=List[allfull.TaskFull])
 def read_tasks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    tasks = task_crud.get_tasks(db, skip=skip, limit=limit)
-    return tasks
+    tasks_items = task_crud.get_tasks(db, skip=skip, limit=limit)
+    return tasks_items
+
+
+@router.get("/tasksgbw", response_model=List[tasks.TaskGYBase])
+def read_tasks_groupby_worklist(db: Session = Depends(get_db), user=Depends(login_manager)):
+    user_dp = user.department_id
+    list_dp_p = user.checklistAll_permission
+    print("department_id:", user_dp)
+    print("permission:", list_dp_p)
+    # print(current_user.is_superuser)
+    if list_dp_p == 2:
+        tasks_items = task_crud.get_tasks_by_worklist(db)
+        return tasks_items
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="You are not permitted!!")
 
 
 @router.get("/{task_id}", response_model=allfull.TaskFull)

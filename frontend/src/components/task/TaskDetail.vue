@@ -1,63 +1,54 @@
 <template>
-  <div v-if="task">
-    <div>
-      <table class="table table-striped table-bordered">
-        <thead>
-          <tr>
-            <th colspan="4">Task Detail</th>
-          </tr>
-          <tr>
-            <th>id</th>
-            <th>taskname</th>
-            <th>fullname</th>
-            <th>organization</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{{ task.id }}</td>
-            <td>{{ task.taskname }}</td>
-            <td>{{ task.fullname }}</td>
-            <td>{{ task.organization }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="workhours" v-if="task.workhours.length">
-      <table class="table table-striped table-bordered">
-        <thead>
-          <tr>
-            <th colspan="7">Workhours</th>
-          </tr>
-          <tr>
-            <th>id</th>
-            <th>username</th>
-            <th>taskname</th>
-            <th>date</th>
-            <th>hour</th>
-            <th>description</th>
-            <th>is_overtime</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="w in task.workhours" :key="w.id">
-            <td>{{ w.id }}</td>
-            <td>{{ w.user.username }}</td>
-            <td>{{ w.task.taskname }}</td>
-            <td>{{ w.date }}</td>
-            <td>{{ w.hour }}</td>
-            <td>{{ w.description }}</td>
-            <td>{{ w.is_overtime }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div v-else>No workhours</div>
+  <div>
+    <b-table :items="tasksgroup" :fields="fields" striped responsive="sm">
+      <template #cell(show_details)="row">
+        <b-button size="sm" @click="row.toggleDetails" class="mr-2"
+          >{{ row.detailsShowing ? "Hide" : "Show" }} Details</b-button
+        >
+      </template>
+
+      <template #row-details="row">
+        <b-card v-for="worklist in row.item.workhours" :key="worklist.id">
+          <b-row class="mb-2">
+            <b-col sm="3" class="text-sm-right">
+              <b>department:</b>
+            </b-col>
+            <b-col>{{ worklist.user.department.department_name }}</b-col>
+          </b-row>
+          <b-row class="mb-2">
+            <b-col sm="3" class="text-sm-right">
+              <b>User Name:</b>
+            </b-col>
+            <b-col>{{ worklist.user.username }}</b-col>
+          </b-row>
+
+          <b-row class="mb-2">
+            <b-col sm="3" class="text-sm-right">
+              <b>Date:</b>
+            </b-col>
+            <b-col>{{ worklist.date }}</b-col>
+          </b-row>
+          <b-row class="mb-2">
+            <b-col sm="3" class="text-sm-right">
+              <b>Hours:</b>
+            </b-col>
+            <b-col>{{ worklist.hour }}/hr</b-col>
+          </b-row>
+          <b-row class="mb-2">
+            <b-col sm="3" class="text-sm-right">
+              <b>description:</b>
+            </b-col>
+            <b-col>{{ worklist.description }}</b-col>
+          </b-row>
+        </b-card>
+        <b-button size="sm" @click="row.toggleDetails">Hide Details</b-button>
+      </template>
+    </b-table>
   </div>
 </template>
 
 <script>
-import { getTaskIdAPI } from "../../service/apis.js";
+import { getTaskByGroupAPI } from "../../service/apis.js";
 export default {
   components: {},
   props: {
@@ -65,22 +56,47 @@ export default {
   },
   data() {
     return {
-      task: null,
       form: {
         taskname: "",
         fullname: "",
         organization: "",
       },
+      isBusy: false,
+
+      tasksgroup: [],
+      fields: [
+        {
+          key: "id",
+          label: "ID",
+          sortable: true,
+        },
+        {
+          key: "taskname",
+          label: "簡稱",
+        },
+        {
+          key: "fullname",
+          label: "計畫全名",
+        },
+        {
+          key: "organization",
+          label: "單位",
+        },
+        "show_details",
+      ],
     };
   },
+  computed: {
+    isLoggedIn: function () {
+      return this.$store.getters.isAuthenticated;
+    },
+  },
   mounted: function () {
-    this.get_task();
+    this.get_tasks_by_group();
   },
   methods: {
-    async get_task() {
-      await getTaskIdAPI(this.$route.params.id).then(
-        (response) => (this.task = response.data)
-      );
+    get_tasks_by_group() {
+      getTaskByGroupAPI().then((response) => (this.tasksgroup = response.data));
     },
   },
 };

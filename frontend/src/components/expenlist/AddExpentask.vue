@@ -4,7 +4,9 @@
       <table class="table table-striped table-bordered">
         <thead style="text-align: center">
           <tr>
-            <th colspan="4"><h4>支出項目</h4></th>
+            <th colspan="4">
+              <h4>支出項目</h4>
+            </th>
           </tr>
           <tr>
             <th>id</th>

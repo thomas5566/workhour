@@ -18,7 +18,7 @@
                 :key="t.id"
                 :value="t.id"
               >
-                {{ t.id }}.{{ t.expentask_name }}
+                {{ t.expentask_name }}
               </b-form-select-option>
             </b-form-select>
           </b-col>
@@ -50,7 +50,7 @@
           </b-col>
           <b-col sm="10">
             <b-form-textarea
-              placeholder="Enter description (Optional)"
+              placeholder="請輸入支出說明..."
               rows="4"
               v-model="form.description"
             ></b-form-textarea>

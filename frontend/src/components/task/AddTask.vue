@@ -9,11 +9,11 @@
             </th>
           </tr>
           <tr>
-            <th>id</th>
+            <!-- <th>id</th> -->
             <th>簡稱</th>
             <th>計畫全名</th>
             <th>單位</th>
-            <th>Action</th>
+            <!-- <th>Action</th> -->
           </tr>
         </thead>
         <tbody>
@@ -23,13 +23,13 @@
             :to="{ taskname: 'TaskDetail', params: { id: task.id } }"
             tag="tr"
           >
-            <td>{{ task.id }}</td>
+            <!-- <td>{{ task.id }}</td> -->
             <td>{{ task.taskname }}</td>
             <td>{{ task.fullname }}</td>
             <td>{{ task.organization }}</td>
-            <td>
+            <!-- <td>
               <button class="btn btn-sm btn-outline-danger" v-on:click="deleteTask(task.id)">刪除</button>
-            </td>
+            </td> -->
           </router-link>
         </tbody>
 
@@ -46,7 +46,12 @@
             <label for="input-default">簡稱:</label>
           </b-col>
           <b-col sm="5">
-            <b-form-input id="input-default" placeholder="請輸入計畫簡稱" v-model="form.taskname" required></b-form-input>
+            <b-form-input
+              id="input-default"
+              placeholder="請輸入計畫簡稱"
+              v-model="form.taskname"
+              required
+            ></b-form-input>
           </b-col>
         </b-row>
 
@@ -55,7 +60,12 @@
             <label for="input-default">計畫全名:</label>
           </b-col>
           <b-col sm="5">
-            <b-form-input id="input-default" placeholder="請輸入計畫全名" v-model="form.fullname" required></b-form-input>
+            <b-form-input
+              id="input-default"
+              placeholder="請輸入計畫全名"
+              v-model="form.fullname"
+              required
+            ></b-form-input>
           </b-col>
         </b-row>
 
@@ -72,7 +82,13 @@
             ></b-form-input>
           </b-col>
         </b-row>
-        <b-button pill variant="primary" type="submit" style="margin: 0 auto; display: block">新增</b-button>
+        <b-button
+          pill
+          variant="primary"
+          type="submit"
+          style="margin: 0 auto; display: block"
+          >新增</b-button
+        >
       </b-container>
     </form>
   </div>
@@ -95,7 +111,7 @@ export default {
       },
     };
   },
-  mounted: function () {
+  mounted: function() {
     this.get_task();
   },
   methods: {

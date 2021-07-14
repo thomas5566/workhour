@@ -18,7 +18,7 @@
                 :key="t.id"
                 :value="t.id"
               >
-                {{ t.id }}.{{ t.taskname }} {{ t.fullname }}
+                {{ t.taskname }}
               </b-form-select-option>
             </b-form-select>
           </b-col>
@@ -49,7 +49,7 @@
           <b-col sm="2">
             <h5 for="input-default">時間(hr):</h5>
           </b-col>
-          <b-col sm="1">
+          <b-col sm="2">
             <b-form-input
               type="number"
               min="0.5"
@@ -61,7 +61,7 @@
               required
             ></b-form-input>
           </b-col>
-          <b-col sm="9">
+          <b-col sm="8">
             <b-form-input
               id="type-range"
               type="range"
@@ -81,7 +81,7 @@
           </b-col>
           <b-col sm="10">
             <b-form-textarea
-              placeholder="Enter description (Optional)"
+              placeholder="請輸入工作說明..."
               rows="4"
               v-model="form.description"
             ></b-form-textarea>
@@ -90,7 +90,7 @@
 
         <b-row class="my-1">
           <b-col sm="2">
-            <h5 for="input-default">加班:</h5>
+            <h5 for="input-default">加班(是/否):</h5>
           </b-col>
           <b-col sm="1">
             <b-form-checkbox
@@ -106,7 +106,7 @@
               <b-col sm="2">
                 <h5 for="input-default">加班時間(hr):</h5>
               </b-col>
-              <b-col sm="1">
+              <b-col sm="2">
                 <b-form-input
                   type="number"
                   min="0.5"
@@ -118,7 +118,7 @@
                   required
                 ></b-form-input>
               </b-col>
-              <b-col sm="9">
+              <b-col sm="8">
                 <b-form-input
                   id="type-range"
                   type="range"
@@ -211,7 +211,7 @@ export default {
       },
     };
   },
-  mounted: function () {
+  mounted: function() {
     this.get_workhour();
     this.get_task();
   },

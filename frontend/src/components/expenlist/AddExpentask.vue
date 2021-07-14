@@ -7,7 +7,7 @@
             <th colspan="4"><h4>支出項目</h4></th>
           </tr>
           <tr>
-            <th>id</th>
+            <!-- <th>id</th> -->
             <th>支出項目</th>
           </tr>
         </thead>
@@ -18,7 +18,7 @@
             :to="{ expentask_name: 'ExpentaskDetail', params: { id: t.id } }"
             tag="tr"
           >
-            <td>{{ t.id }}</td>
+            <!-- <td>{{ t.id }}</td> -->
             <td>{{ t.expentask_name }}</td>
           </router-link>
         </tbody>
@@ -64,7 +64,7 @@ export default {
       },
     };
   },
-  mounted: function () {
+  mounted: function() {
     this.get_expentask();
   },
   methods: {

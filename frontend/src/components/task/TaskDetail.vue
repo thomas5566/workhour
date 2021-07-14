@@ -7,7 +7,7 @@
             <th colspan="4">Task Detail</th>
           </tr>
           <tr>
-            <th>id</th>
+            <!-- <th>id</th> -->
             <th>taskname</th>
             <th>fullname</th>
             <th>organization</th>
@@ -15,7 +15,7 @@
         </thead>
         <tbody>
           <tr>
-            <td>{{ task.id }}</td>
+            <!-- <td>{{ task.id }}</td> -->
             <td>{{ task.taskname }}</td>
             <td>{{ task.fullname }}</td>
             <td>{{ task.organization }}</td>

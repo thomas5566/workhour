@@ -219,7 +219,9 @@
                 </template>
               </tr>
               <tr>
-                <th>所選日期 總工時: {{ totalhours }}</th>
+                <th>所選日期 一般工時: {{ totalhours }}</th>
+                <th>所選日期 加班工時: {{ totalovertimehours }}</th>
+                <th>所選日期 總工時（含加班）: {{ totalhours + totalovertimehours }}</th>
               </tr>
             </tbody>
           </table>
@@ -354,6 +356,12 @@ export default {
       console.log(this.resultQuery);
       return this.resultQuery.reduce(function (totalhours, item) {
         return totalhours + item.hour;
+      }, 0);
+    },
+        totalovertimehours: function () {
+      console.log(this.resultQuery);
+      return this.resultQuery.reduce(function (totalovertimehours, item) {
+        return totalovertimehours + item.overtime_hour;
       }, 0);
     },
     // filterWorkhours() {

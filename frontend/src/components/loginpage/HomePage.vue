@@ -20,6 +20,7 @@ import axios from "axios";
 
 import 工作項目清單 from "../worklist/WorkhourLists.vue";
 import 支出項目清單 from "../expenlist/ExpenLists.vue";
+import 休假紀錄 from "../hr/DaysOffLists.vue";
 
 Vue.use(axios);
 
@@ -28,13 +29,14 @@ export default {
   components: {
     工作項目清單,
     支出項目清單,
+    休假紀錄,
   },
   props: {
     msg: String,
   },
   data() {
     return {
-      tabs: ["工作項目清單", "支出項目清單"],
+      tabs: ["工作項目清單", "支出項目清單", "休假紀錄"],
       component: "工作項目清單",
     };
   },

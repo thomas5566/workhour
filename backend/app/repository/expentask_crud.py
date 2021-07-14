@@ -1,24 +1,24 @@
 from sqlalchemy.orm import Session
 # from .. import models, schemas
 
-from ..models import expentask
+from ..models import ExpenTask
 from ..schemas import expentasks
 
 
 def get_expentask(db: Session, expentask_id: int):
-    return db.query(expentask.ExpenTask).filter(expentask.ExpenTask.id == expentask_id).first()
+    return db.query(ExpenTask).filter(ExpenTask.id == expentask_id).first()
 
 
 def get_expentask_by_expentaskname(db: Session, expentaskname: str):
-    return db.query(expentask.ExpenTask).filter(expentask.ExpenTask.expentask_name == expentaskname).first()
+    return db.query(ExpenTask).filter(ExpenTask.expentask_name == expentaskname).first()
 
 
 def get_expentasks(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(expentask.ExpenTask).offset(skip).limit(limit).all()
+    return db.query(ExpenTask).offset(skip).limit(limit).all()
 
 
 def create_expentask(db: Session, expentask_item: expentasks.ExpenTaskCreate):
-    db_expentask = expentask.ExpenTask(
+    db_expentask = ExpenTask(
         expentask_name=expentask_item.expentask_name)
     db.add(db_expentask)
     db.commit()
@@ -27,8 +27,8 @@ def create_expentask(db: Session, expentask_item: expentasks.ExpenTaskCreate):
 
 
 def update_expentask(db: Session, expentask_id: int):
-    db_expentask = db.query(expentask.ExpenTask).filter(
-        expentask.ExpenTask.id == expentask_id).first()
+    db_expentask = db.query(ExpenTask).filter(
+        ExpenTask.id == expentask_id).first()
     if db_expentask is None:
         return None
     for var, value in vars(db_expentask).items():

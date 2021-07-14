@@ -59,6 +59,13 @@ export function getTaskIdAPI(task_id) {
     })
 }
 
+export function getTaskByGroupAPI() {
+    return axios({
+        url: "/task/tasksgbw/",
+        method: 'get'
+    })
+}
+
 export function postTaskAPI(data) {
     return axios({
         url: "/task/",
@@ -202,5 +209,27 @@ export function getDepartmentsAPI() {
     return axios({
         url: "/department/",
         method: 'get'
+    })
+}
+
+export function getDaysoffAPI() {
+    return axios({
+        url: "/daysoff/",
+        method: 'get'
+    })
+}
+
+export function updateDaysoffAPI(dayoffId, data) {
+    return axios({
+        url: `/daysoff/${dayoffId}`,
+        method: 'put',
+        data: data
+    })
+}
+
+export function deleteDaysoffAPI(dayoff_id) {
+    return axios({
+        url: `/daysoff/${dayoff_id}`,
+        method: 'delete'
     })
 }

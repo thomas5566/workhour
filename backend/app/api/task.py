@@ -24,7 +24,7 @@ def create_task(task_items: tasks.TaskCreate, db: Session = Depends(get_db)):
     return task_crud.create_task(db=db, task_items=task_items)
 
 
-@router.get("/", response_model=List[allfull.TaskFull])
+@router.get("/", response_model=List[tasks.Task])
 def read_tasks(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     tasks_items = task_crud.get_tasks(db, skip=skip, limit=limit)
     return tasks_items

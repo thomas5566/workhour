@@ -9,7 +9,7 @@
           <b-nav-item to="/task">計畫項目清單</b-nav-item>
           <b-nav-item to="/expentask">支出費用清單</b-nav-item>
           <b-nav-item to="/taskbg" v-show="checklistAll_permission === 2"
-            >members</b-nav-item
+            >週報總覽</b-nav-item
           >
           <b-nav-item to="/user" v-show="checklistAll_permission === 1"
             >組員名單</b-nav-item
@@ -48,13 +48,13 @@ export default {
     };
   },
   computed: {
-    isLoggedIn: function () {
+    isLoggedIn: function() {
       return this.$store.getters.isAuthenticated;
     },
-    username: function () {
+    username: function() {
       return this.$store.getters.getUsername;
     },
-    fullname: function () {
+    fullname: function() {
       return this.$store.getters.getFullname;
     },
     checklistAll_permission() {

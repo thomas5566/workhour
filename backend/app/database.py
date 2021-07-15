@@ -15,7 +15,7 @@ database_name = os.environ.get('database_name', 'workhour')
 db_username = urllib.parse.quote_plus(
     str(os.environ.get('db_username', 'postgres')))
 db_password = urllib.parse.quote_plus(
-    str(os.environ.get('db_password', '1234')))
+    str(os.environ.get('db_password', '5566')))
 ssl_mode = urllib.parse.quote_plus(str(os.environ.get('ssl_mode', 'prefer')))
 SQLALCHEMY_DATABASE_URL = 'postgresql://{}:{}@{}:{}/{}?sslmode={}'.format(
     db_username, db_password, host_server, db_server_port, database_name, ssl_mode)

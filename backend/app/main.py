@@ -1,16 +1,18 @@
-import sys, os
+import sys
+import os
 sys.path.append(os.path.abspath(".."))
 
 import uvicorn as uvicorn
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine
-from app import model
+from fastapi import FastAPI
+from app.api import user, task, workhour, expentask, expen, department, daysoff
+from app.dependency import create_default_data
+from app.database import engine, Base
 
 # For DEV only, remove below 4 lines in production
 # from app.dependency import create_default_data
-# model.Base.metadata.drop_all(bind=engine)
-# model.Base.metadata.create_all(bind=engine)
+# Base.metadata.drop_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 # create_default_data()
 
 app = FastAPI()
@@ -34,7 +36,7 @@ app.add_middleware(
     
 )
 
-from app.api import user, task, workhour, expentask, expen, authentication, route_login, department
+from app.api import user, task, workhour, expentask, expen, authentication, route_login, department, daysoff
 # app.include_router(authentication.router)
 app.include_router(user.router)
 app.include_router(department.router)
@@ -42,6 +44,7 @@ app.include_router(task.router)
 app.include_router(workhour.router)
 app.include_router(expentask.router)
 app.include_router(expen.router)
+app.include_router(daysoff.router)
 # app.include_router(route_login.router)
 
 @app.get("/")

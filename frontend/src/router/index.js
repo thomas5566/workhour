@@ -13,6 +13,7 @@ import Workhour from "../components/worklist/AddWorkhour";
 import WorkhourDetail from "../components/worklist/WorkhourDetail";
 import Excel from "@/components/Excel.vue";
 import PdfPage from "@/components/layouts/PdfPage.vue";
+import DaysOffLists from '../components/hr/DaysOffLists.vue'
 // import StoredMembers from '../components/hr/StoredMembers.vue'
 
 Vue.use(VueRouter);
@@ -89,6 +90,11 @@ const routes = [
     path: "/pdfpage",
     name: "PdfPage",
     component: PdfPage,
+  },
+  {
+    path: "/daysoff",
+    name: "DaysOffLists",
+    component: DaysOffLists,
   },
   // {
   //   path: "/members",

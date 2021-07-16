@@ -219,6 +219,14 @@ export function getDaysoffAPI() {
     })
 }
 
+export function postDaysoffAPI(data) {
+    return axios({
+        url: "/daysoff/",
+        method: 'post',
+        data: data
+    })
+}
+
 export function updateDaysoffAPI(dayoffId, data) {
     return axios({
         url: `/daysoff/${dayoffId}`,

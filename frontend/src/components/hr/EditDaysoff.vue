@@ -33,14 +33,14 @@
       <p v-if="userNameValidity === 'invalid'">Please enter a valid name</p>
     </div> -->
     <div class="form-control">
-      <label for="date">休假日期</label>
-      <input
-        id="date"
-        name="date"
-        type="date"
+      <label for="dayoff-datepicker">休假日期:</label>
+      <b-form-datepicker
+        id="dayoff-datepicker"
         v-model="editDayoffData.daysoff_date"
-        ref="dayoffdateInput"
-      />
+        size="sm"
+        locale="zh"
+        class="mb-2"
+      ></b-form-datepicker>
     </div>
     <!-- <div
       class="form-control"
@@ -70,58 +70,18 @@
       />
       <p v-if="userNameValidity === 'invalid'">Please enter a valid name</p>
     </div>
-
     <div class="form-control">
-      <label for="type">休假說明</label>
-      <input
-        id="type"
-        name="type"
-        type="text"
-        v-model="editDayoffData.daysoff_name"
-        ref="dayofftypeInput"
-      />
+      <label>休假類別:</label>
+      <b-form-group v-slot="{ ariaDescribedby }">
+        <b-form-radio-group
+          v-model="editDayoffData.daysoff_name"
+          :options="options"
+          :aria-describedby="ariaDescribedby"
+          name="radios-stacked"
+          stacked
+        ></b-form-radio-group>
+      </b-form-group>
     </div>
-    <!-- <div class="form-control">
-        <label for="referrer">How did you hear about us?</label>
-        <select id="referrer" name="referrer" v-model="referrer">
-          <option value="google">Google</option>
-          <option value="wom">Word of mouth</option>
-          <option value="newspaper">Newspaper</option>
-        </select>
-      </div>
-    <div class="form-control">
-      <h2>休假型態</h2>
-      <div>
-        <input
-          id="type-dayoff"
-          name="type"
-          type="checkbox"
-          value="請假"
-          v-model="editDayoffData.daysoff_name"
-        />
-        <label for="type-dayoff">請假</label>
-      </div>
-      <div>
-        <input
-          id="type-leave"
-          name="type"
-          type="checkbox"
-          value="補修"
-          v-model="editDayoffData.daysoff_name"
-        />
-        <label for="type-leave">補修</label>
-      </div>
-      <div>
-        <input
-          id="interest-nothing"
-          name="interest"
-          type="checkbox"
-          value="nothing"
-          v-model="interest"
-        />
-        <label for="interest-nothing">Nothing</label>
-      </div> 
-    </div> -->
     <div>
       <button @click="$emit('onClose')">更新</button>
       <button @click.prevent="$emit('onClose')">取消</button>
@@ -174,7 +134,11 @@ export default {
         daysoff_hour: this.daysoffHour,
         daysoff_name: this.daysoffName,
       },
-
+      selected: null,
+      options: [
+        { text: "請假", value: "請假" },
+        { text: "補修", value: "補修" },
+      ],
       // type: [],
       // how: null,
       // confirm: false,

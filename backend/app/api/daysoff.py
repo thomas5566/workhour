@@ -27,6 +27,10 @@ def read_daysoff_lists(skip: int = 0, limit: int = 100, db: Session = Depends(ge
     return daysoff_items
 
 
+@router.get("/daysoffbyuser", response_model=List[allfull.DaysoffFull])
+def read_daysoff_by_user(db: Session = Depends(get_db), user=Depends(login_manager)):
+    user_id = user.id
+    return daysoff_crud.get_daysoff_by_userid(db, user_id)
 # @router.get("/tasksgbw", response_model=List[tasks.TaskGYBase])
 # def read_tasks_groupby_worklist(db: Session = Depends(get_db), user=Depends(login_manager)):
 #     user_dp = user.department_id

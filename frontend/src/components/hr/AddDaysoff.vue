@@ -21,12 +21,25 @@
           size="sm"
           locale="zh"
           class="mb-2"
+          :state="daysoff_date === null ? false : true"
+          required
         ></b-form-datepicker>
       </div>
       <div class="form-control">
-        <label for="hour">休假時數:</label>
-        <input id="hour" name="hour" type="number" v-model="daysoff_hour" />
+        <b-row class="my-1">
+          <label for="input-valid">休假時數:</label>
+          <b-col sm="9">
+            <b-form-input
+              id="input-valid"
+              :state="daysoff_hour === 0 ? false : true"
+              v-model="daysoff_hour"
+              type="number"
+              placeholder="請輸入時數..."
+            ></b-form-input>
+          </b-col>
+        </b-row>
       </div>
+
       <div class="form-control">
         <label>休假類別:</label>
         <b-form-group v-slot="{ ariaDescribedby }">
@@ -36,6 +49,7 @@
             :aria-describedby="ariaDescribedby"
             name="radios-stacked"
             stacked
+            required
           ></b-form-radio-group>
         </b-form-group>
       </div>
@@ -52,13 +66,13 @@ export default {
   emits: ["close"],
   data() {
     return {
-      userNameValidity: "pending",
+      userNameValidity: false,
 
       user_id: this.$store.getters.getUserId,
       username: this.$store.getters.getUsername,
       department: this.$store.getters.getDepartment.department_name,
       daysoff_date: null,
-      daysoff_hour: null,
+      daysoff_hour: 0,
       daysoff_name: null,
 
       selected: null,
@@ -75,10 +89,10 @@ export default {
   },
   methods: {
     validateInput() {
-      if (this.editDayoffData.daysoff_hour === "0") {
-        this.userNameValidity = "invalid";
+      if (this.daysoff_date === "") {
+        this.userNameValidity = false;
       } else {
-        this.userNameValidity = "valid";
+        this.userNameValidity = true;
       }
     },
     post_dayoff() {
@@ -99,7 +113,7 @@ export default {
           }
         });
       } catch (error) {
-        throw "Sorry you can't create a new Dayoff now!";
+        throw "Sorry you can't create a new Day off now!";
       }
       // await getWorkhourAPI().then(
       //   (response) => (this.workhours = response.data)

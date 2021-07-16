@@ -151,7 +151,7 @@ export default {
   },
   methods: {
     deleteDayoff(id) {
-      if (confirm("Are you sure you want to delete this item?")) {
+      if (confirm("確定要刪除這筆資料嗎?")) {
         deleteDaysoffAPI(id).then(() => {
           this.get_daysoff();
         });

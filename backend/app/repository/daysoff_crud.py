@@ -1,13 +1,16 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from sqlalchemy import text
 # from .. import models, schemas
 
 from ..models import DaysOff
 from ..schemas import daysoff
 
 
-def get_daysoff_by_id(db: Session, daysoff_id: int):
-    return db.query(DaysOff).filter(DaysOff.id == daysoff_id).first()
+def get_daysoff_by_userid(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    return db.query(DaysOff).order_by(text("daysoff_date desc")
+                                      ).filter(DaysOff.user_id == user_id
+                                               ).offset(skip).limit(limit).all()
 
 
 def get_daysoff_by_daysoffname(db: Session, daysoff_name: str):

@@ -20,14 +20,18 @@ router = APIRouter(
     tags=["User"],
 )
 
+
 @router.post("/", response_model=users.User)
 def create_user(user_item: users.UserCreate, db: Session = Depends(get_db)):
     db_user = user_crud.get_user_by_username(db, username=user_item.username)
     if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    pwhash = bcrypt.hashpw(bytes(user_item.password, 'utf-8'), bcrypt.gensalt())
+        raise HTTPException(
+            status_code=400, detail="Username already registered")
+    pwhash = bcrypt.hashpw(
+        bytes(user_item.password, 'utf-8'), bcrypt.gensalt())
     user_item.password = pwhash.decode('utf8')
     return user_crud.create_user(db=db, user_item=user_item)
+
 
 @router.get("/", response_model=List[users.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -36,7 +40,7 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 
 
 @router.get("/alldata", response_model=List[users.DataTotal])
-def read_users(db: Session = Depends(get_db)):
+def read_users_worklists_by_month(db: Session = Depends(get_db)):
     countall = user_crud.get_allusers_monthly(db)
     return countall
 
@@ -51,19 +55,21 @@ def get_user_bydp(db: Session = Depends(get_db), user=Depends(login_manager)):
     if list_dp_p == 1:
         users = user_crud.get_user_by_department(db, user_dp)
         return users
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                         detail="You are not permitted!!")
+
 
 @router.get('/my', response_model=allfull.UserFull)
 def read_user_my(user=Depends(login_manager)):
     return user
+
 
 @router.post('/login', response_model=users.UserToken)
 def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     username = data.username
     password = data.password
     user = user_crud.get_user_by_username(db, username=username)
-    
+
     if not user:
         raise HTTPException(status_code=400, detail="Username not found")
     elif not bcrypt.checkpw(bytes(data.password, 'utf-8'), bytes(user.password, 'utf-8')):
@@ -77,14 +83,15 @@ def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     user.expiration = datetime.now() + timedelta(hours=24)
     return user
 
+
 @router.get("/{user_id}", response_model=allfull.UserFull)
 def read_user(user_id: int, db: Session = Depends(get_db), user=Depends(login_manager)):
     list_dp_p = user.checklistAll_permission
     if list_dp_p == 1:
         db_user = user_crud.get_user(db, user_id=user_id)
         return db_user
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
-                    detail="You are not permitted!!")
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="You are not permitted!!")
     # if db_user is None:
     #     raise HTTPException(status_code=404, detail="User not found")
     # return db_user

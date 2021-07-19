@@ -1,7 +1,8 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager
+from sqlalchemy.sql.expression import extract
 # from sqlalchemy import text, func, cast, Numeric, union
 # from .. import models
-from ..models import User, Workhour, Department
+from ..models import User, Workhour, Department, Task
 from ..schemas import users
 
 
@@ -24,15 +25,24 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 
 
 def get_allusers_monthly(db: Session):
-    join_query = db.query(User, Department, Workhour)\
-        .join(Department, Department.id == User.department_id)\
-        .join(Workhour, Workhour.user_id == User.id)
+    q = (db.query(User)
+         .join(Workhour)
+         .join(Department)
+         # @note: here we are tricking sqlalchemy to think that we loaded all these relationships,
+         # even though we filter them out by version. Please use this only to get data and display,
+         # but not to continue working with it as if it were a regular UnitOfWork
+         .options(
+        contains_eager(User.workhours).
+        contains_eager(Workhour.user)
+        # contains_eager(user.User.department)
+        )
+        .filter(User.id == Workhour.user_id,)
+        .filter(extract('year', Workhour.date) == 2021)
+        .filter(extract('month', Workhour.date) == 6)
+        .order_by(Workhour.date.desc())
+        ).all()
 
-    for row in join_query.all():
-        print("(")
-        for item in row:
-            print("   ", item)
-        print(")")
+    return q
     # return join_query
     # qry = (db.query(
     #     func.to_char(workhour.Workhour.date,

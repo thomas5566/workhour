@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 import datetime
 
@@ -35,5 +35,3 @@ class Workhour(WorkhourBase):
 
     class Config:
         orm_mode = True
-
-

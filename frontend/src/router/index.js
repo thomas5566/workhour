@@ -14,7 +14,7 @@ import WorkhourDetail from "../components/worklist/WorkhourDetail";
 import Excel from "@/components/Excel.vue";
 import PdfPage from "@/components/layouts/PdfPage.vue";
 import DaysOffLists from '../components/hr/DaysOffLists.vue'
-// import StoredMembers from '../components/hr/StoredMembers.vue'
+import StoredMembers from '../components/hr/StoredMembers.vue'
 
 Vue.use(VueRouter);
 const routes = [
@@ -96,11 +96,11 @@ const routes = [
     name: "DaysOffLists",
     component: DaysOffLists,
   },
-  // {
-  //   path: "/members",
-  //   name: "StoredMembers",
-  //   component: StoredMembers,
-  // },
+  {
+    path: "/members",
+    name: "StoredMembers",
+    component: StoredMembers,
+  },
 ];
 const router = new VueRouter({
   mode: "history",

@@ -21,6 +21,18 @@ class Department(IdMixin, Base, TimestampMixin):
     user = relationship("User", back_populates="department", uselist=False)
 
 
+class Task(IdMixin, Base, TimestampMixin):
+
+    __tablename__ = "task"
+
+    taskname = Column(String(255), index=True)
+    fullname = Column(String(255))
+    organization = Column(String(255))
+    is_active = Column(Boolean(), default=True)
+
+    workhours = relationship("Workhour", back_populates="task")
+
+
 class User(IdMixin, Base, TimestampMixin):
 
     __tablename__ = "user"
@@ -39,17 +51,6 @@ class User(IdMixin, Base, TimestampMixin):
     department_id = Column(Integer, ForeignKey("department.id"))
     department = relationship(
         "Department", back_populates="user", uselist=False)
-
-
-class Task(IdMixin, Base, TimestampMixin):
-
-    __tablename__ = "task"
-
-    taskname = Column(String(255), index=True)
-    fullname = Column(String(255))
-    organization = Column(String(255))
-    is_active = Column(Boolean(), default=True)
-    workhours = relationship("Workhour", back_populates="task")
 
 
 class ExpenTask(IdMixin, Base, TimestampMixin):

@@ -214,7 +214,7 @@ export function getDepartmentsAPI() {
 
 export function getDaysoffAPI() {
     return axios({
-        url: "/daysoff/",
+        url: "/daysoff/daysoffbyuser/",
         method: 'get'
     })
 }

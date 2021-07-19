@@ -8,11 +8,9 @@
           <b-nav-item to="/expen">支出費用</b-nav-item>
           <b-nav-item to="/task">計畫項目清單</b-nav-item>
           <b-nav-item to="/expentask">支出費用清單</b-nav-item>
-          <b-nav-item to="/members">members</b-nav-item>
-          <b-nav-item to="/taskbg" v-show="checklistAll_permission === 2"
-            >週報總覽</b-nav-item
-          >
-          <b-nav-item to="/user" v-show="checklistAll_permission === 1"
+          <b-nav-item to="/taskbg">週報總覽</b-nav-item>
+          <b-nav-item to="/alluserworklists">alluserworklists</b-nav-item>
+          <b-nav-item to="/userbydp" v-show="checklistAll_permission === 1"
             >組員名單</b-nav-item
           >
           <b-nav-item to="/task" v-show="checklistAll_permission === 1"

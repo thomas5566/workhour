@@ -23,6 +23,13 @@ export function getUserByDpAPI() {
     })
 }
 
+export function getUsersAllAPI() {
+    return axios({
+        url: "/user/users-alldata",
+        method: 'get'
+    })
+}
+
 export function getUserIdAPI(user_id) {
     return axios({
         url: "/user/" + user_id,

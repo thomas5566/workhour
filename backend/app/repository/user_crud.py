@@ -35,12 +35,12 @@ def get_allusers_monthly(db: Session):
         contains_eager(User.workhours).
         contains_eager(Workhour.user)
         # contains_eager(user.User.department)
-        )
+    )
         .filter(User.id == Workhour.user_id,)
         .filter(extract('year', Workhour.date) == 2021)
-        .filter(extract('month', Workhour.date) == 6)
+        .filter(extract('month', Workhour.date) == 7)
         .order_by(Workhour.date.desc())
-        ).all()
+    ).all()
 
     return q
     # return join_query

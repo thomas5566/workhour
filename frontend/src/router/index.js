@@ -15,6 +15,7 @@ import Excel from "@/components/Excel.vue";
 import PdfPage from "@/components/layouts/PdfPage.vue";
 import DaysOffLists from '../components/hr/DaysOffLists.vue'
 import StoredMembers from '../components/hr/StoredMembers.vue'
+import AlluserWorklists from '../pages/AlluserWorklists.vue'
 
 Vue.use(VueRouter);
 const routes = [
@@ -37,7 +38,7 @@ const routes = [
   },
 
   {
-    path: "/user",
+    path: "/userbydp",
     name: "User",
     component: User,
   },
@@ -100,6 +101,11 @@ const routes = [
     path: "/members",
     name: "StoredMembers",
     component: StoredMembers,
+  },
+  {
+    path: "/alluserworklists",
+    name: "AlluserWorklists",
+    component: AlluserWorklists,
   },
 ];
 const router = new VueRouter({

@@ -37,7 +37,7 @@ def read_tasks_groupby_worklist(db: Session = Depends(get_db), user=Depends(logi
     print("department_id:", user_dp)
     print("permission:", list_dp_p)
     # print(current_user.is_superuser)
-    if list_dp_p == 2:
+    if list_dp_p == 1:
         tasks_items = task_crud.get_tasks_by_worklist(db)
         return tasks_items
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,

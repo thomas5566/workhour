@@ -34,15 +34,15 @@ def create_user(user_item: users.UserCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=List[users.User])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = user_crud.get_users(db, skip=skip, limit=limit)
     return users
 
 
-@router.get("/alldata", response_model=List[users.DataTotal])
-def read_users_worklists_by_month(db: Session = Depends(get_db)):
-    countall = user_crud.get_allusers_monthly(db)
-    return countall
+@router.get("/users-alldata", response_model=List[users.DataTotal])
+def get_users_worklists_by_month(db: Session = Depends(get_db)):
+    get_all = user_crud.get_allusers_monthly(db)
+    return get_all
 
 
 @router.get("/get-dpuser", response_model=List[users.User])

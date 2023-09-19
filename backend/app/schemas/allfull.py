@@ -6,11 +6,13 @@ from .expentasks import ExpenTask
 from .tasks import Task
 from .whorkhours import Workhour
 from .daysoff import Daysoff
+from .cstshop import CstShpo
 
 
 class WorkhourFull(Workhour):
     user: Optional[User]
     task: Optional[Task]
+    shop: Optional[CstShpo]
 
 
 class ExpenditureFull(Expenditure):

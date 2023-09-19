@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, contains_eager
 from fastapi import HTTPException, status
 # from .. import models, schemas
 
-from ..models import Task, Workhour, User
+from ..models import Task, Workhour, User, CstShop
 from ..schemas import tasks
 
 
@@ -18,7 +18,7 @@ def get_task_by_taskname(db: Session, taskname: str):
 def get_tasks(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Task).filter(Task.is_active == "true").offset(skip).limit(limit).all()
     # results = db.query(task.Task, workhour.Workhour).join(workhour.Workhour).all()
-    # return results
+    # return results    
 
 
 def get_tasks_by_worklist(db: Session):

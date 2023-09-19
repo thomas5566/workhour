@@ -1,6 +1,6 @@
 <template>
   <header>
-    <img src="../../images/YCLogo.jpg" alt="YC" />
+    <img src="../../images/it2.jpg" alt="YC" />
     <!-- <h3>使命 :「為下一代留下永續的地球」</h3>
     <h3>A Sustainable Planet for Next Generations</h3> -->
   </header>
@@ -13,7 +13,7 @@ export default {};
 <style scoped>
 header {
   width: 100%;
-  height: 5rem;
+  height: 12rem;
   background-color: white;
   display: flex;
 

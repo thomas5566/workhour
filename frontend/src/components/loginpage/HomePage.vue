@@ -1,43 +1,41 @@
 <template>
-  <base-card v-if="isLoggedIn">
-    <b-button
-      squared
-      variant="outline-primary"
-      v-for="tab in tabs"
-      :key="tab"
-      @click="component = tab"
-      >{{ tab }}
-    </b-button>
+  <div v-if="isLoggedIn">
+    <!-- <b-button
+        squared
+        variant="outline-primary"
+        v-for="tab in tabs"
+        :key="tab"
+        @click="component = tab"
+        >{{ tab }}
+      </b-button> -->
     <keep-alive>
       <component :is="component" />
     </keep-alive>
-  </base-card>
+  </div>
   <base-card v-else>No Data</base-card>
 </template>
 <script>
 import Vue from "vue";
 import axios from "axios";
 
-import 工作項目清單 from "../worklist/WorkhourLists.vue";
-import 支出項目清單 from "../expenlist/ExpenLists.vue";
-import 休假紀錄 from "../hr/DaysOffLists.vue";
+import WorkhourLists from "../worklist/WorkhourLists.vue";
+import DaysOffLists from "../hr/DaysOffLists.vue";
 
 Vue.use(axios);
 
 export default {
   name: "Home",
   components: {
-    工作項目清單,
-    支出項目清單,
-    休假紀錄,
+    WorkhourLists,
+    DaysOffLists,
   },
   props: {
     msg: String,
   },
   data() {
     return {
-      tabs: ["工作項目清單", "支出項目清單", "休假紀錄"],
-      component: "工作項目清單",
+      // tabs: ["WorkhourLists", "DaysOffLists"],
+      component: "WorkhourLists",
     };
   },
   computed: {
@@ -46,7 +44,6 @@ export default {
     },
   },
   mounted: function () {},
-  created() {},
   methods: {},
 };
 </script>

@@ -31,6 +31,7 @@ class Task(IdMixin, Base, TimestampMixin):
     is_active = Column(Boolean(), default=True)
 
     workhours = relationship("Workhour", back_populates="task")
+    cstshops = relationship("CstShop", back_populates="task")
 
 
 class User(IdMixin, Base, TimestampMixin):
@@ -68,15 +69,21 @@ class Workhour(IdMixin, Base, TimestampMixin):
 
     user_id = Column(Integer, ForeignKey("user.id"))
     task_id = Column(Integer, ForeignKey("task.id"))
-    date = Column(Date)
+    shop_id = Column(Integer, ForeignKey("cst_shop.id"))
+    start_date = Column(Date)
     hour = Column(Numeric(4, 2))
-    is_overtime = Column(Boolean, default=False)
+    case_close = Column(Boolean, default=False)
     overtime_hour = Column(Numeric(4, 2))
     description = Column(String(255), index=True)
     active = Column(Boolean, default=True)
+    end_date = Column(Date)
+    todo = Column(String(255), index=True)
+    cause_issue = Column(String(255), index=True)
+    processing_method = Column(String(255), index=True)
 
     user = relationship("User", back_populates="workhours", uselist=False)
     task = relationship("Task", back_populates="workhours", uselist=False)
+    shop = relationship("CstShop", back_populates="workhours", uselist=False)
 
 
 class Expenditure(IdMixin, Base, TimestampMixin):
@@ -106,3 +113,14 @@ class DaysOff(IdMixin, Base, TimestampMixin):
 
     user_id = Column(Integer, ForeignKey("user.id"))
     user = relationship("User", back_populates="daysoff")
+
+class CstShop(IdMixin, Base):
+
+    __tablename__ = "cst_shop"
+
+    main_department_id = Column(Integer, ForeignKey("task.id"))    
+    shop_name = Column(String(255))
+    shop_number = Column(String(255))
+
+    task = relationship("Task", back_populates="cstshops")
+    workhours = relationship("Workhour", back_populates="shop")

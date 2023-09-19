@@ -2,14 +2,11 @@
   <div>
     <b-table :items="userlistes" :fields="fields" striped responsive="sm">
       <template #cell(show_details)="row">
-        <b-button size="sm" @click="row.toggleDetails" class="mr-2"
-          >{{ row.detailsShowing ? "Hide" : "Show" }} Details</b-button
-        >
+        <b-button size="sm" @click="row.toggleDetails" class="mr-2">{{ row.detailsShowing ? "Hide" : "Show" }}
+          Details</b-button>
       </template>
       <template #cell(check_permission)="row">
-        <b-check size="sm" class="mr-2"
-          >{{ row.detailsShowing ? "Hide" : "Show" }} Check</b-check
-        >
+        <b-check size="sm" class="mr-2">{{ row.detailsShowing ? "Hide" : "Show" }} Check</b-check>
       </template>
 
       <template #row-details="row">
@@ -86,7 +83,11 @@ export default {
   },
   methods: {
     get_members() {
-      getUsersAllAPI().then((response) => (this.userlistes = response.data));
+      getUsersAllAPI()
+        .then((response) => (this.userlistes = response.data))
+        .catch((err) => {
+          console.error(err)
+        });
     },
   },
 };

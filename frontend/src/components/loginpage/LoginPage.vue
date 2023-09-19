@@ -1,11 +1,12 @@
 <template>
   <div class="login">
+
     <body class="img js-fullheight" :style="cssProps">
       <section class="ftco-section">
         <div class="container">
           <div class="row justify-content-center">
             <div class="col-md-6 text-center mb-5">
-              <h1 class="heading-section">YC Consultant</h1>
+              <h1 class="heading-section">資訊服務紀錄系統</h1>
             </div>
           </div>
           <div class="row justify-content-center">
@@ -18,12 +19,7 @@
                       <b-input-group-prepend is-text>
                         <b-icon icon="person-fill"></b-icon>
                       </b-input-group-prepend>
-                      <b-form-input
-                        type="text"
-                        placeholder="Username"
-                        v-model="form.username"
-                        required
-                      ></b-form-input>
+                      <b-form-input type="text" placeholder="Username" v-model="form.username" required></b-form-input>
                     </b-input-group>
                     <!-- <input
                       type="text"
@@ -38,12 +34,8 @@
                       <b-input-group-prepend is-text>
                         <b-icon icon="lock-fill"></b-icon>
                       </b-input-group-prepend>
-                      <b-form-input
-                        type="password"
-                        placeholder="Password"
-                        v-model="form.password"
-                        required
-                      ></b-form-input>
+                      <b-form-input type="password" placeholder="Password" v-model="form.password"
+                        required></b-form-input>
                     </b-input-group>
                     <!-- <input
                       id="password-field"
@@ -53,40 +45,34 @@
                       v-model="form.password"
                       required
                     /> -->
-                    <span
-                      toggle="#password-field"
-                      class="fa fa-fw fa-eye field-icon toggle-password"
-                    ></span>
+                    <span toggle="#password-field" class="fa fa-fw fa-eye field-icon toggle-password"></span>
                   </div>
-                  <div class="form-group">
-                    <button
-                      type="submit"
-                      class="form-control btn btn-primary submit px-3"
-                    >
-                      Sign In
-                    </button>
-                  </div>
+                  <!-- <div class="form-group">
+                    <row>
+                      <button type="submit" class="form-control btn btn-primary submit px-3">
+                        登入
+                      </button>
+                    </row>
+                    <row>
+                      <div class="form-control btn btn-primary submit px-3">
+                        <a href="/register" style="color: #0a0a0a">註冊</a>
+                      </div>
+                    </row>
+                  </div> 
                   <div class="form-group d-md-flex">
                     <div class="w-50">
-                      <label class="checkbox-wrap checkbox-primary"
-                        >Remember Me
+                      <label class="checkbox-wrap checkbox-primary">Remember Me
                         <input type="checkbox" checked />
                         <span class="checkmark"></span>
                       </label>
                     </div>
-                    <div class="w-50 text-md-right">
-                      <a href="/register" style="color: #fff">Sign Up</a>
-                    </div>
-                  </div>
+                  </div> -->
                 </form>
-                <p class="w-100 text-center">&mdash; Or Visit &mdash;</p>
                 <div class="social d-flex text-center">
-                  <a @click="linktofb" class="px-2 py-2 mr-md-1 rounded"
-                    ><span class="ion-logo-facebook mr-2"></span> Facebook</a
-                  >
-                  <a @click="linktoyt" class="px-2 py-2 ml-md-1 rounded"
-                    ><span class="ion-logo-twitter mr-2"></span> Youtube</a
-                  >
+                  <a @click="submit" class="px-2 py-2 mr-md-1 rounded"><span class="ion-logo-facebook mr-2"></span>
+                    登入</a>
+                  <a @click="register" class="px-2 py-2 ml-md-1 rounded"><span class="ion-logo-twitter mr-2"></span>
+                    註冊</a>
                 </div>
               </div>
             </div>
@@ -204,7 +190,7 @@ export default {
   data() {
     return {
       cssProps: {
-        backgroundImage: `url(${require("../../images/2.jpg")})`,
+        backgroundImage: `url(${require("../../images/bg.jpg")})`,
       },
       form: {
         username: "",
@@ -213,6 +199,7 @@ export default {
       showError: false,
     };
   },
+
   methods: {
     ...mapActions(["LogIn"]),
     async submit() {
@@ -223,6 +210,8 @@ export default {
         await this.LogIn(User);
         this.$router.push("/home");
         this.showError = false;
+        // sessionStorage.setItem("store", JSON.stringify(this.$store.state));
+        window.sessionStorage.setItem("token", this.$store.getters.getToken);
       } catch (error) {
         this.showError = true;
       }
@@ -232,19 +221,14 @@ export default {
         type: "setUserData",
         userData: this.user,
       });
+
       this.$router.push("/home");
     },
-    linktofb() {
-      window.open(
-        "https://www.facebook.com/%E6%B0%B8%E6%99%BA%E9%A1%A7%E5%95%8F%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8-100589515034076"
-      );
-    },
-    linktoyt() {
-      window.open("https://www.youtube.com/channel/UC105KwWByx2gju0bploT5Cg");
+    async register() {
+      this.$router.push("/register");
     },
   },
 };
 </script>
 
-<style scoped src="../../static/css/loginpage.css">
-</style>
+<style scoped src="../../static/css/loginpage.css"></style>

@@ -18,10 +18,11 @@ function endLoading() {
 }
 
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = 'http://127.0.0.1:8000/';
+axios.defaults.baseURL = "http://10.133.6.45:8000/api/";
+// axios.defaults.baseURL = "http://127.0.0.1:8000/api/";
 // axios.defaults.baseURL = 'http://192.168.0.123:8000/';
 // axios.defaults.baseURL = "http://192.168.0.124:8000/";
-// axios.defaults.baseURL = 'http://0.0.0.0:80/';
+// axios.defaults.baseURL = "http://127.0.0.1:5566/";
 
 // 請求攔截
 axios.interceptors.request.use(
@@ -45,6 +46,7 @@ axios.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.log(error);
     Message.error(error.response.data);
     endLoading();
 
@@ -54,16 +56,28 @@ axios.interceptors.response.use(
     if (status === 401) {
       Message.error("請重新登入");
       //清楚token
-      this.$store.dispatch("LogOut");
+      //console.log(this.$store);
+      // this.$store.dispatch("LogOut");
       //跳轉到登入頁面
-      router.push("/login");
+      router.push("/login").catch((error) => {
+        console.info(error.message);
+      });
     }
     if (status === 400) {
-      Message.error("You are not authorized");
+      Message.error("Bad Request");
       //清楚token
       this.$store.dispatch("LogOut");
       //跳轉到登入頁面
-      router.push("/login");
+      router.push("/").catch((error) => {
+        console.info(error.message);
+      });
+    }
+    if (status === 404) {
+      Message.error("Page Not Found");
+      //跳轉到登入頁面
+      router.push("/").catch((error) => {
+        console.info(error.message);
+      });
     }
     return Promise.reject(error);
   }

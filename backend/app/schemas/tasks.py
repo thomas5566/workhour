@@ -18,10 +18,21 @@ class WorkhourTaskFull(BaseModel):
         orm_mode = True
 
 
+class CstShposList(BaseModel):
+    id: int
+    main_department_id: int    
+    shop_name: str
+    shop_number: str
+
+    class Config:
+        orm_mode = True
+
+
 class TaskBase(BaseModel):
     taskname: str
     fullname: str
     organization: str
+    cstshops: List[CstShposList] = []    
 
 
 class TaskCreate(TaskBase):

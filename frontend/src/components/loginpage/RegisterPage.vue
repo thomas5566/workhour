@@ -68,79 +68,43 @@
           <div class="col-md-5 col-lg-5">
             <div class="wrap">
               <div class="img">
-                <img src="../../images/5566.gif" height="230px" width="440px" />
+                <img src="../../images/it.jpg" height="230px" width="240px" />
               </div>
               <div class="login-wrap p-4 p-md-6">
-                <div class="d-flex">
+                <div class="d-flex-center">
                   <div class="w-100">
-                    <h3 class="mb-6">YC Consultant</h3>
+                    <h3 class="mb-6">春水堂資訊部</h3>
                   </div>
                 </div>
                 <form class="signin-form" @submit.prevent="post_user">
                   <div class="form-group mt-4">
-                    <input
-                      type="text"
-                      class="form-control"
-                      required
-                      v-model="form.username"
-                    />
-                    <label class="form-control-placeholder" for="username"
-                      >Username</label
-                    >
+                    <input type="text" class="form-control" required v-model="form.username" />
+                    <label class="form-control-placeholder" for="username">員工編號</label>
                   </div>
 
                   <div class="form-group mt-4">
-                    <input
-                      id="password-field"
-                      type="password"
-                      class="form-control"
-                      v-model="form.password"
-                      required
-                    />
-                    <label class="form-control-placeholder" for="password"
-                      >Password</label
-                    >
-                    <span
-                      toggle="#password-field"
-                      class="fa fa-fw fa-eye field-icon toggle-password"
-                    ></span>
+                    <input id="password-field" type="password" class="form-control" v-model="form.password" required />
+                    <label class="form-control-placeholder" for="password">Password</label>
+                    <span toggle="#password-field" class="fa fa-fw fa-eye field-icon toggle-password"></span>
                   </div>
 
                   <div class="form-group mt-4">
-                    <select
-                      id="department-field"
-                      type="text"
-                      class="form-control"
-                      v-model="form.department_id"
-                      required
-                    >
-                      <option value="0" disabled selected>
+                    <select id="department-field" type="text" class="form-control" v-model="form.department_id" required>
+                      <option value="" disabled selected>
                         ---------------------請選擇部門---------------------
                       </option>
-                      <option
-                        v-for="department in departments"
-                        :value="department"
-                        :key="department.id"
-                      >
+                      <option v-for="department in departments" :value="department" :key="department.id">
                         {{ department.id }}.
                         {{ department.department_name }}
                       </option>
                     </select>
-                    <label class="form-control-placeholder" for="department"
-                      >Department</label
-                    >
-                    <span
-                      toggle="#department-field"
-                      class="fa fa-fw fa-eye field-icon toggle-department"
-                    ></span>
+                    <label class="form-control-placeholder" for="department">Department</label>
+                    <span toggle="#department-field" class="fa fa-fw field-icon toggle-department"></span>
                   </div>
 
                   <div class="form-group">
-                    <button
-                      type="submit"
-                      class="form-control btn btn-primary rounded submit px-3"
-                      @submit.prevent="submit"
-                    >
+                    <button type="submit" class="form-control btn btn-primary rounded submit px-3"
+                      @submit.prevent="submit">
                       Sign Up
                     </button>
                   </div>
@@ -169,7 +133,7 @@ export default {
       form: {
         username: "",
         password: "",
-        department_id: 0,
+        department_id: "",
         is_superuser: false,
       },
       showError: false,
@@ -211,4 +175,10 @@ export default {
 </script>
 
 <style scoped src="../../static/css/registerpage.css">
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+}
 </style>

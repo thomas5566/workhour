@@ -26,11 +26,35 @@ def read_workhours(db: Session = Depends(get_db), user=Depends(login_manager)):
     user_id = user.id
     return workhour_crud.get_workhours(db, user_id)
 
-# @router.get("/worklist-group", response_model=List[schemas.WorkhourFull])
-# def read_workhours(user: schemas.User, db: Session = Depends(get_db)):
-#     group = user.department
-#     return workhour_crud.get_worklist_by_group(db, group)
+@router.get("/allworkhours", response_model=List[allfull.WorkhourFull])
+def read_all_workhours(db: Session = Depends(get_db), user=Depends(login_manager)):    
+    return workhour_crud.get_all_workhours(db)
 
+
+@router.get("/worklist-year-month", response_model=List[whorkhours.WorkhourByYearMonth])
+def read_workhours(db: Session = Depends(get_db)):
+    db_get_worklist_by_year_month = workhour_crud.get_worklist_by_yearmonth(db)
+    
+    if db_get_worklist_by_year_month is None:
+        raise HTTPException(status_code=404, detail="Get worklist by year and month is not found")
+    return db_get_worklist_by_year_month
+
+
+@router.get("/worklist-userid", response_model=List[whorkhours.WorkhourByUserId])
+def read_workhours(db: Session = Depends(get_db)):
+    db_get_worklist_by_user_id = workhour_crud.get_worklist_by_userid(db)
+    
+    if db_get_worklist_by_user_id is None:
+        raise HTTPException(status_code=404, detail="Get worklist by user id is not found")
+    return db_get_worklist_by_user_id
+
+
+@router.get("/worklist-shopid", response_model=List[whorkhours.WorkhourByShopId])
+def read_workhours(db: Session = Depends(get_db)):
+    db_get_worklist_by_shop_id = workhour_crud.get_worklist_by_shopid(db)
+    if db_get_worklist_by_shop_id is None:
+        raise HTTPException(status_code=404, detail="Get worklist by shop id is not found")
+    return db_get_worklist_by_shop_id
 
 # def read_workhours(skip: int = 0, limit: int = 100, user_id: int = None, task_id: int = None, db: Session = Depends(get_db)):
 #     if user_id and task_id:

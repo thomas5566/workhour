@@ -2,10 +2,10 @@
   <div>
     <b-card title="Card Title" no-body>
       <b-card-header header-tag="nav">
-        <b-nav card-header tabs justified>
+        <b-nav card-header justified>
           <b-nav-item to="/home">首頁</b-nav-item>
-          <b-nav-item to="/workhour">計畫項目</b-nav-item>
-          <b-nav-item to="/expen">支出費用</b-nav-item>
+          <!-- <b-nav-item to="/workhour">計畫項目</b-nav-item> -->
+          <!-- <b-nav-item to="/expen">支出費用</b-nav-item>
           <b-nav-item to="/task">計畫項目清單</b-nav-item>
           <b-nav-item to="/expentask">支出費用清單</b-nav-item>
           <b-nav-item to="/taskbg">週報總覽</b-nav-item>
@@ -16,7 +16,7 @@
           <b-nav-item to="/task" v-show="checklistAll_permission === 1"
             >計畫項目清單</b-nav-item
           >
-          <b-nav-item to="/excel">匯出Excel</b-nav-item>
+          <b-nav-item to="/excel">匯出Excel</b-nav-item> -->
           <b-nav-item href="./123.pdf" target="_blank">
             <b-icon icon="info-circle-fill" variant="info"></b-icon>
           </b-nav-item>
@@ -63,7 +63,10 @@ export default {
   methods: {
     async logout() {
       await this.$store.dispatch("LogOut");
-      this.$router.push("/login");
+      // 清空vuex與sessionStorage, 並發送logout事件使其他頁面的storage攔截
+      window.sessionStorage.clear();
+      window.localStorage.clear();
+      this.$router.push({ name: "LoginPage" });
     },
   },
 };

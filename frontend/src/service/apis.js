@@ -276,3 +276,24 @@ export function deleteDaysoffAPI(dayoff_id) {
     method: "delete",
   });
 }
+
+export function getBranchListAPI() {
+  return axios({
+    url: "/branchlist/",
+    method: "get",
+  });
+}
+
+export function getServerListAPI() {
+  return axios({
+    url: "/serverlist/",
+    method: "get",
+  });
+}
+
+export function getServerListByBranchIdAPI(branch_id) {
+  return axios({
+    url: "/serverlist/serverlist-branchid?branch_id=" + branch_id,
+    method: "get",
+  });
+}

@@ -3,7 +3,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(".."))
 
-from app.api import user, task, workhour, expentask, expen, authentication, route_login, department, daysoff, cstshop
+from app.api import user, task, workhour, expentask, expen, authentication, route_login, department, daysoff, cstshop, branchlist, serverlist
 from app.database import engine, Base
 from app.dependency import create_default_data
 from fastapi.responses import RedirectResponse
@@ -63,10 +63,12 @@ app.include_router(user.router, prefix=settings.API_V1_STR)
 app.include_router(department.router, prefix=settings.API_V1_STR)
 app.include_router(task.router, prefix=settings.API_V1_STR)
 app.include_router(workhour.router, prefix=settings.API_V1_STR)
-app.include_router(expentask.router, prefix=settings.API_V1_STR)
-app.include_router(expen.router, prefix=settings.API_V1_STR)
-app.include_router(daysoff.router, prefix=settings.API_V1_STR)
+# app.include_router(expentask.router, prefix=settings.API_V1_STR)
+# app.include_router(expen.router, prefix=settings.API_V1_STR)
+# app.include_router(daysoff.router, prefix=settings.API_V1_STR)
 app.include_router(cstshop.router, prefix=settings.API_V1_STR)
+app.include_router(branchlist.router, prefix=settings.API_V1_STR)
+app.include_router(serverlist.router, prefix=settings.API_V1_STR)
 # app.include_router(route_login.router)
 
 

@@ -86,6 +86,15 @@
               </p>
             </a>
           </li>
+          <li class="nav-item">
+            <a href="/#/serverlist" class="nav-link">
+              <i class="nav-icon fas fa-edit"></i>
+              <p>
+                設備清單
+                <span class="right badge badge-danger">New</span>
+              </p>
+            </a>
+          </li>
           <!-- <li class="nav-item">
             <a href="/chartExample" class="nav-link">
               <i class="nav-icon fas fa-copy"></i>

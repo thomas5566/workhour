@@ -8,12 +8,12 @@ import os
 # SQLALCHEMY_DATABASE_URL = config.settings.DATABASE_URL
 
 # For office local postgresql
-host_server = os.environ.get('host_server', 'localhost')
+host_server = os.environ.get('host_server', '10.133.6.45') # Server Name
 db_server_port = urllib.parse.quote_plus(
-    str(os.environ.get('db_server_port', '5432')))
-database_name = os.environ.get('database_name', 'workhour')
+    str(os.environ.get('db_server_port', '5432'))) # Server Port
+database_name = os.environ.get('database_name', 'workhour') # Database Name
 db_username = urllib.parse.quote_plus(
-    str(os.environ.get('db_username', 'postgres')))
+    str(os.environ.get('db_username', 'postgres'))) 
 db_password = urllib.parse.quote_plus(
     str(os.environ.get('db_password', '1234')))
 ssl_mode = urllib.parse.quote_plus(str(os.environ.get('ssl_mode', 'prefer')))

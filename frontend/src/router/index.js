@@ -19,6 +19,7 @@ import AlluserWorklists from "../pages/AlluserWorklists.vue";
 import DashboardV2 from "../pages/DashboardV2.vue";
 import AllWorkLists from "../components/worklist/AllWorkLists.vue";
 import ChartExample from "../components/worklist/ChartExample.vue";
+import ServerList from "../components/serverlist/ServerListDetail.vue";
 
 import store from "@/store";
 
@@ -132,6 +133,11 @@ const routes = [
     path: "/dashboardV2",
     name: "DashboardV2",
     component: DashboardV2,
+  },
+  {
+    path: "/serverlist",
+    name: "ServerList",
+    component: ServerList,
   },
 ];
 

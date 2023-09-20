@@ -5,7 +5,6 @@
       <Sidebar></Sidebar>
 
       <div class="content-wrapper">
-        <ContentHeader></ContentHeader>
         <section class="content">
           <div class="container-fluid">
             <div id="app">
@@ -28,8 +27,8 @@
 
 // import TheHeaderNav from "@/components/layouts/TheHeaderNav.vue";
 // import TheHeader from "@/components/layouts/TheHeaders.vue";
+// import ContentHeader from "./dashboard/ContentHeader.vue";
 
-import ContentHeader from "./dashboard/ContentHeader.vue";
 import Navbar from "./dashboard/Navbar.vue";
 import Sidebar from "./dashboard/Sidebar.vue";
 import Footer from "./dashboard/Footer.vue";
@@ -40,7 +39,7 @@ export default {
     // NavBar,
     // TheHeaderNav,
     // TheHeader,
-    ContentHeader,
+    // ContentHeader,
     Navbar,
     Sidebar,
     Footer,

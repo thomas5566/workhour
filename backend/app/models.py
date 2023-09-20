@@ -124,3 +124,25 @@ class CstShop(IdMixin, Base):
 
     task = relationship("Task", back_populates="cstshops")
     workhours = relationship("Workhour", back_populates="shop")
+
+
+class BranchList(IdMixin, Base):
+
+    __tablename__ = "branch_list"
+
+    branch_name = Column(String(255))
+    branch_title = Column(String(255))
+
+
+class ServerList(IdMixin, Base):
+
+    __tablename__ = "serverlist"
+
+    branch_id = Column(Integer)
+    server_name = Column(String(255))
+    server_ip = Column(String(255))
+    server_location = Column(String(255))
+    server_acc = Column(String(255))
+    server_pass = Column(String(255))
+    server_remark = Column(String(255))
+

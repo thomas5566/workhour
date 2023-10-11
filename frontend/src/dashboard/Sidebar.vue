@@ -86,7 +86,7 @@
               </p>
             </a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" v-if="showElement">
             <a href="/#/serverlist" class="nav-link">
               <i class="nav-icon fas fa-edit"></i>
               <p>
@@ -720,10 +720,23 @@
 
 <script>
 export default {
+  data() {
+    return {
+      showServerListNav: false
+    }
+  },
   methods: {
     async redirecthome() {
       this.$router.push("/home");
     },
+
+  },
+  computed: {
+    showElement: function () {
+      return (this.$store.getters.getUsername === "11203501" ||
+        this.$store.getters.getUsername === "11005004" ||
+        this.$store.getters.getUsername === "10205006");
+    }
   },
 };
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="isLoggedIn">
     <div class="form-row">
       <div class="col">
         <select class="custom-select" v-model="selected_branch" @change="onSelectedChange(selected_branch)">
@@ -50,6 +50,7 @@
       </div>
     </div>
   </div>
+  <base-card v-else>No Data</base-card>
 </template>
 
 <script>
@@ -87,12 +88,15 @@ export default {
       let server_lists = this.server_lists;
       const searchKeyWord = (server) => {
         const hasServerIpFilter = server.server_ip.includes(this.searchKeyWord);
-        const hasServerNameFilter = server.server_name.includes(this.searchKeyWord);
+        const hasServerNameFilter = server.server_name.toLowerCase().includes(this.searchKeyWord.toLowerCase());
+        const hasServerLocationFilter = server.server_location.toLowerCase().includes(this.searchKeyWord.toLowerCase());
 
         if (hasServerIpFilter == true) {
           return hasServerIpFilter
         } else if (hasServerNameFilter == true) {
           return hasServerNameFilter
+        } else if (hasServerLocationFilter == true) {
+          return hasServerLocationFilter
         }
       }
 
@@ -126,10 +130,8 @@ export default {
         .catch((err) => {
           console.error(err)
         });
-      console.log(this.server_lists)
     },
     onSelectedChange(selected_branch_id) {
-      console.log(selected_branch_id)
       if (selected_branch_id === "0") {
         this.get_server_lists();
       } else {

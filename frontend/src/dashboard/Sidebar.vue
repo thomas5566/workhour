@@ -68,7 +68,7 @@
               </li>
             </ul> -->
           </li>
-          <li class="nav-item">
+          <li class="nav-item" v-if="showElement">
             <a href="/#/allworkhourlist" class="nav-link">
               <i class="nav-icon fas fa-tachometer-alt"></i>
               <p>
@@ -77,7 +77,7 @@
               </p>
             </a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" v-if="showElement">
             <a href="/#/home" class="nav-link">
               <i class="nav-icon fas fa-copy"></i>
               <p>
@@ -95,6 +95,25 @@
               </p>
             </a>
           </li>
+          <li class="nav-item" v-if="showElement">
+            <a href="/#/fetnetlist" class="nav-link">
+              <i class="nav-icon fas fa-edit"></i>
+              <p>
+                春水-遠傳電信資料
+                <span class="right badge badge-danger">New</span>
+              </p>
+            </a>
+          </li>
+          <li class="nav-item" v-if="showElement">
+            <a href="/#/ipcamlist" class="nav-link">
+              <i class="nav-icon fas fa-edit"></i>
+              <p>
+                監視器資料
+                <span class="right badge badge-danger">New</span>
+              </p>
+            </a>
+          </li>
+
           <!-- <li class="nav-item">
             <a href="/chartExample" class="nav-link">
               <i class="nav-icon fas fa-copy"></i>
@@ -735,7 +754,10 @@ export default {
     showElement: function () {
       return (this.$store.getters.getUsername === "11203501" ||
         this.$store.getters.getUsername === "11005004" ||
-        this.$store.getters.getUsername === "10205006");
+        this.$store.getters.getUsername === "10205006" ||
+        this.$store.getters.getUsername === "11401001" ||
+        this.$store.getters.getUsername === "11202510" ||
+        this.$store.getters.getUsername === "10205037");
     }
   },
 };

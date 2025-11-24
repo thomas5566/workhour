@@ -310,7 +310,6 @@
         </div>
       </transition>
     </div>
-
   </div>
 </template>
 <script>
@@ -519,7 +518,6 @@ export default {
       if (this.workhours.length !== 0) {
         this.count_total_case = this.workhours.length;
         for (i = 0; i < this.workhours.length; i++) {
-
           if (this.workhours[i].case_close) {
             this.count_true++;
           } else {
@@ -609,12 +607,8 @@ export default {
           console.log(e);
         });
     },
-
     toggleWorkhourId(workhourId) {
-      console.log(workhourId);
       this.activeWorkhour = this.workhours.find((item) => item.id === workhourId);
-      console.log("toggleWorkhour Data:");
-      console.log(this.activeWorkhour);
       this.dialogIsVisible = false;
     },
     showAddWorlist() {

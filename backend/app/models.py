@@ -3,15 +3,20 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .database import Base
 
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
+
+# from sqlalchemy.sql.sqltypes import TIMESTAMP
+from sqlalchemy.sql.expression import text
+from sqlalchemy.types import TIMESTAMP
+
 
 class IdMixin(object):
     id = Column(Integer, primary_key=True, index=True)
 
-
 class TimestampMixin(object):
     created_at = Column(Date, server_default=func.now())
     updated_at = Column(Date, server_default=func.now(), onupdate=func.now())
-
 
 class Department(IdMixin, Base, TimestampMixin):
 
@@ -19,7 +24,6 @@ class Department(IdMixin, Base, TimestampMixin):
 
     department_name = Column(String(255), index=True)
     user = relationship("User", back_populates="department", uselist=False)
-
 
 class Task(IdMixin, Base, TimestampMixin):
 
@@ -32,7 +36,6 @@ class Task(IdMixin, Base, TimestampMixin):
 
     workhours = relationship("Workhour", back_populates="task")
     cstshops = relationship("CstShop", back_populates="task")
-
 
 class User(IdMixin, Base, TimestampMixin):
 
@@ -53,7 +56,6 @@ class User(IdMixin, Base, TimestampMixin):
     department = relationship(
         "Department", back_populates="user", uselist=False)
 
-
 class ExpenTask(IdMixin, Base, TimestampMixin):
 
     __tablename__ = "expentask"
@@ -61,7 +63,6 @@ class ExpenTask(IdMixin, Base, TimestampMixin):
     expentask_name = Column(String(255), index=True)
 
     expens = relationship("Expenditure", back_populates="expentask")
-
 
 class Workhour(IdMixin, Base, TimestampMixin):
 
@@ -85,7 +86,6 @@ class Workhour(IdMixin, Base, TimestampMixin):
     task = relationship("Task", back_populates="workhours", uselist=False)
     shop = relationship("CstShop", back_populates="workhours", uselist=False)
 
-
 class Expenditure(IdMixin, Base, TimestampMixin):
 
     __tablename__ = "expenditure"
@@ -100,7 +100,6 @@ class Expenditure(IdMixin, Base, TimestampMixin):
     user = relationship("User", back_populates="expenditures", uselist=False)
     expentask = relationship(
         "ExpenTask", back_populates="expens", uselist=False)
-
 
 class DaysOff(IdMixin, Base, TimestampMixin):
 
@@ -125,14 +124,12 @@ class CstShop(IdMixin, Base):
     task = relationship("Task", back_populates="cstshops")
     workhours = relationship("Workhour", back_populates="shop")
 
-
 class BranchList(IdMixin, Base):
 
     __tablename__ = "branch_list"
 
     branch_name = Column(String(255))
     branch_title = Column(String(255))
-
 
 class ServerList(IdMixin, Base):
 
@@ -146,3 +143,56 @@ class ServerList(IdMixin, Base):
     server_pass = Column(String(255))
     server_remark = Column(String(255))
 
+class TransactionsList(IdMixin, Base):
+
+    __tablename__ = "transactions"    
+    
+    amount = Column(String(255))
+    sale_id = Column(String(255))
+    sale_amount = Column(String(255))
+    pos_id = Column(String(255))
+    canceled = Column(String(255))
+    transaction_id = Column(String(255))
+    service_amount = Column(String(255))
+    discount_amount = Column(String(255))
+    sale_deleted = Column(String(255))
+    employee_username = Column(String(255))
+    shipping_fee = Column(String(255))
+    shop_id = Column(Integer)
+    create_time = Column(Date)
+    update_time = Column(Date)
+    
+
+class FetnetList(IdMixin, Base):
+
+    __tablename__ = "fetnetlist"
+
+    branch_id = Column(Integer)
+    shop_id = Column(Integer)
+    shop_name = Column(String(255))
+    shop_tax = Column(String(255))
+    shop_location = Column(String(255))
+    shop_phone_number = Column(String(255))
+    shop_phone_short_code = Column(String(255))
+    adsl_number = Column(String(255))
+    fetnet_phone_number = Column(String(255))
+    adsl_bank_number = Column(String(255))
+    fetnetlist_remark = Column(String(255))
+
+
+class IpCamList(IdMixin, Base):
+
+    __tablename__ = "ipcamlist"
+
+    shop_id = Column(Integer)
+    shop_name = Column(String(255))
+    ipcam_brand = Column(String(255))
+    ipcam_ip = Column(String(255))
+    admin_acc = Column(String(255))
+    admin_pass = Column(String(255))
+    user_acc = Column(String(255))
+    user_pass = Column(String(255))
+    phone_port = Column(String(255))
+    http_port = Column(String(255))
+    tcp_port = Column(String(255))
+    remark = Column(String(255))

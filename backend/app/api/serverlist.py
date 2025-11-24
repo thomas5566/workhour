@@ -26,3 +26,16 @@ def read_serverlist_by_id(branch_id: int = None, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Get server list by branch id is not found")
     return db_get_serverlist_by_branch_id
 
+
+@router.put("/{serverlist_id}")
+def edit_serverlist(serverlist_id: int, serverlist_items: serverlist.ServerListUpdate, db: Session = Depends(get_db)):    
+    serverlist_retrieved = serverlist_crud.get_serverlist_by_id(
+        db=db, serverlist_id=serverlist_id)
+    if not serverlist_retrieved:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Server-list with id {id} does not exist")
+    
+    else: serverlist_crud.update_serverlist_by_id(
+            serverlist_id=serverlist_id, serverlist_items=serverlist_items, db=db)
+        
+    return {"detail": "Successfully updated data."}

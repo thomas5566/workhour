@@ -49,6 +49,7 @@ class WorkhourByYearMonth(BaseModel):
     class Config:
         orm_mode = True
 
+
 class WorkhourByUserId(BaseModel):
     user_id: int
     total_events: int

@@ -3,7 +3,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(".."))
 
-from app.api import user, task, workhour, expentask, expen, authentication, route_login, department, daysoff, cstshop, branchlist, serverlist
+from app.api import user, task, workhour, expentask, expen, authentication, route_login, department, daysoff, cstshop, branchlist, serverlist, dudotransactionslist, fetnetlist, ipcamlist
 from app.database import engine, Base
 from app.dependency import create_default_data
 from fastapi.responses import RedirectResponse
@@ -42,7 +42,7 @@ origins = [
     "http://10.133.6.45",
     "http://10.133.6.45:80",
     "http://127.0.0.1:8000",
-    "http://172.25.108.49:8080"
+    "http://172.25.104.17:8080"
 ]
 
 app.add_middleware(
@@ -69,6 +69,9 @@ app.include_router(workhour.router, prefix=settings.API_V1_STR)
 app.include_router(cstshop.router, prefix=settings.API_V1_STR)
 app.include_router(branchlist.router, prefix=settings.API_V1_STR)
 app.include_router(serverlist.router, prefix=settings.API_V1_STR)
+app.include_router(dudotransactionslist.router, prefix=settings.API_V1_STR)
+app.include_router(fetnetlist.router, prefix=settings.API_V1_STR)
+app.include_router(ipcamlist.router, prefix=settings.API_V1_STR)
 # app.include_router(route_login.router)
 
 

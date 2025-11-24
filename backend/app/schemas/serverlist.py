@@ -32,3 +32,11 @@ class ServerListByBranchId(BaseModel):
     class Config:
         orm_mode = True
 
+
+class ServerListUpdate(BaseModel):
+    server_name: str
+    server_ip: str
+    server_location: str
+    server_acc: str
+    server_pass: str
+    server_remark: str

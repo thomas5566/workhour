@@ -20,6 +20,10 @@ import DashboardV2 from "../pages/DashboardV2.vue";
 import AllWorkLists from "../components/worklist/AllWorkLists.vue";
 import ChartExample from "../components/worklist/ChartExample.vue";
 import ServerList from "../components/serverlist/ServerListDetail.vue";
+import CleanShiftSchedule from "../components/cleanshiftschedule/CleanShiftSchedule.vue";
+import DudoTransactions from "../components/dudo/DudoTransactions.vue";
+import FetnetList from "../components/fetnetlist/FetnetListDetail.vue";
+import IpCamList from "../components/ipcamlist/IpCamListDetail.vue";
 
 import store from "@/store";
 
@@ -138,6 +142,26 @@ const routes = [
     path: "/serverlist",
     name: "ServerList",
     component: ServerList,
+  },
+  {
+    path: "/fetnetlist",
+    name: "FetnetList",
+    component: FetnetList,
+  },
+  {
+    path: "/ipcamlist",
+    name: "IpCamList",
+    component: IpCamList,
+  },
+  {
+    path: "/cleanshiftschedule",
+    name: "CleanShiftSchedule",
+    component: CleanShiftSchedule,
+  },
+  {
+    path: "/dudo",
+    name: "DudoTransactions",
+    component: DudoTransactions,
   },
 ];
 

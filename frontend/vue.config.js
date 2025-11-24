@@ -15,6 +15,13 @@ module.exports = {
           "^/api": "/api",
         },
       },
+      "/dudo": {
+        target: "https://api.dudooeat.com/latest/transactions",
+        changeOrigin: true,
+        pathRewrite: {
+          "^/dudo": "/dudo",
+        },
+      },
     },
     // proxy: "http://10.133.6.45:8000/",
   },

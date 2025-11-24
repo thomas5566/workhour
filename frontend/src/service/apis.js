@@ -297,3 +297,72 @@ export function getServerListByBranchIdAPI(branch_id) {
     method: "get",
   });
 }
+
+export function updateServerListByIdAPI(serverlist_id, data) {
+  return axios({
+    url: `/serverlist/${serverlist_id}`,
+    method: "put",
+    data: data,
+  });
+}
+
+export function getDudoTransactionsListsAPI() {
+  return axios({
+    url: "/transactionslist/",
+    method: "get",
+  });
+}
+
+export function getDudoTransactionsByShopIdAPI(
+  shop_id,
+  search_date_start,
+  search_date_end
+) {
+  return axios({
+    url:
+      "/transactionslist/transactionslist-shopid?shop_id=" +
+      shop_id +
+      "&search_date_start=" +
+      search_date_start +
+      "&search_date_end=" +
+      search_date_end,
+    method: "get",
+  });
+}
+
+export function getFetnetListAPI() {
+  return axios({
+    url: "/fetnetlist/",
+    method: "get",
+  });
+}
+
+export function getFetnetByBranchIdAPI(branch_id) {
+  return axios({
+    url: "/fetnetlist/fetnetlist-branchid?branch_id=" + branch_id,
+    method: "get",
+  });
+}
+
+export function updateFetnetListByIdAPI(fetnetlist_id, data) {
+  return axios({
+    url: `/fetnetlist/${fetnetlist_id}`,
+    method: "put",
+    data: data,
+  });
+}
+
+export function getIpcamListAPI() {
+  return axios({
+    url: "/ipcamlist/",
+    method: "get",
+  });
+}
+
+export function updateIpCamListByIdAPI(ipcamlist_id, data) {
+  return axios({
+    url: `/ipcamlist/${ipcamlist_id}`,
+    method: "put",
+    data: data,
+  });
+}

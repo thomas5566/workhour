@@ -1,22 +1,9 @@
 <template>
-  <div v-if="isLoggedIn">
-    <div class="form-row">
-      <div class="col">
-        <select class="custom-select" v-model="selected_branch" @change="onSelectedChange(selected_branch)">
-          <option value="0" selected>設備清單 - 全部</option>
-          <option v-for="branch in branch_lists" :key="branch.id" :value="branch.id">
-            {{ branch.branch_title }} - {{ branch.branch_name }}
-          </option>
-        </select>
-      </div>
-      <div class="col">
-        <input type="search" v-model="searchKeyWord" class="form-control" placeholder="Search Key Word">
-      </div>
-    </div>
+  <div>
     <div class="row">
       <div class="card text-center">
         <div class="card-header" style="text-align: center">
-          <h4>設備清單</h4>
+          <h4>打掃清單</h4>
         </div>
         <div class="card-body">
           <div class="table-responsive-xl">
@@ -50,44 +37,30 @@
             </table>
           </div>
         </div>
-        <div class="card-footer pb-0 pt-3">
+        <!-- <div class="card-footer pb-0 pt-3">
           <jw-pagination :items="filteredServerLists" @changePage="onChangeServerPage"></jw-pagination>
-        </div>
+        </div> -->
       </div>
     </div>
-    <div class="row">
 
-      <transition name="fade">
-        <div v-if="this.activeServerList" class="backdrop">
-          <EditServerListDetail :key="activeServerList.id" :id="activeServerList.id"
-            :branch-id="activeServerList.branch_id" :server-acc="activeServerList.server_acc"
-            :server-ip="activeServerList.server_ip" :server-location="activeServerList.server_location"
-            :server-name="activeServerList.server_name" :server-pass="activeServerList.server_pass"
-            :server-remark="activeServerList.server_remark" @onClose="toggleServerListId">
-          </EditServerListDetail>
-        </div>
-      </transition>
-    </div>
   </div>
-  <base-card v-else>No Data</base-card>
 </template>
 
 <script>
 import Vue from "vue";
-import {
-  getBranchListAPI,
-  getServerListAPI,
-  getServerListByBranchIdAPI
-} from "../../service/apis.js";
+// import {
+//   getBranchListAPI,
+//   getServerListAPI,
+//   getServerListByBranchIdAPI
+// } from "../../service/apis.js";
 
 import { PaginationPlugin } from "bootstrap-vue";
-import EditServerListDetail from "./EditServerListDetail.vue"
 Vue.use(PaginationPlugin);
 
 export default {
   emits: ["close"],
-  name: "ServerLists",
-  components: { EditServerListDetail },
+  name: "CleanShiftSchedule",
+  components: {},
   data() {
     return {
       branch_lists: [],
@@ -131,50 +104,13 @@ export default {
     },
   },
   mounted: function () {
-    this.get_branch_lists();
-    this.get_server_lists();
   },
   created() {
     // reflash data list when chiled component update data
     this.$root.$on("get_serverlists", this.get_server_lists);
   },
   methods: {
-    async get_branch_lists() {
-      await getBranchListAPI().then((response) => (this.branch_lists = response.data))
-        .catch((err) => {
-          console.error(err)
-        });
-    },
-    async get_server_lists() {
-      await getServerListAPI().then((response) => (this.server_lists = response.data))
-        .catch((err) => {
-          console.error(err)
-        });
-    },
-    async get_server_lists_by_branchId(branch_id) {
-      this.server_lists = [];
-      await getServerListByBranchIdAPI(branch_id).then((response) => (this.server_lists = response.data))
-        .catch((err) => {
-          console.error(err)
-        });
-    },
-    onSelectedChange(selected_branch_id) {
-      if (selected_branch_id === "0") {
-        this.get_server_lists();
-      } else {
-        this.get_server_lists_by_branchId(selected_branch_id);
-      }
-    },
-    onChangeServerPage(pageOfServers) {
-      // update page of items
-      this.pageOfServers = pageOfServers;
-    },
-    toggleServerListId(serverId) {
-      console.log(serverId);
-      this.activeServerList = this.server_lists.find((item) => item.id === serverId);
-      console.log(this.activeServerList);
-      this.dialogIsVisible = false;
-    },
+
   },
 };
 </script>

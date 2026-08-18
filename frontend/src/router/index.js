@@ -1,31 +1,30 @@
-import Vue from "vue";
-import VueRouter from "vue-router";
-import HomePage from "../components/loginpage/HomePage.vue";
-import RegisterPage from "../components/loginpage/RegisterPage";
-import LoginPage from "../components/loginpage/LoginPage";
-import User from "../components/user/UserList";
-import UserDetail from "../components/user/UserDetail";
-import Task from "../components/task/AddTask";
-import TaskDetail from "../components/task/TaskDetail";
-import Expen from "../components/expenlist/AddExpen";
-import Expentask from "../components/expenlist/AddExpentask";
-import Workhour from "../components/worklist/AddWorkhour";
-import WorkhourDetail from "../components/worklist/WorkhourDetail";
-import Excel from "@/components/Excel.vue";
-import PdfPage from "@/components/layouts/PdfPage.vue";
-import StoredMembers from "../components/hr/StoredMembers.vue";
-import AlluserWorklists from "../pages/AlluserWorklists.vue";
-import DashboardV2 from "../pages/DashboardV2.vue";
-import AllWorkLists from "../components/worklist/AllWorkLists.vue";
-import ChartExample from "../components/worklist/ChartExample.vue";
-import ServerList from "../components/serverlist/ServerListDetail.vue";
-import CleanShiftSchedule from "../components/cleanshiftschedule/CleanShiftSchedule.vue";
-import FetnetList from "../components/fetnetlist/FetnetListDetail.vue";
-import IpCamList from "../components/ipcamlist/IpCamListDetail.vue";
-
+import { createRouter, createWebHashHistory } from "vue-router";
+import LoginPage from "../components/loginpage/LoginPage.vue";
 import store from "@/store";
 
-Vue.use(VueRouter);
+// Lazy routes keep heavy reporting/grid libraries out of the login bundle.
+const RegisterPage = () => import("../components/loginpage/RegisterPage.vue");
+const HomePage = () => import("../components/loginpage/HomePage.vue");
+const User = () => import("../components/user/UserList.vue");
+const UserDetail = () => import("../components/user/UserDetail.vue");
+const Task = () => import("../components/task/AddTask.vue");
+const TaskDetail = () => import("../components/task/TaskDetail.vue");
+const Expen = () => import("../components/expenlist/AddExpen.vue");
+const Expentask = () => import("../components/expenlist/AddExpentask.vue");
+const Workhour = () => import("../components/worklist/AddWorkhour.vue");
+const WorkhourDetail = () => import("../components/worklist/WorkhourDetail.vue");
+const Excel = () => import("@/components/Excel.vue");
+const PdfPage = () => import("@/components/layouts/PdfPage.vue");
+const StoredMembers = () => import("../components/hr/StoredMembers.vue");
+const AlluserWorklists = () => import("../pages/AlluserWorklists.vue");
+const DashboardV2 = () => import("../pages/DashboardV2.vue");
+const AllWorkLists = () => import("../components/worklist/AllWorkLists.vue");
+const ChartExample = () => import("../components/worklist/ChartExample.vue");
+const ServerList = () => import("../components/serverlist/ServerListDetail.vue");
+const CleanShiftSchedule = () => import("../components/cleanshiftschedule/CleanShiftSchedule.vue");
+const FetnetList = () => import("../components/fetnetlist/FetnetListDetail.vue");
+const IpCamList = () => import("../components/ipcamlist/IpCamListDetail.vue");
+
 const routes = [
   {
     path: "/",
@@ -153,32 +152,26 @@ const routes = [
   },
 ];
 
-const router = new VueRouter({
-  mode: "hash",
-  hash: true,
-  // base: process.env.BASE_URL,
+const router = createRouter({
+  history: createWebHashHistory(),
   routes,
 });
 
-router.beforeEach((to, from, next) => {
-  // 一開始於Login寫入的Token
+router.beforeEach((to) => {
+  // Clear any data-loading overlay left by the page being navigated away from.
+  window.dispatchEvent(new window.Event("workhour:navigation"));
   const token = window.sessionStorage.getItem("token");
-  // 有token又到登入頁，就導向HomePage
   if (to.name === "LoginPage" && token) {
-    next({ name: "HomePage" });
+    return { name: "HomePage" };
   }
-  // 判斷有要求權限的頁面檢查token
   if (to.matched.some((res) => res.meta.requiresAuth)) {
     if (token) {
-      // 同步sessionStorage的token至vuex中
-      store.dispatch("root/setToken", token);
-      next();
-    } else {
-      next({ name: "LoginPage" });
+      store.commit("RestoreToken", token);
+      return true;
     }
-  } else {
-    next();
+    return { name: "LoginPage", query: { redirect: to.fullPath } };
   }
+  return true;
 });
 
 export default router;

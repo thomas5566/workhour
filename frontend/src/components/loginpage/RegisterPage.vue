@@ -78,22 +78,25 @@
                 </div>
                 <form class="signin-form" @submit.prevent="post_user">
                   <div class="form-group mt-4">
-                    <input type="text" class="form-control" required v-model="form.username" />
+                    <input type="text" class="form-control" required :value="form.username"
+                      @input="form.username = $event.target.value" />
                     <label class="form-control-placeholder" for="username">員工編號</label>
                   </div>
 
                   <div class="form-group mt-4">
-                    <input id="password-field" type="password" class="form-control" v-model="form.password" required />
+                    <input id="password-field" type="password" class="form-control" :value="form.password" required
+                      @input="form.password = $event.target.value" />
                     <label class="form-control-placeholder" for="password">Password</label>
                     <span toggle="#password-field" class="fa fa-fw fa-eye field-icon toggle-password"></span>
                   </div>
 
                   <div class="form-group mt-4">
-                    <select id="department-field" type="text" class="form-control" v-model="form.department_id" required>
+                    <select id="department-field" class="form-control" :value="form.department_id" required
+                      @change="form.department_id = departments.find((item) => item.id === Number($event.target.value))">
                       <option value="" disabled selected>
                         ---------------------請選擇部門---------------------
                       </option>
-                      <option v-for="department in departments" :value="department" :key="department.id">
+                      <option v-for="department in departments" :value="department.id" :key="department.id">
                         {{ department.id }}.
                         {{ department.department_name }}
                       </option>
@@ -121,9 +124,8 @@
 </template>
 
 <script>
-import { postUserAPI, getDepartmentsAPI } from "../../service/apis.js";
-import router from "../../router/index.js";
-import { MessageBox } from "element-ui";
+import { getRegistrationDepartmentsAPI, registerUserAPI } from "../../service/apis.js";
+import { ElMessage } from "element-plus";
 export default {
   name: "Register",
   components: {},
@@ -151,22 +153,22 @@ export default {
           department_id: this.form.department_id.id,
           is_superuser: this.form.is_superuser,
         };
-        await postUserAPI(data).then((response) => {
-          if (response.status == 200) {
+        await registerUserAPI(data).then((response) => {
+          if (response.status === 201) {
             this.form.username = "";
             this.form.password = "";
             this.form.department_id = 0;
             this.form.is_superuser = false;
-            MessageBox("註冊成功!!");
-            router.push("/login");
+            ElMessage.success("註冊成功!!");
+            this.$router.push("/login");
           }
         });
-      } catch (error) {
-        throw "Sorry you can't create a new user now!";
+      } catch {
+        this.showError = true;
       }
     },
     get_departments() {
-      getDepartmentsAPI().then(
+      getRegistrationDepartmentsAPI().then(
         (response) => (this.departments = response.data)
       );
     },

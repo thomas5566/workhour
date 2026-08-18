@@ -69,49 +69,49 @@
             </ul> -->
           </li>
           <li class="nav-item" v-if="showElement">
-            <a href="/#/allworkhourlist" class="nav-link">
+            <router-link to="/allworkhourlist" class="nav-link">
               <i class="nav-icon fas fa-tachometer-alt"></i>
               <p>
                 Dashboard
                 <span class="right badge badge-danger">New</span>
               </p>
-            </a>
+            </router-link>
           </li>
           <li class="nav-item" v-if="showElement">
-            <a href="/#/home" class="nav-link">
+            <router-link to="/home" class="nav-link">
               <i class="nav-icon fas fa-copy"></i>
               <p>
                 報修紀錄
                 <span class="right badge badge-danger">New</span>
               </p>
-            </a>
+            </router-link>
           </li>
           <li class="nav-item" v-if="showElement">
-            <a href="/#/serverlist" class="nav-link">
+            <router-link to="/serverlist" class="nav-link">
               <i class="nav-icon fas fa-edit"></i>
               <p>
                 設備清單
                 <span class="right badge badge-danger">New</span>
               </p>
-            </a>
+            </router-link>
           </li>
           <li class="nav-item" v-if="showElement">
-            <a href="/#/fetnetlist" class="nav-link">
+            <router-link to="/fetnetlist" class="nav-link">
               <i class="nav-icon fas fa-edit"></i>
               <p>
                 春水-遠傳電信資料
                 <span class="right badge badge-danger">New</span>
               </p>
-            </a>
+            </router-link>
           </li>
           <li class="nav-item" v-if="showElement">
-            <a href="/#/ipcamlist" class="nav-link">
+            <router-link to="/ipcamlist" class="nav-link">
               <i class="nav-icon fas fa-edit"></i>
               <p>
                 監視器資料
                 <span class="right badge badge-danger">New</span>
               </p>
-            </a>
+            </router-link>
           </li>
 
           <!-- <li class="nav-item">

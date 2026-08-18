@@ -14,15 +14,14 @@
           </tr>
         </thead>
         <tbody>
-          <router-link
+          <tr
             v-for="t in expentasks"
             :key="t.id"
-            :to="{ expentask_name: 'ExpentaskDetail', params: { id: t.id } }"
-            tag="tr"
+            class="clickable-row"
           >
             <!-- <td>{{ t.id }}</td> -->
             <td>{{ t.expentask_name }}</td>
-          </router-link>
+          </tr>
         </tbody>
       </table>
     </base-card>
@@ -85,7 +84,7 @@ export default {
             this.form.expentask_name = "";
           }
         });
-      } catch (error) {
+      } catch {
         throw "Sorry you can't create a new task now!";
       }
       await getExpentaskAPI().then(

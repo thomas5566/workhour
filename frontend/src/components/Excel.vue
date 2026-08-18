@@ -92,25 +92,23 @@
   <base-card v-else>No Data</base-card>
 </template>
 <script>
-import Vue from "vue";
-import axios from "axios";
-import ElementUI from "element-ui";
-import "element-ui/lib/theme-chalk/index.css";
-import "@/plugins/element.js";
 import { getWorkhourAPI, getExpenAPI } from "../service/apis.js";
 import {
-  GridPlugin,
+  ColumnDirective,
+  ColumnsDirective,
+  GridComponent,
   Toolbar,
   ExcelExport,
   Filter,
   Page,
 } from "@syncfusion/ej2-vue-grids";
-Vue.use(axios);
-Vue.use(GridPlugin);
-Vue.use(ElementUI);
 export default {
   name: "Excle",
-  components: {},
+  components: {
+    "e-column": ColumnDirective,
+    "e-columns": ColumnsDirective,
+    "ejs-grid": GridComponent,
+  },
   props: {
     msg: String,
   },
@@ -193,13 +191,5 @@ export default {
 </script>
 
 <style scoped>
-@import "../../node_modules/@syncfusion/ej2-base/styles/material.css";
-@import "../../node_modules/@syncfusion/ej2-buttons/styles/material.css";
-@import "../../node_modules/@syncfusion/ej2-calendars/styles/material.css";
-@import "../../node_modules/@syncfusion/ej2-dropdowns/styles/material.css";
-@import "../../node_modules/@syncfusion/ej2-inputs/styles/material.css";
-@import "../../node_modules/@syncfusion/ej2-navigations/styles/material.css";
-@import "../../node_modules/@syncfusion/ej2-popups/styles/material.css";
-@import "../../node_modules/@syncfusion/ej2-splitbuttons/styles/material.css";
-@import "../../node_modules/@syncfusion/ej2-vue-grids/styles/material.css";
+@import "@syncfusion/ej2-vue-grids/styles/material.css";
 </style>

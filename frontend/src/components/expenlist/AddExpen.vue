@@ -179,7 +179,7 @@ export default {
             this.form.description = "";
           }
         });
-      } catch (error) {
+      } catch {
         throw "Sorry you can't create a new task now!";
       }
       // await getWorkhourAPI().then(

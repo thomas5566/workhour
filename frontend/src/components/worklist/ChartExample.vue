@@ -104,10 +104,11 @@ export default {
         },
         options: {
           scales: {
-            xAxes: [{
+            // Chart.js 3+ identifies axes by name rather than an array.
+            x: {
               type: 'linear',
               position: 'bottom'
-            }]
+            }
           }
         }
       },
@@ -141,12 +142,12 @@ export default {
         },
         options: {
           scales: {
-            xAxes: [{
+            x: {
               stacked: true
-            }],
-            yAxes: [{
+            },
+            y: {
               stacked: true
-            }]
+            }
           }
         }
       },

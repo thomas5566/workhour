@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import Chart from "../../../node_modules/admin-lte/plugins/chart.js/Chart";
+import Chart from "chart.js/auto";
 
 export default {
     name: 'DoughnutChartJs',

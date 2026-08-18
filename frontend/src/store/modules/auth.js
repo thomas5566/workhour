@@ -29,6 +29,9 @@ const actions = {
   },
 };
 const mutations = {
+  RestoreToken(state, token) {
+    state.token = token;
+  },
   LogIn(state, data) {
     state.id = data.id;
     state.username = data.username;
@@ -48,6 +51,7 @@ const mutations = {
     state.checklistAll_permission = null;
     state.token = "";
     state.expiration = Date.now();
+    window.sessionStorage.removeItem("token");
   },
 };
 export default {

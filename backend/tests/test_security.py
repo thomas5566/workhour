@@ -101,6 +101,10 @@ def test_openapi_requires_authentication_for_business_routes() -> None:
     schema = app.openapi()
     public_operations = {
         ("/api/user/login", "post"),
+        # Self-registration exposes only department labels and creates
+        # regular accounts; role-bearing account management stays protected.
+        ("/api/user/registration-departments", "get"),
+        ("/api/user/register", "post"),
         ("/health", "get"),
         ("/ready", "get"),
     }

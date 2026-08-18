@@ -7,12 +7,9 @@
   <base-card v-else>No Data</base-card>
 </template>
 <script>
-import Vue from "vue";
-import axios from "axios";
 
 import WorkhourLists from "../worklist/WorkhourLists.vue";
 
-Vue.use(axios);
 
 export default {
   name: "Home",

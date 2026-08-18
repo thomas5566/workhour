@@ -82,13 +82,10 @@
 </template>
 
 <script>
-import Vue from "vue";
-import { PaginationPlugin } from "bootstrap-vue";
 import { getMonthlyWorkhourAPI, getWorkhourMyAPI } from "../../service/apis.js";
-import DatePicker from "vue2-datepicker";
-import "vue2-datepicker/index.css";
-import "vue2-datepicker/locale/zh-cn";
-Vue.use(PaginationPlugin);
+import DatePicker from "vue-datepicker-next";
+import "vue-datepicker-next/index.css";
+import "vue-datepicker-next/locale/zh-cn";
 
 export default {
   components: { DatePicker },

@@ -86,16 +86,11 @@
 
 <script>
 import { getMonthlyExpenAPI, getExpenMyAPI } from "../../service/apis.js";
-import Vue from "vue";
-import axios from "axios";
 // options components
-import { PaginationPlugin } from "bootstrap-vue";
-import DatePicker from "vue2-datepicker";
-import "vue2-datepicker/index.css";
-import "vue2-datepicker/locale/zh-cn";
+import DatePicker from "vue-datepicker-next";
+import "vue-datepicker-next/index.css";
+import "vue-datepicker-next/locale/zh-cn";
 
-Vue.use(PaginationPlugin);
-Vue.use(axios);
 export default {
   data() {
     return {

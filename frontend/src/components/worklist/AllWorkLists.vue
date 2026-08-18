@@ -143,16 +143,11 @@ import {
     getAllWorkListsByUserIdAPI,
     getUserAPI
 } from "../../service/apis.js";
-import Vue from "vue";
-import axios from "axios";
-import { PaginationPlugin } from "bootstrap-vue";
-import DatePicker from "vue2-datepicker";
-import "vue2-datepicker/index.css";
-import "vue2-datepicker/locale/zh-cn";
+import DatePicker from "vue-datepicker-next";
+import "vue-datepicker-next/index.css";
+import "vue-datepicker-next/locale/zh-cn";
 import VAChart from '../charjs/VAChart.vue'
 
-Vue.use(PaginationPlugin);
-Vue.use(axios);
 
 export default {
     name: "AllWorkhourLists",
@@ -204,15 +199,16 @@ export default {
                 },
                 options: {
                     scales: {
-                        xAxes: [{
+                        // Chart.js 3+ uses named axes instead of the former xAxes/yAxes arrays.
+                        x: {
                             stacked: true
-                        }],
-                        yAxes: [{
+                        },
+                        y: {
                             ticks: {
                                 stepSize: 1
                             },
                             stacked: true
-                        }]
+                        }
                     },
                     plugins: {
                         colors: {
@@ -354,13 +350,12 @@ export default {
                 console.error(err)
             });
 
-            var i = 0;
             this.count_true = 0;
             this.count_false = 0;
 
             if (this.workhours.length !== 0) {
                 this.count_total_case = this.workhours.length;
-                for (i = 0; i < this.workhours.length; i++) {
+                for (let i = 0; i < this.workhours.length; i++) {
                     if (this.workhours[i].case_close) {
                         this.count_true++;
                     } else {
@@ -389,7 +384,7 @@ export default {
         async get_worklists_by_shopid() {
             this.workListsbyShtopid = null;
 
-            await getAllWorkListsByUserIdAPI().then(
+            await getAllWorkListsByShopIdAPI().then(
                 (response) => (this.workListsbyShtopid = response.data)
             ).catch((err) => {
                 console.error(err)
@@ -404,7 +399,7 @@ export default {
             }
         },
         async get_worklists_by_userid() {
-            await getAllWorkListsByShopIdAPI().then(
+            await getAllWorkListsByUserIdAPI().then(
                 (response) => (this.workListsbyUserid = response.data)
             ).catch((err) => {
                 console.error(err)

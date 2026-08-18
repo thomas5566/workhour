@@ -52,6 +52,21 @@ export function postUserAPI(data) {
   });
 }
 
+export function registerUserAPI(data) {
+  return axios({
+    url: "/user/register",
+    method: "post",
+    data,
+  });
+}
+
+export function getRegistrationDepartmentsAPI() {
+  return axios({
+    url: "/user/registration-departments",
+    method: "get",
+  });
+}
+
 export function getTaskAPI() {
   return axios({
     url: "/task/",
@@ -133,14 +148,14 @@ export function getAllWorkListsByDateAPI() {
 
 export function getAllWorkListsByUserIdAPI() {
   return axios({
-    url: "/workhour/worklist-shopid",
+    url: "/workhour/worklist-userid",
     method: "get",
   });
 }
 
 export function getAllWorkListsByShopIdAPI() {
   return axios({
-    url: "/workhour/worklist-userid",
+    url: "/workhour/worklist-shopid",
     method: "get",
   });
 }

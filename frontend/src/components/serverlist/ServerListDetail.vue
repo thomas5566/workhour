@@ -73,16 +73,13 @@
 </template>
 
 <script>
-import Vue from "vue";
 import {
   getBranchListAPI,
   getServerListAPI,
   getServerListByBranchIdAPI
 } from "../../service/apis.js";
 
-import { PaginationPlugin } from "bootstrap-vue";
 import EditServerListDetail from "./EditServerListDetail.vue"
-Vue.use(PaginationPlugin);
 
 export default {
   emits: ["close"],

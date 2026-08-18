@@ -1,0 +1,57 @@
+x-backend-environment: &backend-environment
+  DATABASE_URL: postgresql+psycopg2://workhour:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/workhour
+  SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+  ALGORITHM: ${ALGORITHM:-HS256}
+  ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+  ENABLE_API_DOCS: ${ENABLE_API_DOCS:-true}
+  BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["http://localhost:8080","http://127.0.0.1:8080"]}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: workhour
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: workhour
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workhour -d workhour"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: ./backend
+    command: python -m alembic upgrade head
+    environment: *backend-environment
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: ./backend
+    environment: *backend-environment
+    ports:
+      - "127.0.0.1:5566:5566"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

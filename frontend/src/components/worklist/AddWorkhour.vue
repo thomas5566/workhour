@@ -311,7 +311,7 @@ export default {
             this.form.selected_cstshop_id = "";
           }
         });
-      } catch (error) {
+      } catch {
         throw "Sorry you can't create a new Work-List now!";
       }
       await getWorkhourAPI().then(

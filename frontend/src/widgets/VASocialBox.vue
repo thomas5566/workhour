@@ -19,12 +19,12 @@
       </div>
       <!-- /.box-header -->
       <div class="box-body">
-        <img v-for="image in images" class="img-responsive pad" :src="image" alt="Photo">
+        <img v-for="image in images" :key="image" class="img-responsive pad" :src="image" alt="Photo">
 
         <p>{{ text }}</p>
 
         <!-- Attachment -->
-        <div class="attachment-block clearfix" v-for="attachment in attachments">
+        <div v-for="attachment in attachments" :key="attachment.url" class="attachment-block clearfix">
           <img class="attachment-img" :src="attachment.image" alt="Attachment Image">
 
           <div class="attachment-pushed">
@@ -40,12 +40,13 @@
         <!-- /.attachment-block -->
 
         <!-- <button type="button" class="btn btn-default btn-xs"><i class="fa fa-share"></i> Share</button> -->
-        <button v-for="button in buttons" type="button" class="btn btn-default btn-xs" @click="button.onClick"><i :class="button.theme"></i> {{ button.name }}</button>
+        <button v-for="button in buttons" :key="button.name" type="button" class="btn btn-default btn-xs" @click="button.onClick"><i :class="button.theme"></i> {{ button.name }}</button>
         <span class="pull-right text-muted">{{ likeCount }} likes - {{ commentCount }} comments</span>
       </div>
       <!-- /.box-body -->
       <div class="box-footer box-comments">
         <va-social-box-comment v-for="comment in comments"
+          :key="`${comment.name}-${comment.date}`"
           :name="comment.name"
           :profileImage="comment.profileImage"
           :text="comment.text"

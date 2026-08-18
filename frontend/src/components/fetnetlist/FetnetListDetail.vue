@@ -84,16 +84,13 @@
 </template>
 
 <script>
-import Vue from "vue";
 import {
   getBranchListAPI,
   getFetnetListAPI,
   getFetnetByBranchIdAPI
 } from "../../service/apis.js";
 
-import { PaginationPlugin } from "bootstrap-vue";
 import EditFetnetListDetail from "./EditFetnetListDetail.vue"
-Vue.use(PaginationPlugin);
 
 export default {
   emits: ["close"],

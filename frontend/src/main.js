@@ -1,48 +1,40 @@
-import Vue from "vue";
+import { createBootstrap } from "bootstrap-vue-next";
+import { configureCompat, createApp, defineComponent, h } from "vue";
+
 import App from "./App.vue";
+import BaseButton from "./components/UI/BaseButton.vue";
+import BaseCard from "./components/UI/BaseCard.vue";
+import JwPagination from "./components/UI/JwPagination.vue";
+import BFormDatepicker from "./components/compat/BFormDatepicker.vue";
+import BIcon from "./components/compat/BIcon.vue";
+import BInputGroupAddon from "./components/compat/BInputGroupAddon.vue";
 import router from "./router";
 import store from "./store";
-// import ElementUI from 'element-ui';
-// import 'element-ui/lib/theme-chalk/index.css';
-// import './plugins/element.js'
 
-// Import Bootstrap an BootstrapVue CSS files (order is important)
-import { BootstrapVue, IconsPlugin } from "bootstrap-vue";
 import "bootstrap/dist/css/bootstrap.css";
-import "bootstrap-vue/dist/bootstrap-vue.css";
+import "bootstrap-vue-next/dist/bootstrap-vue-next.css";
+import "element-plus/dist/index.css";
+import "admin-lte/dist/css/adminlte.min.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
-// register jw pagination component globally
-import JwPagination from "jw-vue-pagination";
+// MODE 2 keeps legacy Options API views operational while warnings guide cleanup.
+configureCompat({ MODE: 2 });
 
-// Custom UI
-import BaseCard from "./components/UI/BaseCard.vue";
-import BaseButton from "./components/UI/BaseButton.vue";
-
-//import adminlte styles
-import "../node_modules/admin-lte/dist/css/adminlte.min.css";
-import "../node_modules/admin-lte/plugins/overlayScrollbars/css/OverlayScrollbars.min.css";
-import "../node_modules/admin-lte/plugins/summernote/summernote-bs4.min.css";
-import "../node_modules/admin-lte/plugins/daterangepicker/daterangepicker.css";
-import "../node_modules/admin-lte/plugins/jqvmap/jqvmap.min.css";
-import "../node_modules/admin-lte/plugins/icheck-bootstrap/icheck-bootstrap.min.css";
-import "../node_modules/admin-lte/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css";
-import "../node_modules/admin-lte/plugins/bootstrap4-duallistbox/bootstrap-duallistbox.min.css";
-import "../node_modules/admin-lte/plugins/bs-stepper/css/bs-stepper.min.css";
-import "../node_modules/admin-lte/plugins/dropzone/min/dropzone.min.css";
-import "../node_modules/admin-lte/plugins/fontawesome-free/css/all.min.css";
-
-Vue.component("jw-pagination", JwPagination);
-Vue.component("base-card", BaseCard);
-Vue.component("base-button", BaseButton);
-// Make BootstrapVue available throughout your project
-Vue.use(BootstrapVue);
-// Optionally install the BootstrapVue icon components plugin
-Vue.use(IconsPlugin);
-// Vue.use(ElementUI);
-
-Vue.config.productionTip = false;
-export default new Vue({
-  store,
-  router,
-  render: (h) => h(App),
-}).$mount("#app");
+const app = createApp(App);
+const inputGroupAddon = (position) => defineComponent({
+  name: `BInputGroup${position === "append" ? "Append" : "Prepend"}`,
+  setup(_props, { slots }) {
+    return () => h(BInputGroupAddon, { position }, slots);
+  },
+});
+app.use(store);
+app.use(router);
+app.use(createBootstrap());
+app.component("BaseCard", BaseCard);
+app.component("BaseButton", BaseButton);
+app.component("JwPagination", JwPagination);
+app.component("BFormDatepicker", BFormDatepicker);
+app.component("BIcon", BIcon);
+app.component("BInputGroupAppend", inputGroupAddon("append"));
+app.component("BInputGroupPrepend", inputGroupAddon("prepend"));
+app.mount("#app");

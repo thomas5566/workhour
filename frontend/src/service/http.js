@@ -1,86 +1,87 @@
 import axios from "axios";
-import { Loading, Message } from "element-ui";
-import router from "../router/index.js";
+import { ElLoading, ElMessage } from "element-plus";
+
+import router from "../router";
 import store from "../store";
 
-let loading;
+const http = axios.create({
+  // Development uses Vite's /api proxy; deployments can provide an absolute URL.
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
+  timeout: 15000,
+});
+
+let loadingInstance;
+let activeRequests = 0;
 
 function startLoading() {
-  loading = Loading.service({
-    lock: true,
-    text: "載入中....",
-    background: "rgba(0, 0, 0, 0.7)",
-  });
+  activeRequests += 1;
+  if (!loadingInstance) {
+    const contentTarget = document.querySelector(".content-wrapper");
+    // Keep navigation available while data-heavy Dashboard requests load.
+    // Guest pages do not have a content wrapper, so they skip this indicator.
+    if (!contentTarget) return;
+    loadingInstance = ElLoading.service({
+      target: contentTarget,
+      fullscreen: false,
+      lock: false,
+      text: "載入中…",
+      background: "rgba(244, 246, 249, 0.72)",
+    });
+  }
 }
 
 function endLoading() {
-  loading.close();
+  activeRequests = Math.max(0, activeRequests - 1);
+  if (activeRequests === 0 && loadingInstance) {
+    loadingInstance.close();
+    loadingInstance = undefined;
+  }
 }
 
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "http://10.133.6.45:8000/api/";
-// axios.defaults.baseURL = "http://127.0.0.1:8000/api/";
-// axios.defaults.baseURL = 'http://192.168.0.123:8000/';
-// axios.defaults.baseURL = "http://192.168.0.124:8000/";
-// axios.defaults.baseURL = "http://127.0.0.1:5566/";
+function resetLoading() {
+  activeRequests = 0;
+  if (loadingInstance) {
+    loadingInstance.close();
+    loadingInstance = undefined;
+  }
+}
 
-// 請求攔截
-axios.interceptors.request.use(
-  (confing) => {
+// Router imports the store, which imports this HTTP module. A DOM event avoids
+// calling the still-uninitialized router during that circular module load.
+window.addEventListener("workhour:navigation", resetLoading);
+
+http.interceptors.request.use(
+  (config) => {
     startLoading();
-    //設定請求頭
-    if (store.getters.isAuthenticated) {
-      confing.headers.Authorization = "Bearer " + store.getters.getToken;
-    }
-    return confing;
+    const token = store.getters.getToken || window.sessionStorage.getItem("token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
   },
   (error) => {
+    endLoading();
     return Promise.reject(error);
-  }
+  },
 );
 
-//響應攔截
-axios.interceptors.response.use(
+http.interceptors.response.use(
   (response) => {
     endLoading();
     return response;
   },
-  (error) => {
-    console.log(error);
-    Message.error(error.response.data);
+  async (error) => {
     endLoading();
-
-    // 獲取狀態碼
-    const { status } = error.response;
+    const status = error.response?.status;
+    const detail = error.response?.data?.detail;
+    ElMessage.error(typeof detail === "string" ? detail : "伺服器連線失敗，請稍後再試");
 
     if (status === 401) {
-      Message.error("請重新登入");
-      //清楚token
-      //console.log(this.$store);
-      // this.$store.dispatch("LogOut");
-      //跳轉到登入頁面
-      router.push("/login").catch((error) => {
-        console.info(error.message);
-      });
-    }
-    if (status === 400) {
-      Message.error("Bad Request");
-      //清楚token
-      this.$store.dispatch("LogOut");
-      //跳轉到登入頁面
-      router.push("/").catch((error) => {
-        console.info(error.message);
-      });
-    }
-    if (status === 404) {
-      Message.error("Page Not Found");
-      //跳轉到登入頁面
-      router.push("/").catch((error) => {
-        console.info(error.message);
-      });
+      await store.dispatch("LogOut");
+      if (router.currentRoute.value.name !== "LoginPage") {
+        await router.push({ name: "LoginPage" });
+      }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
-export default axios;
+export default http;

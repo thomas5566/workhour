@@ -84,15 +84,12 @@
 </template>
 
 <script>
-import Vue from "vue";
 import {
   getBranchListAPI,
   getIpcamListAPI
 } from "../../service/apis.js";
 
-import { PaginationPlugin } from "bootstrap-vue";
 import EditIpcamListDetail from "./EditIpCamListDetail.vue"
-Vue.use(PaginationPlugin);
 
 export default {
   emits: ["close"],

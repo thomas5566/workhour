@@ -12,16 +12,16 @@
         </tr>
       </thead>
       <tbody>
-        <router-link
+        <tr
           v-for="u in users"
           :key="u.id"
-          :to="{ name: 'UserDetail', params: { id: u.id } }"
-          tag="tr"
+          class="clickable-row"
+          @click="$router.push({ name: 'UserDetail', params: { id: u.id } })"
         >
           <td>{{ u.id }}</td>
           <td>{{ u.department.department_name }}</td>
           <td>{{ u.username }}</td>
-        </router-link>
+        </tr>
       </tbody>
     </table>
   </base-card>

@@ -17,11 +17,9 @@
           </tr>
         </thead>
         <tbody>
-          <router-link
+          <tr
             v-for="task in tasks"
             :key="task.id"
-            :to="{ taskname: 'TaskDetail', params: { id: task.id } }"
-            tag="tr"
           >
             <!-- <td>{{ task.id }}</td> -->
             <td>{{ task.taskname }}</td>
@@ -30,7 +28,7 @@
             <!-- <td>
               <button class="btn btn-sm btn-outline-danger" v-on:click="deleteTask(task.id)">刪除</button>
             </td> -->
-          </router-link>
+          </tr>
         </tbody>
 
         <!-- <tbody v-for="task in tasks" :key="task.id">
@@ -132,7 +130,7 @@ export default {
             this.form.organization = "";
           }
         });
-      } catch (error) {
+      } catch {
         throw "Sorry you can't create a new task now!";
       }
       await getTaskAPI().then((response) => (this.tasks = response.data));

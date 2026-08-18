@@ -1,0 +1,94 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint frontend
+        run: pnpm lint -- --max-warnings=0
+
+      - name: Run frontend tests
+        run: pnpm test
+
+      - name: Build production frontend
+        run: pnpm build
+
+  container-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      POSTGRES_PASSWORD: ci-only-postgres-password
+      SECRET_KEY: ci-only-secret-key-that-is-at-least-32-characters
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Validate full-stack Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build frontend image
+        run: docker build --tag workhour-frontend-ci ./frontend
+
+      - name: Smoke test frontend image
+        run: |
+          set -euo pipefail
+          docker run --detach \
+            --name workhour-frontend-smoke \
+            --publish 8080:8080 \
+            workhour-frontend-ci
+
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8080/healthz > /dev/null; then
+              curl --fail --silent --show-error http://127.0.0.1:8080/
+              exit 0
+            fi
+            sleep 1
+          done
+
+          docker logs workhour-frontend-smoke
+          exit 1
+
+      - name: Remove smoke-test container
+        if: always()
+        run: docker rm --force workhour-frontend-smoke || true

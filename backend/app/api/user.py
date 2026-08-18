@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException, Response, status
 from ..auth import CurrentUser, ManagerUser, login_manager
 from ..core.config import settings
 from ..core.hashing import DUMMY_PASSWORD_HASH, Hasher
-from ..repository import user_crud
-from ..schemas import allfull, users
+from ..repository import department_crud, user_crud
+from ..schemas import allfull, departments, users
 from .dependencies import (
     DatabaseSession,
     LoginForm,
@@ -21,14 +21,11 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=users.User)
-def create_user(
+def _create_user_account(
     user_item: users.UserCreate,
     db: DatabaseSession,
-    manager: ManagerUser,
 ):
-    # Bootstrap administrators are provisioned outside the public API, so
-    # account creation can stay manager-only without a registration backdoor.
+    """Create a regular account for both managed and self-registration flows."""
     db_user = user_crud.get_user_by_username(db, username=user_item.username)
     if db_user:
         raise HTTPException(
@@ -43,6 +40,36 @@ def create_user(
         user_item=user_item,
         hashed_password=hashed_password,
     )
+
+
+@router.get(
+    "/registration-departments",
+    response_model=list[departments.Department],
+)
+def read_registration_departments(db: DatabaseSession):
+    # Expose only department identifiers/names required by self-registration.
+    return department_crud.get_departments(db)
+
+
+@router.post(
+    "/register",
+    response_model=users.User,
+    status_code=status.HTTP_201_CREATED,
+)
+def register_user(user_item: users.UserCreate, db: DatabaseSession):
+    # UserCreate has no role fields; public callers cannot grant privileges.
+    return _create_user_account(user_item, db)
+
+
+@router.post("/", response_model=users.User)
+def create_user(
+    user_item: users.UserCreate,
+    db: DatabaseSession,
+    manager: ManagerUser,
+):
+    # Bootstrap administrators are provisioned outside the public API, so
+    # account creation can stay manager-only without a registration backdoor.
+    return _create_user_account(user_item, db)
 
 
 @router.get("/", response_model=list[users.User])

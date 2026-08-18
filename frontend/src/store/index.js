@@ -1,15 +1,24 @@
-import Vue from "vue";
-import Vuex from "vuex";
-import createPersistedState from "vuex-persistedstate";
+import { createStore } from "vuex";
 import auth from "./modules/auth";
 
-// Load Vuex
-Vue.use(Vuex);
+function persistAuthentication(store) {
+  const savedState = window.sessionStorage.getItem("workhour-auth");
+  if (savedState) {
+    try {
+      store.replaceState({ ...store.state, auth: JSON.parse(savedState) });
+    } catch {
+      window.sessionStorage.removeItem("workhour-auth");
+    }
+  }
+  store.subscribe((_mutation, state) => {
+    window.sessionStorage.setItem("workhour-auth", JSON.stringify(state.auth));
+  });
+}
 
-// Create store
-export default new Vuex.Store({
+export default createStore({
   modules: {
     auth,
   },
-  plugins: [createPersistedState()],
+  // Authentication is session-scoped; do not leave bearer tokens in localStorage.
+  plugins: [persistAuthentication],
 });

@@ -1,8 +1,6 @@
 <template>
-  <div class="login">
-
-    <body class="img js-fullheight" :style="cssProps">
-      <section class="ftco-section">
+  <main class="login-page" :style="cssProps">
+      <section class="login-section">
         <div class="container">
           <div class="row justify-content-center">
             <div class="col-md-6 text-center mb-5">
@@ -13,14 +11,23 @@
             <div class="col-md-6 col-lg-4">
               <div class="login-wrap p-0">
                 <!-- <h3 class="mb-4 text-center">Have an account?</h3> -->
-                <form @submit.prevent="submit" class="signin-form">
-                  <div class="form-group">
-                    <b-input-group class="mb-2">
-                      <b-input-group-prepend is-text>
-                        <b-icon icon="person-fill"></b-icon>
-                      </b-input-group-prepend>
-                      <b-form-input type="text" placeholder="Username" v-model="form.username" required></b-form-input>
-                    </b-input-group>
+                <form class="signin-form" @submit.prevent="submit">
+                  <div class="form-group login-field">
+                    <label class="login-field__icon" for="username" aria-hidden="true">
+                      <i class="fas fa-user"></i>
+                    </label>
+                    <!-- Native controls avoid Bootstrap 4 input-group sizing conflicts. -->
+                    <input
+                      id="username"
+                      :value="form.username"
+                      class="form-control"
+                      name="username"
+                      type="text"
+                      autocomplete="username"
+                      placeholder="使用者帳號"
+                      required
+                      @input="form.username = $event.target.value"
+                    />
                     <!-- <input
                       type="text"
                       class="form-control"
@@ -29,14 +36,21 @@
                       required
                     /> -->
                   </div>
-                  <div class="form-group">
-                    <b-input-group class="mb-2">
-                      <b-input-group-prepend is-text>
-                        <b-icon icon="lock-fill"></b-icon>
-                      </b-input-group-prepend>
-                      <b-form-input type="password" placeholder="Password" v-model="form.password"
-                        required></b-form-input>
-                    </b-input-group>
+                  <div class="form-group login-field">
+                    <label class="login-field__icon" for="password" aria-hidden="true">
+                      <i class="fas fa-lock"></i>
+                    </label>
+                    <input
+                      id="password"
+                      :value="form.password"
+                      class="form-control"
+                      name="password"
+                      type="password"
+                      autocomplete="current-password"
+                      placeholder="密碼"
+                      required
+                      @input="form.password = $event.target.value"
+                    />
                     <!-- <input
                       id="password-field"
                       type="password"
@@ -45,7 +59,6 @@
                       v-model="form.password"
                       required
                     /> -->
-                    <span toggle="#password-field" class="fa fa-fw fa-eye field-icon toggle-password"></span>
                   </div>
                   <!-- <div class="form-group">
                     <row>
@@ -68,18 +81,16 @@
                     </div>
                   </div> -->
                 </form>
-                <div class="social d-flex text-center">
-                  <a @click="submit" class="px-2 py-2 mr-md-1 rounded"><span class="ion-logo-facebook mr-2"></span>
-                    登入</a>
-                  <a @click="register" class="px-2 py-2 ml-md-1 rounded"><span class="ion-logo-twitter mr-2"></span>
-                    註冊</a>
+                <div class="login-actions">
+                  <button type="button" class="btn login-button" @click="submit">登入</button>
+                  <button type="button" class="btn login-button" @click="register">註冊</button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
-    </body>
+  </main>
 
     <!-- <section class="ftco-section">
       <div class="container">
@@ -179,18 +190,18 @@
         </div>
       </div>
     </section> -->
-  </div>
 </template>
 
 <script>
 import { mapActions } from "vuex";
+import backgroundImage from "../../images/bg.jpg";
 export default {
   name: "Login",
   components: {},
   data() {
     return {
       cssProps: {
-        backgroundImage: `url(${require("../../images/bg.jpg")})`,
+        backgroundImage: `url(${backgroundImage})`,
       },
       form: {
         username: "",
@@ -212,7 +223,7 @@ export default {
         this.showError = false;
         // sessionStorage.setItem("store", JSON.stringify(this.$store.state));
         window.sessionStorage.setItem("token", this.$store.getters.getToken);
-      } catch (error) {
+      } catch {
         this.showError = true;
       }
     },
@@ -231,4 +242,98 @@ export default {
 };
 </script>
 
-<style scoped src="../../static/css/loginpage.css"></style>
+<style scoped>
+.login-page {
+  align-items: center;
+  background-position: center;
+  background-size: cover;
+  display: flex;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  position: relative;
+}
+
+.login-page::before {
+  background: rgba(3, 20, 36, 0.25);
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+.login-section {
+  position: relative;
+  width: 100%;
+  z-index: 1;
+}
+
+.heading-section {
+  color: #fff;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 600;
+  margin-bottom: 2rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.login-wrap {
+  margin: 0 auto;
+  max-width: 26rem;
+}
+
+.login-field {
+  align-items: center;
+  display: flex;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.login-field__icon {
+  color: #263746;
+  left: 1rem;
+  margin: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.login-field .form-control {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 0.5rem;
+  color: #152331;
+  height: 3rem;
+  padding: 0.75rem 1rem 0.75rem 2.8rem;
+  width: 100%;
+}
+
+.login-field .form-control:focus {
+  border-color: #7cc4ff;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  outline: 0;
+}
+
+.login-actions {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 1.25rem;
+}
+
+.login-button {
+  background: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  color: #152331;
+  min-height: 2.75rem;
+}
+
+.login-button:hover,
+.login-button:focus-visible {
+  background: #152331;
+  color: #fff;
+}
+
+@media (max-width: 575.98px) {
+  .login-actions {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

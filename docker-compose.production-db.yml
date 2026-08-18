@@ -1,0 +1,25 @@
+services:
+  app:
+    build:
+      context: ./backend
+    environment:
+      # The external database URL lives in ignored .env.production, never here.
+      DATABASE_URL: ${EXTERNAL_DATABASE_URL:?set EXTERNAL_DATABASE_URL in .env.production}
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env.production}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      ENABLE_API_DOCS: ${ENABLE_API_DOCS:-true}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["http://localhost:8080","http://127.0.0.1:8080"]}
+    ports:
+      - "127.0.0.1:${BACKEND_HOST_PORT:-5566}:5566"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "127.0.0.1:${FRONTEND_HOST_PORT:-8080}:8080"
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped

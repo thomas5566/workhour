@@ -1,73 +1,43 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "workhour-frontend",
+  "version": "1.0.0",
   "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.19.0",
+  "engines": { "node": ">=20.19.0" },
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "dev": "vite",
+    "serve": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.4.2",
-    "@fortawesome/free-brands-svg-icons": "^6.4.2",
-    "@fortawesome/free-regular-svg-icons": "^6.4.2",
-    "@fortawesome/free-solid-svg-icons": "^6.4.2",
-    "@pledgecamp/vue3-chartjs": "^4.0.6",
-    "@syncfusion/ej2-vue-buttons": "^19.1.63",
-    "@syncfusion/ej2-vue-calendars": "^19.1.66",
-    "@syncfusion/ej2-vue-grids": "^19.1.66",
-    "axios": "^0.21.1",
-    "bootstrap": "^5.0.1",
-    "bootstrap-vue": "^2.21.2",
-    "core-js": "^3.6.5",
-    "element-ui": "2.4.5",
-    "file-saver": "^2.0.5",
-    "jw-vue-pagination": "^1.0.3",
-    "serve": "^14.2.0",
-    "vue": "^2.6.13",
-    "vue-date-fns": "^2.0.1",
-    "vue-json-excel": "^0.3.0",
-    "vue-month-picker": "^1.5.0",
-    "vue-pdf": "^4.3.0",
-    "vue-pdf-embed": "^1.1.6",
-    "vue-router": "^3.5.1",
-    "vue-video": "^0.1.7",
-    "vue2-datepicker": "^3.9.1",
-    "vue2-daterange-picker": "^0.6.5",
-    "vuejs-paginate": "^2.1.0",
-    "vuex": "^3.6.2",
-    "vuex-persistedstate": "^4.0.0-beta.3",
-    "xlsx": "^0.17.0"
+    "@fortawesome/fontawesome-free": "7.3.1",
+    "@syncfusion/ej2-vue-grids": "34.2.3",
+    "admin-lte": "4.3.1",
+    "axios": "1.19.0",
+    "bootstrap": "5.3.8",
+    "bootstrap-vue-next": "0.46.2",
+    "chart.js": "4.5.1",
+    "element-plus": "2.14.4",
+    "file-saver": "2.0.5",
+    "vue": "^3.5.40",
+    "vue-datepicker-next": "1.0.3",
+    "vue-router": "^4.6.3",
+    "vuex": "^4.1.0",
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^5.0.8",
-    "@vue/cli-plugin-eslint": "^5.0.8",
-    "@vue/cli-service": "^5.0.8",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^7.32.0",
-    "eslint-plugin-vue": "^6.2.2",
-    "sass": "^1.32.0",
-    "sass-loader": "^10.0.0",
-    "script-loader": "^0.7.2",
-    "vue-template-compiler": "^2.6.11"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/essential",
-      "eslint:recommended"
-    ],
-    "parserOptions": {
-      "parser": "babel-eslint"
-    },
-    "rules": {}
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead"
-  ]
+    "@eslint/js": "10.0.1",
+    "@vitejs/plugin-vue": "6.0.8",
+    "@vue/compat": "^3.5.40",
+    "@vue/test-utils": "2.4.11",
+    "eslint": "10.8.1",
+    "eslint-plugin-vue": "10.10.0",
+    "jsdom": "30.0.1",
+    "vite": "^8.2.0",
+    "vitest": "4.1.10"
+  }
 }

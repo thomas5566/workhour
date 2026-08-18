@@ -1,30 +1,47 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 
 from ..models import FetnetList
 from ..schemas import fetnetlist
+from .transaction import commit_or_rollback
 
 
-def get_fetnetlists(db: Session, skip: int = 0):
-    return db.query(FetnetList).offset(skip).all()
+def get_fetnetlists(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+) -> list[FetnetList]:
+    statement = select(FetnetList).order_by(FetnetList.id).offset(skip).limit(limit)
+    return list(db.scalars(statement).all())
 
 
-def get_fetnetlist_by_id(db: Session, fetnetlist_id: int):
-    return db.query(FetnetList).filter(FetnetList.id == fetnetlist_id).first()
+def get_fetnetlist_by_id(db: Session, fetnetlist_id: int) -> FetnetList | None:
+    return db.get(FetnetList, fetnetlist_id)
 
 
-def get_fetnetlists_by_branch_id(db: Session, branch_id, skip: int = 0):
-    return db.query(FetnetList).filter(FetnetList.branch_id == branch_id).offset(skip).all()
+def get_fetnetlists_by_branch_id(
+    db: Session, branch_id: int, skip: int = 0, limit: int = 100
+) -> list[FetnetList]:
+    statement = (
+        select(FetnetList)
+        .where(FetnetList.branch_id == branch_id)
+        .order_by(FetnetList.id)
+        .offset(skip)
+        .limit(limit)
+    )
+    return list(db.scalars(statement).all())
 
 
-def update_fetnetlist_by_id(fetnetlist_id: int, fetnetlist_items: fetnetlist.FetnetListUpdate, db: Session):
-    db_fetnetlist = db.query(FetnetList).filter(
-        FetnetList.id == fetnetlist_id)
-
-    if not db_fetnetlist.first():
-        return 0
-    
-    db_fetnetlist.update(fetnetlist_items.__dict__)
-    db.commit()
-    return 1
-
+def update_fetnetlist_by_id(
+    fetnetlist_id: int,
+    fetnetlist_items: fetnetlist.FetnetListUpdate,
+    db: Session,
+) -> FetnetList | None:
+    db_fetnetlist = db.get(FetnetList, fetnetlist_id)
+    if db_fetnetlist is None:
+        return None
+    for field, value in fetnetlist_items.model_dump().items():
+        setattr(db_fetnetlist, field, value)
+    commit_or_rollback(db)
+    db.refresh(db_fetnetlist)
+    return db_fetnetlist

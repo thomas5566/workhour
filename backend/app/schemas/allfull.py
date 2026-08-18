@@ -1,36 +1,35 @@
-from typing import List, Optional
+from pydantic import Field
 
-from .users import User
+from .cstshop import CstShop
 from .expens import Expenditure
 from .expentasks import ExpenTask
 from .tasks import Task
-from .whorkhours import Workhour
-from .daysoff import Daysoff
-from .cstshop import CstShpo
+from .users import User
+from .workhours import Workhour
 
 
 class WorkhourFull(Workhour):
-    user: Optional[User]
-    task: Optional[Task]
-    shop: Optional[CstShpo]
+    user: User | None = None
+    task: Task | None = None
+    shop: CstShop | None = None
 
 
 class ExpenditureFull(Expenditure):
-    user: Optional[User]
-    expentask: Optional[ExpenTask]
+    user: User | None = None
+    expentask: ExpenTask | None = None
 
 
 class ExpenTaskFull(ExpenTask):
-    expenditures: List[ExpenditureFull] = []
+    # Keep the public JSON name while reading the ORM's legacy `expens` name.
+    expenditures: list[ExpenditureFull] = Field(
+        default_factory=list,
+        validation_alias="expens",
+    )
 
 
 class TaskFull(Task):
-    workhours: List[WorkhourFull] = []
+    workhours: list[WorkhourFull] = Field(default_factory=list)
 
 
 class UserFull(User):
-    workhours: List[WorkhourFull] = []
-
-
-class DaysoffFull(Daysoff):
-    user: Optional[User]
+    workhours: list[WorkhourFull] = Field(default_factory=list)

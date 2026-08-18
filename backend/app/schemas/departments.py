@@ -1,12 +1,6 @@
-from pydantic import BaseModel
+from .base import BaseModel
 
 
-class DepartmentBase(BaseModel):
-    department_name: str
-
-
-class Department(DepartmentBase):
+class Department(BaseModel):
     id: int
-
-    class Config:
-        orm_mode = True
+    department_name: str | None = None

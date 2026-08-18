@@ -1,0 +1,109 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "frontend/src/service/apis.js"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/src/service/apis.js"
+      - ".github/workflows/backend-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # Windows protects the supported developer workflow; Linux matches the
+    # container runtime used by the backend image.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      # CI never connects to a deployed database or uses a production secret.
+      DATABASE_URL: "sqlite+pysqlite:///:memory:"
+      SECRET_KEY: ci-only-secret-key-that-is-at-least-32-characters
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+
+      - name: Install backend dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Lint backend
+        run: python -m ruff check .
+
+      - name: Compile backend
+        run: python -m compileall -q app migrations tests
+
+      - name: Run backend tests
+        run: python -m pytest -q
+
+  container-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      POSTGRES_PASSWORD: ci-only-postgres-password
+      SECRET_KEY: ci-only-secret-key-that-is-at-least-32-characters
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Validate Compose configuration
+        run: docker compose --file backend/docker-compose.yml config --quiet
+
+      - name: Build backend image
+        run: docker build --tag workhour-backend-ci ./backend
+
+      - name: Smoke test backend health endpoint
+        run: |
+          set -euo pipefail
+          docker run --detach \
+            --name workhour-backend-smoke \
+            --publish 5566:5566 \
+            --env DATABASE_URL="sqlite+pysqlite:///:memory:" \
+            --env SECRET_KEY="$SECRET_KEY" \
+            workhour-backend-ci
+
+          # Poll instead of using a fixed sleep so fast runs finish immediately
+          # while slower cold starts still receive a bounded grace period.
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5566/ready > /dev/null; then
+              curl --fail --silent --show-error http://127.0.0.1:5566/ready
+              exit 0
+            fi
+            sleep 1
+          done
+
+          docker logs workhour-backend-smoke
+          exit 1
+
+      - name: Remove smoke-test container
+        if: always()
+        # The runner is ephemeral, but explicit cleanup keeps reruns predictable.
+        run: docker rm --force workhour-backend-smoke || true

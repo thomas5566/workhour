@@ -1,68 +1,50 @@
-from typing import List, Optional
-from pydantic import BaseModel
 import datetime
+
+from pydantic import ConfigDict, Field
+
+from .base import BaseModel
+from .cstshop import CstShop
 from .users import User
 
 
 class WorkhourTaskFull(BaseModel):
-    user_id: Optional[int] = None
-    task_id: Optional[int] = None
-    date: datetime.date
-    hour: float
-    description: Optional[str] = None
-    is_overtime: Optional[bool] = False
-    overtime_hour: float
-    user: Optional[User]
-
-    class Config:
-        orm_mode = True
+    user_id: int | None = None
+    task_id: int | None = None
+    # Preserve the Vue response key while reading the corrected ORM column.
+    date: datetime.date = Field(validation_alias="start_date")
+    hour: float | None = None
+    description: str | None = None
+    is_overtime: bool = False
+    overtime_hour: float | None = None
+    user: User | None = None
 
 
-class CstShposList(BaseModel):
-    id: int
-    main_department_id: int    
-    shop_name: str
-    shop_number: str
+class TaskWrite(BaseModel):
+    # Reject the retired cstshops input instead of silently discarding it.
+    model_config = ConfigDict(extra="forbid")
 
-    class Config:
-        orm_mode = True
-
-
-class TaskBase(BaseModel):
-    taskname: str
-    fullname: str
-    organization: str
-    cstshops: List[CstShposList] = []    
+    taskname: str = Field(min_length=1, max_length=255)
+    fullname: str = Field(max_length=255)
+    organization: str = Field(max_length=255)
 
 
-class TaskCreate(TaskBase):
+class TaskCreate(TaskWrite):
     pass
 
 
-class TaskUpdate(TaskBase):
+class TaskUpdate(TaskWrite):
     pass
 
 
-class Task(TaskBase):
+class Task(BaseModel):
     id: int
-
-    class Config:
-        orm_mode = True
+    taskname: str | None = None
+    fullname: str | None = None
+    organization: str | None = None
+    cstshops: list[CstShop] = Field(default_factory=list)
 
 
 class TaskGYBase(BaseModel):
-    id: str
-    taskname: str
-    workhours: List[WorkhourTaskFull] = []
-    # task_name: str
-    # user_name: str
-    # user_id: int
-    # worklist_task_id: int
-    # worklist_date: datetime.date
-    # worklist_hour: str
-    # worklist_overtime: str
-    # worklist_overtime_hour: str
-    # worklist_description: str
-
-    class Config:
-        orm_mode = True
+    id: int
+    taskname: str | None = None
+    workhours: list[WorkhourTaskFull] = Field(default_factory=list)

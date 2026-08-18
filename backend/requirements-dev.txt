@@ -1,0 +1,6 @@
+-r requirements.txt
+
+# All packages below publish Windows-compatible wheels or are pure Python.
+httpx==0.28.1
+pytest==9.1.1
+ruff==0.16.0

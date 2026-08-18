@@ -1,44 +1,35 @@
-from typing import Optional
-from pydantic import BaseModel
 import datetime
 
-from .users import User
-from .expentasks import ExpenTask
+from pydantic import Field
+
+from .base import BaseModel
 
 
-class ExpenditureBase(BaseModel):
-    user_id: Optional[int] = None
-    expentask_id: int
+class ExpenditureWrite(BaseModel):
+    expentask_id: int = Field(gt=0)
     date: datetime.date
-    price: int
-    description: Optional[str] = None
+    price: int = Field(ge=0)
+    description: str | None = Field(default=None, max_length=255)
 
 
-class ExpenditureUpdate(ExpenditureBase):
-    user_id: int
-    expentask_id: int
-    date: datetime.date
-    price: int
-    description: str
-
-    class Config:
-        orm_mode = True
-
-
-class ExpenditureCreate(ExpenditureBase):
+class ExpenditureCreate(ExpenditureWrite):
+    # Ownership is derived from the authenticated token, never request JSON.
     pass
 
 
-class Expenditure(ExpenditureBase):
-    id: int
+class ExpenditureUpdate(ExpenditureWrite):
+    pass
 
-    class Config:
-        orm_mode = True
+
+class Expenditure(BaseModel):
+    id: int
+    user_id: int | None = None
+    expentask_id: int | None = None
+    date: datetime.date | None = None
+    price: int | None = None
+    description: str | None = None
 
 
 class ExpenTotal(BaseModel):
     year_month: str
     total_pric: int
-
-    class Config:
-        orm_mode = True

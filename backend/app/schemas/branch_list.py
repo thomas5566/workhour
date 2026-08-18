@@ -1,15 +1,7 @@
-from pydantic import BaseModel
+from .base import BaseModel
 
 
-class BranchListBase(BaseModel):
+class BranchList(BaseModel):
     id: int
-    branch_name: str
-    branch_title: str
-
-
-class BranchList(BranchListBase):
-    id: int
-
-    class Config:
-        orm_mode = True
-
+    branch_name: str | None = None
+    branch_title: str | None = None

@@ -13,7 +13,6 @@ import Workhour from "../components/worklist/AddWorkhour";
 import WorkhourDetail from "../components/worklist/WorkhourDetail";
 import Excel from "@/components/Excel.vue";
 import PdfPage from "@/components/layouts/PdfPage.vue";
-import DaysOffLists from "../components/hr/DaysOffLists.vue";
 import StoredMembers from "../components/hr/StoredMembers.vue";
 import AlluserWorklists from "../pages/AlluserWorklists.vue";
 import DashboardV2 from "../pages/DashboardV2.vue";
@@ -21,7 +20,6 @@ import AllWorkLists from "../components/worklist/AllWorkLists.vue";
 import ChartExample from "../components/worklist/ChartExample.vue";
 import ServerList from "../components/serverlist/ServerListDetail.vue";
 import CleanShiftSchedule from "../components/cleanshiftschedule/CleanShiftSchedule.vue";
-import DudoTransactions from "../components/dudo/DudoTransactions.vue";
 import FetnetList from "../components/fetnetlist/FetnetListDetail.vue";
 import IpCamList from "../components/ipcamlist/IpCamListDetail.vue";
 
@@ -119,11 +117,6 @@ const routes = [
     component: PdfPage,
   },
   {
-    path: "/daysoff",
-    name: "DaysOffLists",
-    component: DaysOffLists,
-  },
-  {
     path: "/members",
     name: "StoredMembers",
     component: StoredMembers,
@@ -157,11 +150,6 @@ const routes = [
     path: "/cleanshiftschedule",
     name: "CleanShiftSchedule",
     component: CleanShiftSchedule,
-  },
-  {
-    path: "/dudo",
-    name: "DudoTransactions",
-    component: DudoTransactions,
   },
 ];
 

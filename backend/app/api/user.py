@@ -1,19 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-from typing import List
-from fastapi.security import OAuth2PasswordRequestForm
+from datetime import UTC, datetime, timedelta
 
-import bcrypt
-# from fastapi_login.exceptions import InvalidCredentialsException
-# from app import crud, schemas, config
-# from .. import schemas
-from ..schemas import users, allfull
-from ..database import get_db
-from ..auth import login_manager
+from fastapi import APIRouter, HTTPException, Response, status
+
+from ..auth import CurrentUser, ManagerUser, login_manager
+from ..core.config import settings
+from ..core.hashing import DUMMY_PASSWORD_HASH, Hasher
 from ..repository import user_crud
-# from .route_login import get_current_user_from_token
-
+from ..schemas import allfull, users
+from .dependencies import (
+    DatabaseSession,
+    LoginForm,
+    PageLimit,
+    PageOffset,
+    PositivePathId,
+)
 
 router = APIRouter(
     prefix="/user",
@@ -22,76 +22,101 @@ router = APIRouter(
 
 
 @router.post("/", response_model=users.User)
-def create_user(user_item: users.UserCreate, db: Session = Depends(get_db)):
+def create_user(
+    user_item: users.UserCreate,
+    db: DatabaseSession,
+    manager: ManagerUser,
+):
+    # Bootstrap administrators are provisioned outside the public API, so
+    # account creation can stay manager-only without a registration backdoor.
     db_user = user_crud.get_user_by_username(db, username=user_item.username)
     if db_user:
         raise HTTPException(
-            status_code=400, detail="Username already registered")
-    pwhash = bcrypt.hashpw(
-        bytes(user_item.password, 'utf-8'), bcrypt.gensalt())
-    user_item.password = pwhash.decode('utf8')
-    return user_crud.create_user(db=db, user_item=user_item)
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already registered",
+        )
+    hashed_password = Hasher.get_password_hash(
+        user_item.password.get_secret_value()
+    )
+    return user_crud.create_user(
+        db=db,
+        user_item=user_item,
+        hashed_password=hashed_password,
+    )
 
 
-@router.get("/", response_model=List[users.User])
-def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = user_crud.get_users(db, skip=skip, limit=limit)
-    return users
+@router.get("/", response_model=list[users.User])
+def get_users(
+    db: DatabaseSession,
+    manager: ManagerUser,
+    skip: PageOffset = 0,
+    limit: PageLimit = 100,
+):
+    return user_crud.get_users(db, skip=skip, limit=limit)
 
 
-@router.get("/users-alldata", response_model=List[users.DataTotal])
-def get_users_worklists_by_month(db: Session = Depends(get_db)):
-    get_all = user_crud.get_allusers_monthly(db)
-    return get_all
+@router.get("/users-alldata", response_model=list[users.DataTotal])
+def get_users_worklists_by_month(
+    db: DatabaseSession,
+    manager: ManagerUser,
+):
+    return user_crud.get_allusers_monthly(db)
 
 
-@router.get("/get-dpuser", response_model=List[users.User])
-def get_user_bydp(db: Session = Depends(get_db), user=Depends(login_manager)):
-    user_dp = user.department_id
-    list_dp_p = user.checklistAll_permission
-    print("department_id:", user_dp)
-    print("permission:", list_dp_p)
-    # print(current_user.is_superuser)
-    if list_dp_p == 1:
-        users = user_crud.get_user_by_department(db, user_dp)
-        return users
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="You are not permitted!!")
+@router.get("/get-dpuser", response_model=list[users.User])
+def get_user_bydp(
+    db: DatabaseSession,
+    manager: ManagerUser,
+):
+    return user_crud.get_user_by_department(db, manager.department_id)
 
 
-@router.get('/my', response_model=allfull.UserFull)
-def read_user_my(user=Depends(login_manager)):
-    return user
+@router.get("/my", response_model=allfull.UserFull)
+def read_user_my(
+    db: DatabaseSession,
+    user: CurrentUser,
+):
+    return user_crud.get_user(db, user_id=user.id)
 
 
-@router.post('/login', response_model=users.UserToken)
-def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    username = data.username
-    password = data.password
-    user = user_crud.get_user_by_username(db, username=username)
-
-    if not user:
-        raise HTTPException(status_code=400, detail="Username not found")
-    elif not bcrypt.checkpw(bytes(data.password, 'utf-8'), bytes(user.password, 'utf-8')):
-        raise HTTPException(status_code=400, detail="Incorrect password")
+@router.post("/login", response_model=users.UserToken)
+def login(data: LoginForm, db: DatabaseSession, response: Response):
+    user = user_crud.get_user_by_username(db, username=data.username)
+    # Always verify a hash, even for an unknown account, so username probing
+    # cannot rely on a noticeably faster missing-user response.
+    stored_hash = user.password if user else DUMMY_PASSWORD_HASH
+    password_is_valid = Hasher.verify_password(data.password, stored_hash)
+    if not user or not password_is_valid or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     access_token = login_manager.create_access_token(
-        data={'sub': user.id},
-        expires=timedelta(hours=24)
+        data={"sub": str(user.id)},
+        expires=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
     user.token = access_token
-    user.expiration = datetime.now() + timedelta(hours=24)
+    user.expiration = datetime.now(UTC) + timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    # Bearer tokens must never be retained by browser or intermediary caches.
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
     return user
 
 
 @router.get("/{user_id}", response_model=allfull.UserFull)
-def read_user(user_id: int, db: Session = Depends(get_db), user=Depends(login_manager)):
-    list_dp_p = user.checklistAll_permission
-    if list_dp_p == 1:
-        db_user = user_crud.get_user(db, user_id=user_id)
-        return db_user
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="You are not permitted!!")
-    # if db_user is None:
-    #     raise HTTPException(status_code=404, detail="User not found")
-    # return db_user
+def read_user(
+    user_id: PositivePathId,
+    db: DatabaseSession,
+    manager: ManagerUser,
+):
+    db_user = user_crud.get_user(db, user_id=user_id)
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+    return db_user

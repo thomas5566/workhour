@@ -1,0 +1,15 @@
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+# Dependency deprecations and ORM relationship warnings should fail early
+# instead of surfacing only after a future Python or framework upgrade.
+filterwarnings = ["error"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+# Enforce the complete pycodestyle baseline now that the legacy formatting
+# violations have been removed.
+select = ["B", "E", "F", "I", "UP", "W"]

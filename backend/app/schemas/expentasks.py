@@ -1,21 +1,20 @@
-from pydantic import BaseModel
+from pydantic import Field
+
+from .base import BaseModel
 
 
-class ExpenTaskBase(BaseModel):
-    expentask_name: str
+class ExpenTaskWrite(BaseModel):
+    expentask_name: str = Field(min_length=1, max_length=255)
 
 
-class ExpenTaskCreate(ExpenTaskBase):
+class ExpenTaskCreate(ExpenTaskWrite):
     pass
 
 
-class ExpenTaskUpdate(ExpenTaskBase):
+class ExpenTaskUpdate(ExpenTaskWrite):
     pass
 
 
-class ExpenTask(ExpenTaskBase):
+class ExpenTask(BaseModel):
     id: int
-
-    class Config:
-        orm_mode = True
-
+    expentask_name: str | None = None

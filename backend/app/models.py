@@ -1,198 +1,208 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Date, Time, Float, Numeric
+from __future__ import annotations
+
+from datetime import date, datetime
+from decimal import Decimal
+
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from .database import Base
 
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-
-# from sqlalchemy.sql.sqltypes import TIMESTAMP
-from sqlalchemy.sql.expression import text
-from sqlalchemy.types import TIMESTAMP
+from .db.base import Base
 
 
-class IdMixin(object):
-    id = Column(Integer, primary_key=True, index=True)
+class IdMixin:
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
-class TimestampMixin(object):
-    created_at = Column(Date, server_default=func.now())
-    updated_at = Column(Date, server_default=func.now(), onupdate=func.now())
 
-class Department(IdMixin, Base, TimestampMixin):
+class TimestampMixin:
+    # These remain nullable to match the deployed legacy schema exactly.
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
+
+class Department(IdMixin, TimestampMixin, Base):
     __tablename__ = "department"
 
-    department_name = Column(String(255), index=True)
-    user = relationship("User", back_populates="department", uselist=False)
+    department_name: Mapped[str | None] = mapped_column(String(255), index=True)
+    # A department contains many users; a collection annotation prevents
+    # SQLAlchemy from treating this one-to-many relationship as a scalar.
+    users: Mapped[list[User]] = relationship(back_populates="department")
 
-class Task(IdMixin, Base, TimestampMixin):
 
+class Task(IdMixin, TimestampMixin, Base):
     __tablename__ = "task"
 
-    taskname = Column(String(255), index=True)
-    fullname = Column(String(255))
-    organization = Column(String(255))
-    is_active = Column(Boolean(), default=True)
+    taskname: Mapped[str | None] = mapped_column(String(255), index=True)
+    fullname: Mapped[str | None] = mapped_column(String(255))
+    organization: Mapped[str | None] = mapped_column(String(255))
+    is_active: Mapped[bool | None] = mapped_column(Boolean(), default=True)
 
-    workhours = relationship("Workhour", back_populates="task")
-    cstshops = relationship("CstShop", back_populates="task")
+    workhours: Mapped[list[Workhour]] = relationship(back_populates="task")
+    cstshops: Mapped[list[CstShop]] = relationship(back_populates="task")
 
-class User(IdMixin, Base, TimestampMixin):
 
+class User(IdMixin, TimestampMixin, Base):
     __tablename__ = "user"
 
-    username = Column(String(100), unique=True, index=True)
-    fullname = Column(String(255), default="")
-    password = Column(String(255))
-    is_active = Column(Boolean(), default=True)
-    is_superuser = Column(Boolean(), default=False)
-    checklistAll_permission = Column(Integer, default=0)  # 0: user, 1: manager
-    # worklistAll_permission = Column(Integer, default=0)  # 0: user, 1: manager
+    username: Mapped[str | None] = mapped_column(
+        String(100),
+        unique=True,
+        index=True,
+    )
+    fullname: Mapped[str | None] = mapped_column(String(255), default="")
+    password: Mapped[str | None] = mapped_column(String(255))
+    is_active: Mapped[bool | None] = mapped_column(Boolean(), default=True)
+    is_superuser: Mapped[bool | None] = mapped_column(Boolean(), default=False)
+    checklistAll_permission: Mapped[int | None] = mapped_column(Integer, default=0)
 
-    workhours = relationship("Workhour", back_populates="user")
-    expenditures = relationship("Expenditure", back_populates="user")
-    daysoff = relationship("DaysOff", back_populates="user")
-    department_id = Column(Integer, ForeignKey("department.id"))
-    department = relationship(
-        "Department", back_populates="user", uselist=False)
+    workhours: Mapped[list[Workhour]] = relationship(back_populates="user")
+    expenditures: Mapped[list[Expenditure]] = relationship(back_populates="user")
+    department_id: Mapped[int | None] = mapped_column(ForeignKey("department.id"))
+    department: Mapped[Department | None] = relationship(back_populates="users")
 
-class ExpenTask(IdMixin, Base, TimestampMixin):
 
+class ExpenTask(IdMixin, TimestampMixin, Base):
     __tablename__ = "expentask"
 
-    expentask_name = Column(String(255), index=True)
+    expentask_name: Mapped[str | None] = mapped_column(String(255), index=True)
+    expens: Mapped[list[Expenditure]] = relationship(back_populates="expentask")
 
-    expens = relationship("Expenditure", back_populates="expentask")
 
-class Workhour(IdMixin, Base, TimestampMixin):
-
+class Workhour(IdMixin, TimestampMixin, Base):
     __tablename__ = "workhour"
 
-    user_id = Column(Integer, ForeignKey("user.id"))
-    task_id = Column(Integer, ForeignKey("task.id"))
-    shop_id = Column(Integer, ForeignKey("cst_shop.id"))
-    start_date = Column(Date)
-    hour = Column(Numeric(4, 2))
-    case_close = Column(Boolean, default=False)
-    overtime_hour = Column(Numeric(4, 2))
-    description = Column(String(255), index=True)
-    active = Column(Boolean, default=True)
-    end_date = Column(Date)
-    todo = Column(String(255), index=True)
-    cause_issue = Column(String(255), index=True)
-    processing_method = Column(String(255), index=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+    task_id: Mapped[int | None] = mapped_column(ForeignKey("task.id"))
+    shop_id: Mapped[int | None] = mapped_column(ForeignKey("cst_shop.id"))
+    start_date: Mapped[date | None] = mapped_column(Date)
+    hour: Mapped[Decimal | None] = mapped_column(Numeric(4, 2))
+    case_close: Mapped[bool | None] = mapped_column(Boolean(), default=False)
+    overtime_hour: Mapped[Decimal | None] = mapped_column(Numeric(4, 2))
+    description: Mapped[str | None] = mapped_column(String(255), index=True)
+    active: Mapped[bool | None] = mapped_column(Boolean(), default=True)
+    end_date: Mapped[date | None] = mapped_column(Date)
+    todo: Mapped[str | None] = mapped_column(String(255), index=True)
+    cause_issue: Mapped[str | None] = mapped_column(String(255), index=True)
+    processing_method: Mapped[str | None] = mapped_column(String(255), index=True)
 
-    user = relationship("User", back_populates="workhours", uselist=False)
-    task = relationship("Task", back_populates="workhours", uselist=False)
-    shop = relationship("CstShop", back_populates="workhours", uselist=False)
+    user: Mapped[User | None] = relationship(back_populates="workhours")
+    task: Mapped[Task | None] = relationship(back_populates="workhours")
+    shop: Mapped[CstShop | None] = relationship(back_populates="workhours")
 
-class Expenditure(IdMixin, Base, TimestampMixin):
 
+class Expenditure(IdMixin, TimestampMixin, Base):
     __tablename__ = "expenditure"
 
-    user_id = Column(Integer, ForeignKey("user.id"))
-    expentask_id = Column(Integer, ForeignKey("expentask.id"))
-    date = Column(Date)
-    price = Column(Integer)
-    description = Column(String(255), index=True)
-    active = Column(Boolean, default=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+    expentask_id: Mapped[int | None] = mapped_column(ForeignKey("expentask.id"))
+    date: Mapped[date | None] = mapped_column(Date)
+    price: Mapped[int | None] = mapped_column(Integer)
+    description: Mapped[str | None] = mapped_column(String(255), index=True)
+    active: Mapped[bool | None] = mapped_column(Boolean(), default=True)
 
-    user = relationship("User", back_populates="expenditures", uselist=False)
-    expentask = relationship(
-        "ExpenTask", back_populates="expens", uselist=False)
+    user: Mapped[User | None] = relationship(back_populates="expenditures")
+    expentask: Mapped[ExpenTask | None] = relationship(back_populates="expens")
 
-class DaysOff(IdMixin, Base, TimestampMixin):
 
+class DaysOff(IdMixin, TimestampMixin, Base):
+    # Keep the retired feature's table in Alembic metadata until a separately
+    # approved data-retention migration decides whether existing rows may drop.
     __tablename__ = "daysoff"
 
-    daysoff_name = Column(String(255), index=True)
-    daysoff_date = Column(Date)
-    daysoff_hour = Column(Numeric(4, 2))
-    active = Column(Boolean, default=True)
+    daysoff_name: Mapped[str | None] = mapped_column(String(255), index=True)
+    daysoff_date: Mapped[date | None] = mapped_column(Date)
+    daysoff_hour: Mapped[Decimal | None] = mapped_column(Numeric(4, 2))
+    active: Mapped[bool | None] = mapped_column(Boolean(), default=True)
 
-    user_id = Column(Integer, ForeignKey("user.id"))
-    user = relationship("User", back_populates="daysoff")
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
+
 
 class CstShop(IdMixin, Base):
-
     __tablename__ = "cst_shop"
 
-    main_department_id = Column(Integer, ForeignKey("task.id"))    
-    shop_name = Column(String(255))
-    shop_number = Column(String(255))
+    # Keep the legacy column name while mapping it to the Task relationship.
+    main_department_id: Mapped[int | None] = mapped_column(ForeignKey("task.id"))
+    shop_name: Mapped[str | None] = mapped_column(String(255))
+    shop_number: Mapped[str | None] = mapped_column(String(255))
 
-    task = relationship("Task", back_populates="cstshops")
-    workhours = relationship("Workhour", back_populates="shop")
+    task: Mapped[Task | None] = relationship(back_populates="cstshops")
+    workhours: Mapped[list[Workhour]] = relationship(back_populates="shop")
+
 
 class BranchList(IdMixin, Base):
-
     __tablename__ = "branch_list"
 
-    branch_name = Column(String(255))
-    branch_title = Column(String(255))
+    branch_name: Mapped[str | None] = mapped_column(String(255))
+    branch_title: Mapped[str | None] = mapped_column(String(255))
+
 
 class ServerList(IdMixin, Base):
-
     __tablename__ = "serverlist"
 
-    branch_id = Column(Integer)
-    server_name = Column(String(255))
-    server_ip = Column(String(255))
-    server_location = Column(String(255))
-    server_acc = Column(String(255))
-    server_pass = Column(String(255))
-    server_remark = Column(String(255))
+    branch_id: Mapped[int | None] = mapped_column(Integer)
+    server_name: Mapped[str | None] = mapped_column(String(255))
+    server_ip: Mapped[str | None] = mapped_column(String(255))
+    server_location: Mapped[str | None] = mapped_column(String(255))
+    server_acc: Mapped[str | None] = mapped_column(String(255))
+    server_pass: Mapped[str | None] = mapped_column(String(255))
+    server_remark: Mapped[str | None] = mapped_column(String(255))
+
 
 class TransactionsList(IdMixin, Base):
+    # This retired integration remains mapped only to preserve its legacy data.
+    __tablename__ = "transactions"
 
-    __tablename__ = "transactions"    
-    
-    amount = Column(String(255))
-    sale_id = Column(String(255))
-    sale_amount = Column(String(255))
-    pos_id = Column(String(255))
-    canceled = Column(String(255))
-    transaction_id = Column(String(255))
-    service_amount = Column(String(255))
-    discount_amount = Column(String(255))
-    sale_deleted = Column(String(255))
-    employee_username = Column(String(255))
-    shipping_fee = Column(String(255))
-    shop_id = Column(Integer)
-    create_time = Column(Date)
-    update_time = Column(Date)
-    
+    amount: Mapped[str | None] = mapped_column(String(255))
+    sale_id: Mapped[str | None] = mapped_column(String(255))
+    sale_amount: Mapped[str | None] = mapped_column(String(255))
+    pos_id: Mapped[str | None] = mapped_column(String(255))
+    canceled: Mapped[str | None] = mapped_column(String(255))
+    transaction_id: Mapped[str | None] = mapped_column(String(255))
+    service_amount: Mapped[str | None] = mapped_column(String(255))
+    discount_amount: Mapped[str | None] = mapped_column(String(255))
+    sale_deleted: Mapped[str | None] = mapped_column(String(255))
+    employee_username: Mapped[str | None] = mapped_column(String(255))
+    shipping_fee: Mapped[str | None] = mapped_column(String(255))
+    shop_id: Mapped[int | None] = mapped_column(Integer)
+    create_time: Mapped[date | None] = mapped_column(Date)
+    update_time: Mapped[date | None] = mapped_column(Date)
+
 
 class FetnetList(IdMixin, Base):
-
     __tablename__ = "fetnetlist"
 
-    branch_id = Column(Integer)
-    shop_id = Column(Integer)
-    shop_name = Column(String(255))
-    shop_tax = Column(String(255))
-    shop_location = Column(String(255))
-    shop_phone_number = Column(String(255))
-    shop_phone_short_code = Column(String(255))
-    adsl_number = Column(String(255))
-    fetnet_phone_number = Column(String(255))
-    adsl_bank_number = Column(String(255))
-    fetnetlist_remark = Column(String(255))
+    branch_id: Mapped[int | None] = mapped_column(Integer)
+    shop_id: Mapped[int | None] = mapped_column(Integer)
+    shop_name: Mapped[str | None] = mapped_column(String(255))
+    shop_tax: Mapped[str | None] = mapped_column(String(255))
+    shop_location: Mapped[str | None] = mapped_column(String(255))
+    shop_phone_number: Mapped[str | None] = mapped_column(String(255))
+    shop_phone_short_code: Mapped[str | None] = mapped_column(String(255))
+    adsl_number: Mapped[str | None] = mapped_column(String(255))
+    fetnet_phone_number: Mapped[str | None] = mapped_column(String(255))
+    adsl_bank_number: Mapped[str | None] = mapped_column(String(255))
+    fetnetlist_remark: Mapped[str | None] = mapped_column(String(255))
 
 
 class IpCamList(IdMixin, Base):
-
     __tablename__ = "ipcamlist"
 
-    shop_id = Column(Integer)
-    shop_name = Column(String(255))
-    ipcam_brand = Column(String(255))
-    ipcam_ip = Column(String(255))
-    admin_acc = Column(String(255))
-    admin_pass = Column(String(255))
-    user_acc = Column(String(255))
-    user_pass = Column(String(255))
-    phone_port = Column(String(255))
-    http_port = Column(String(255))
-    tcp_port = Column(String(255))
-    remark = Column(String(255))
+    shop_id: Mapped[int | None] = mapped_column(Integer)
+    shop_name: Mapped[str | None] = mapped_column(String(255))
+    ipcam_brand: Mapped[str | None] = mapped_column(String(255))
+    ipcam_ip: Mapped[str | None] = mapped_column(String(255))
+    admin_acc: Mapped[str | None] = mapped_column(String(255))
+    admin_pass: Mapped[str | None] = mapped_column(String(255))
+    user_acc: Mapped[str | None] = mapped_column(String(255))
+    user_pass: Mapped[str | None] = mapped_column(String(255))
+    phone_port: Mapped[str | None] = mapped_column(String(255))
+    http_port: Mapped[str | None] = mapped_column(String(255))
+    tcp_port: Mapped[str | None] = mapped_column(String(255))
+    remark: Mapped[str | None] = mapped_column(String(255))

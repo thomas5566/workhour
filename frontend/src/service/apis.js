@@ -247,36 +247,6 @@ export function getDepartmentsAPI() {
   });
 }
 
-export function getDaysoffAPI() {
-  return axios({
-    url: "/daysoff/daysoffbyuser/",
-    method: "get",
-  });
-}
-
-export function postDaysoffAPI(data) {
-  return axios({
-    url: "/daysoff/",
-    method: "post",
-    data: data,
-  });
-}
-
-export function updateDaysoffAPI(dayoffId, data) {
-  return axios({
-    url: `/daysoff/${dayoffId}`,
-    method: "put",
-    data: data,
-  });
-}
-
-export function deleteDaysoffAPI(dayoff_id) {
-  return axios({
-    url: `/daysoff/${dayoff_id}`,
-    method: "delete",
-  });
-}
-
 export function getBranchListAPI() {
   return axios({
     url: "/branchlist/",
@@ -303,30 +273,6 @@ export function updateServerListByIdAPI(serverlist_id, data) {
     url: `/serverlist/${serverlist_id}`,
     method: "put",
     data: data,
-  });
-}
-
-export function getDudoTransactionsListsAPI() {
-  return axios({
-    url: "/transactionslist/",
-    method: "get",
-  });
-}
-
-export function getDudoTransactionsByShopIdAPI(
-  shop_id,
-  search_date_start,
-  search_date_end
-) {
-  return axios({
-    url:
-      "/transactionslist/transactionslist-shopid?shop_id=" +
-      shop_id +
-      "&search_date_start=" +
-      search_date_start +
-      "&search_date_end=" +
-      search_date_end,
-    method: "get",
   });
 }
 

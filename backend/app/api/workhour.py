@@ -1,13 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
-from sqlalchemy.orm import Session
-from typing import List
-# from app import crud, schemas, config
-# from .. import schemas
+from fastapi import APIRouter, HTTPException, status
 
-from ..schemas import whorkhours, allfull
+from ..auth import CurrentUser, ManagerUser, ensure_owner_or_manager
 from ..repository import workhour_crud
-from ..database import get_db
-from ..auth import login_manager
+from ..schemas import allfull, workhours
+from ..schemas.common import MessageResponse
+from .dependencies import DatabaseSession, PageLimit, PageOffset, PositivePathId
 
 router = APIRouter(
     prefix="/workhour",
@@ -15,129 +12,150 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=allfull.WorkhourFull)
-def create_workhour(workhour_items: whorkhours.WorkhourCreate, db: Session = Depends(get_db), user=Depends(login_manager)):
-    workhour_items.user_id = user.id
-    return workhour_crud.create_workhour(db=db, workhour_items=workhour_items)
+@router.post(
+    "/",
+    response_model=allfull.WorkhourFull,
+)
+def create_workhour(
+    workhour_items: workhours.WorkhourCreate,
+    db: DatabaseSession,
+    user: CurrentUser,
+):
+    return workhour_crud.create_workhour(
+        db=db,
+        workhour_items=workhour_items,
+        user_id=user.id,
+    )
 
 
-@router.get("/workhours", response_model=List[allfull.WorkhourFull])
-def read_workhours(db: Session = Depends(get_db), user=Depends(login_manager)):
-    user_id = user.id
-    return workhour_crud.get_workhours(db, user_id)
-
-@router.get("/allworkhours", response_model=List[allfull.WorkhourFull])
-def read_all_workhours(db: Session = Depends(get_db), user=Depends(login_manager)):    
-    return workhour_crud.get_all_workhours(db)
-
-
-@router.get("/worklist-year-month", response_model=List[whorkhours.WorkhourByYearMonth])
-def read_workhours(db: Session = Depends(get_db)):
-    db_get_worklist_by_year_month = workhour_crud.get_worklist_by_yearmonth(db)
-    
-    if db_get_worklist_by_year_month is None:
-        raise HTTPException(status_code=404, detail="Get worklist by year and month is not found")
-    return db_get_worklist_by_year_month
+@router.get("/workhours", response_model=list[allfull.WorkhourFull])
+def read_workhours(
+    db: DatabaseSession,
+    user: CurrentUser,
+    skip: PageOffset = 0,
+    limit: PageLimit = 100,
+):
+    # Defaults preserve the repository's legacy page while enabling navigation.
+    return workhour_crud.get_workhours(
+        db,
+        user.id,
+        skip=skip,
+        limit=limit,
+    )
 
 
-@router.get("/worklist-userid", response_model=List[whorkhours.WorkhourByUserId])
-def read_workhours(db: Session = Depends(get_db)):
-    db_get_worklist_by_user_id = workhour_crud.get_worklist_by_userid(db)
-    
-    if db_get_worklist_by_user_id is None:
-        raise HTTPException(status_code=404, detail="Get worklist by user id is not found")
-    return db_get_worklist_by_user_id
+@router.get("/allworkhours", response_model=list[allfull.WorkhourFull])
+def read_all_workhours(
+    db: DatabaseSession,
+    manager: ManagerUser,
+    skip: PageOffset = 0,
+    limit: PageLimit = 1000,
+):
+    return workhour_crud.get_all_workhours(db, skip=skip, limit=limit)
 
 
-@router.get("/worklist-shopid", response_model=List[whorkhours.WorkhourByShopId])
-def read_workhours(db: Session = Depends(get_db)):
-    db_get_worklist_by_shop_id = workhour_crud.get_worklist_by_shopid(db)
-    if db_get_worklist_by_shop_id is None:
-        raise HTTPException(status_code=404, detail="Get worklist by shop id is not found")
-    return db_get_worklist_by_shop_id
-
-# def read_workhours(skip: int = 0, limit: int = 100, user_id: int = None, task_id: int = None, db: Session = Depends(get_db)):
-#     if user_id and task_id:
-#         workhours = workhour_crud.get_workhours_by_user_task(db, skip=skip, limit=limit, user_id=user_id, task_id=task_id)
-#     elif user_id:
-#         workhours = workhour_crud.get_workhours_by_user_id(db, skip=skip, limit=limit, user_id=user_id)
-#     elif task_id:
-#         workhours = workhour_crud.get_workhours_by_task_id(db, skip=skip, limit=limit, task_id=task_id)
-#     else:
-#         workhours = workhour_crud.get_workhours(db, skip=skip, limit=limit)
-#     return workhours
-
-@router.get('/my/{user_id}', response_model=List[allfull.WorkhourFull])
-def read_workhours_my(user_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), user=Depends(login_manager)):
-    # user_id = user.id
-    list_dp_p = user.checklistAll_permission
-    if list_dp_p == 1:
-        workhours = workhour_crud.get_workhours_by_user_id(
-            db, skip=skip, limit=limit, user_id=user_id)
-        return workhours
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="You are not permitted!!")
-    # workhours = workhour_crud.get_workhours_by_user_id(
-    #     db, skip=skip, limit=limit, user_id=user_id)
-    # return workhours
+@router.get("/worklist-year-month", response_model=list[workhours.WorkhourByYearMonth])
+def read_workhours_by_year_month(
+    db: DatabaseSession,
+    manager: ManagerUser,
+):
+    return workhour_crud.get_worklist_by_yearmonth(db)
 
 
-@router.get('/totalhour/{user_id}', response_model=List[whorkhours.WorkhourTotal])
-def get_totalworkhours_byid(user_id: int, db: Session = Depends(get_db), user=Depends(login_manager)):
-    # user_id = 5
-    list_dp_p = user.checklistAll_permission
-    if list_dp_p == 1:
-        workhour_items = workhour_crud.get_monthlyworkhours_by_user_id(
-            db, user_id=user_id)
-        return workhour_items
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="You are not permitted!!")
-    # workhour_items = workhour_crud.get_monthlyworkhours_by_user_id(
-    #     db, user_id=user_id)
-    # print(workhour_items)
-    # return workhour_items
+@router.get("/worklist-userid", response_model=list[workhours.WorkhourByUserId])
+def read_workhours_by_user_id_summary(
+    db: DatabaseSession,
+    manager: ManagerUser,
+):
+    return workhour_crud.get_worklist_by_userid(db)
+
+
+@router.get("/worklist-shopid", response_model=list[workhours.WorkhourByShopId])
+def read_workhours_by_shop_id_summary(
+    db: DatabaseSession,
+    manager: ManagerUser,
+):
+    return workhour_crud.get_worklist_by_shopid(db)
+
+
+@router.get("/my/{user_id}", response_model=list[allfull.WorkhourFull])
+def read_workhours_my(
+    user_id: PositivePathId,
+    db: DatabaseSession,
+    manager: ManagerUser,
+    skip: PageOffset = 0,
+    limit: PageLimit = 100,
+):
+    return workhour_crud.get_workhours_by_user_id(
+        db,
+        skip=skip,
+        limit=limit,
+        user_id=user_id,
+    )
+
+
+@router.get("/totalhour/{user_id}", response_model=list[workhours.WorkhourTotal])
+def get_totalworkhours_byid(
+    user_id: PositivePathId,
+    db: DatabaseSession,
+    manager: ManagerUser,
+):
+    return workhour_crud.get_monthlyworkhours_by_user_id(
+        db,
+        user_id=user_id,
+    )
 
 
 @router.get("/{workhour_id}", response_model=allfull.WorkhourFull)
-def read_workhour(workhour_id: int, db: Session = Depends(get_db)):
+def read_workhour(
+    workhour_id: PositivePathId,
+    db: DatabaseSession,
+    user: CurrentUser,
+):
     db_workhour = workhour_crud.get_workhour(db, workhour_id=workhour_id)
     if db_workhour is None:
         raise HTTPException(status_code=404, detail="Workhour not found")
+    ensure_owner_or_manager(user, db_workhour.user_id)
     return db_workhour
 
-# @router.put("/{workhour_id}", response_model=schemas.WorkhourFull)
-# def edit_workhour(workhour: schemas.WorkhourUpdate, workhour_id: int, db: Session = Depends(get_db)):
-#     # user_id = user.id
-#     db_workhour = workhour_crud.update_workhour(db, workhour_id=workhour_id, workhour=workhour)
-#     if db_workhour is None:
-#         raise HTTPException(status_code=404, detail="Workhour not found")
-#     return db_workhour
 
-
-@router.put("/{workhour_id}")
-def edit_workhour(workhour_id: int, workhour_items: whorkhours.WorkhourUpdate, db: Session = Depends(get_db), user=Depends(login_manager)):
-    user_id = user.id
+@router.put("/{workhour_id}", response_model=MessageResponse)
+def edit_workhour(
+    workhour_id: PositivePathId,
+    workhour_items: workhours.WorkhourUpdate,
+    db: DatabaseSession,
+    user: CurrentUser,
+) -> MessageResponse:
     workhour_retrieved = workhour_crud.get_workhour(
-        db=db, workhour_id=workhour_id)
+        db=db,
+        workhour_id=workhour_id,
+    )
     if not workhour_retrieved:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Workhour with id {id} does not exist")
-    if workhour_retrieved.user_id == user.id:
-        message = workhour_crud.update_workhour(
-            workhour_id=workhour_id, workhour_items=workhour_items, db=db, user_id=user_id)
-    else:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail=f"You are not authorized to update.")
-    return {"detail": "Successfully updated data."}
-
-# @router.get("/totalhours", response_model=List[schemas.WorkhourFull])
-# def read_totalworkhours(skip: int=0, db: Session = Depends(get_db)):
-#     totalworkhours = crud.get_totalworkhours_by_user_id(db, skip=skip)
-#     list_totalhours = [int(number) for number in totalworkhours]
-#     return list_totalhours
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Workhour with id {workhour_id} does not exist",
+        )
+    ensure_owner_or_manager(user, workhour_retrieved.user_id)
+    workhour_crud.update_workhour(
+        workhour_id=workhour_id,
+        workhour_items=workhour_items,
+        db=db,
+        user_id=workhour_retrieved.user_id,
+    )
+    return MessageResponse(detail="Successfully updated data.")
 
 
-@router.delete("/{id}", response_class=Response)
-def delete_workhour(id: int, db: Session = Depends(get_db)):
-    # expen.user_id = user.id
-    return workhour_crud.delete_workhour(id, db)
+@router.delete("/{workhour_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_workhour(
+    workhour_id: PositivePathId,
+    db: DatabaseSession,
+    user: CurrentUser,
+) -> None:
+    workhour = workhour_crud.get_workhour(db, workhour_id)
+    if workhour is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workhour not found",
+        )
+    ensure_owner_or_manager(user, workhour.user_id)
+    workhour_crud.delete_workhour(workhour_id, db)

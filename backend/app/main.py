@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel
-from sqlalchemy import text
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from app.api import (
@@ -17,6 +17,7 @@ from app.api import (
     expentask,
     fetnetlist,
     ipcamlist,
+    monitoring,
     serverlist,
     task,
     user,
@@ -169,6 +170,7 @@ def create_app() -> FastAPI:
         serverlist.router,
         fetnetlist.router,
         ipcamlist.router,
+        monitoring.router,
     )
     for router in routers:
         application.include_router(router, prefix=settings.API_V1_STR)
@@ -183,7 +185,9 @@ def create_app() -> FastAPI:
     @application.get("/ready", response_model=HealthResponse, tags=["Health"])
     def readiness_check(db: DatabaseSession) -> HealthResponse:
         # Readiness must fail when the database cannot serve application work.
-        db.execute(text("SELECT 1"))
+        # Use SQLAlchemy's expression API even for the constant readiness
+        # probe, keeping raw SQL construction out of application code.
+        db.execute(select(1))
         return HealthResponse(
             status="ok",
             version=settings.PROJECT_VERSION,

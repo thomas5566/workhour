@@ -13,7 +13,6 @@ const Expen = () => import("../components/expenlist/AddExpen.vue");
 const Expentask = () => import("../components/expenlist/AddExpentask.vue");
 const Workhour = () => import("../components/worklist/AddWorkhour.vue");
 const WorkhourDetail = () => import("../components/worklist/WorkhourDetail.vue");
-const Excel = () => import("@/components/Excel.vue");
 const PdfPage = () => import("@/components/layouts/PdfPage.vue");
 const StoredMembers = () => import("../components/hr/StoredMembers.vue");
 const AlluserWorklists = () => import("../pages/AlluserWorklists.vue");
@@ -21,9 +20,15 @@ const DashboardV2 = () => import("../pages/DashboardV2.vue");
 const AllWorkLists = () => import("../components/worklist/AllWorkLists.vue");
 const ChartExample = () => import("../components/worklist/ChartExample.vue");
 const ServerList = () => import("../components/serverlist/ServerListDetail.vue");
+const AddServerDevice = () => import("../components/serverlist/AddServerDevice.vue");
 const CleanShiftSchedule = () => import("../components/cleanshiftschedule/CleanShiftSchedule.vue");
 const FetnetList = () => import("../components/fetnetlist/FetnetListDetail.vue");
+const AddFetnetList = () => import("../components/fetnetlist/AddFetnetList.vue");
 const IpCamList = () => import("../components/ipcamlist/IpCamListDetail.vue");
+const AddIpCamList = () => import("../components/ipcamlist/AddIpCamList.vue");
+const InfrastructureMonitoring = () => import("../pages/InfrastructureMonitoring.vue");
+const MasterDataManagement = () => import("../pages/MasterDataManagement.vue");
+const UserManagement = () => import("../pages/UserManagement.vue");
 
 const routes = [
   {
@@ -86,11 +91,6 @@ const routes = [
     component: Expen,
   },
   {
-    path: "/excel",
-    name: "Excel",
-    component: Excel,
-  },
-  {
     path: "/user/:id",
     name: "UserDetail",
     component: UserDetail,
@@ -136,14 +136,50 @@ const routes = [
     component: ServerList,
   },
   {
+    path: "/serverlist/add",
+    name: "AddServerDevice",
+    component: AddServerDevice,
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/fetnetlist",
     name: "FetnetList",
     component: FetnetList,
   },
   {
+    path: "/fetnetlist/add",
+    name: "AddFetnetList",
+    component: AddFetnetList,
+    meta: { requiresAuth: true },
+  },
+  {
     path: "/ipcamlist",
     name: "IpCamList",
     component: IpCamList,
+  },
+  {
+    path: "/ipcamlist/add",
+    name: "AddIpCamList",
+    component: AddIpCamList,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/monitoring",
+    name: "InfrastructureMonitoring",
+    component: InfrastructureMonitoring,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/master-data",
+    name: "MasterDataManagement",
+    component: MasterDataManagement,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/user-management",
+    name: "UserManagement",
+    component: UserManagement,
+    meta: { requiresAuth: true },
   },
   {
     path: "/cleanshiftschedule",

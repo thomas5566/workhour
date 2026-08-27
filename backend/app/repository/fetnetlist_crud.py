@@ -11,12 +11,20 @@ def get_fetnetlists(
     skip: int = 0,
     limit: int = 100,
 ) -> list[FetnetList]:
-    statement = select(FetnetList).order_by(FetnetList.id).offset(skip).limit(limit)
+    statement = select(FetnetList).order_by(FetnetList.id.desc()).offset(skip).limit(limit)
     return list(db.scalars(statement).all())
 
 
 def get_fetnetlist_by_id(db: Session, fetnetlist_id: int) -> FetnetList | None:
     return db.get(FetnetList, fetnetlist_id)
+
+
+def create_fetnetlist(db: Session, items: fetnetlist.FetnetListCreate) -> FetnetList:
+    record = FetnetList(**items.model_dump())
+    db.add(record)
+    commit_or_rollback(db)
+    db.refresh(record)
+    return record
 
 
 def get_fetnetlists_by_branch_id(
@@ -25,7 +33,7 @@ def get_fetnetlists_by_branch_id(
     statement = (
         select(FetnetList)
         .where(FetnetList.branch_id == branch_id)
-        .order_by(FetnetList.id)
+        .order_by(FetnetList.id.desc())
         .offset(skip)
         .limit(limit)
     )
@@ -40,7 +48,7 @@ def update_fetnetlist_by_id(
     db_fetnetlist = db.get(FetnetList, fetnetlist_id)
     if db_fetnetlist is None:
         return None
-    for field, value in fetnetlist_items.model_dump().items():
+    for field, value in fetnetlist_items.model_dump(exclude_unset=True).items():
         setattr(db_fetnetlist, field, value)
     commit_or_rollback(db)
     db.refresh(db_fetnetlist)

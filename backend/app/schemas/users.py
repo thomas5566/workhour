@@ -37,11 +37,41 @@ class UserCreate(BaseModel):
         return value
 
 
+class UserAdminCreate(UserCreate):
+    is_active: bool = True
+    is_superuser: bool = False
+    checklistAll_permission: int = Field(default=0, ge=0, le=1)
+
+
+class UserAdminUpdate(BaseModel):
+    username: str = Field(min_length=1, max_length=100)
+    fullname: str = Field(default="", max_length=255)
+    department_id: int = Field(gt=0)
+    password: SecretStr | None = Field(default=None, min_length=8)
+    is_active: bool = True
+    is_superuser: bool = False
+    checklistAll_permission: int = Field(default=0, ge=0, le=1)
+
+    @field_validator("password")
+    @classmethod
+    def validate_optional_bcrypt_password_length(
+        cls, value: SecretStr | None
+    ) -> SecretStr | None:
+        if (
+            value is not None
+            and len(value.get_secret_value().encode("utf-8"))
+            > BCRYPT_MAX_PASSWORD_BYTES
+        ):
+            raise ValueError("password must not exceed 72 UTF-8 bytes")
+        return value
+
+
 class User(BaseModel):
     id: int
     # Legacy rows can contain NULL values even though new writes are validated.
     username: str | None = None
     fullname: str | None = None
+    is_active: bool = True
     is_superuser: bool = False
     checklistAll_permission: int = 0
     department_id: int | None = None

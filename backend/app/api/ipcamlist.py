@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import logging
 
-from ..auth import require_manager
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+
+from ..auth import ManagerUser, require_manager
+from ..core.credentials import decrypt_credential
 from ..repository import ipcamlist_crud
 from ..schemas import ipcamlist
 from ..schemas.common import MessageResponse
@@ -12,6 +15,7 @@ router = APIRouter(
     tags=["IpCamList"],
     dependencies=[Depends(require_manager)],
 )
+logger = logging.getLogger(__name__)
 
 
 @router.get("/", response_model=list[ipcamlist.IpCamList])
@@ -22,6 +26,40 @@ def read_ipcamlist(
 ):
     ipcamlist_items = ipcamlist_crud.get_ipcamlists(db, skip=skip, limit=limit)
     return ipcamlist_items
+
+
+@router.post("/", response_model=ipcamlist.IpCamList, status_code=status.HTTP_201_CREATED)
+def create_ipcamlist(
+    items: ipcamlist.IpCamListCreate,
+    db: DatabaseSession,
+) -> ipcamlist.IpCamList:
+    return ipcamlist_crud.create_ipcamlist(db, items)
+
+
+@router.post(
+    "/{ipcamlist_id}/reveal-passwords",
+    response_model=ipcamlist.IpCamCredentialReveal,
+)
+def reveal_ipcam_passwords(
+    ipcamlist_id: PositivePathId,
+    db: DatabaseSession,
+    manager: ManagerUser,
+    response: Response,
+) -> ipcamlist.IpCamCredentialReveal:
+    record = ipcamlist_crud.get_ipcamlist_by_id(db, ipcamlist_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="IP camera not found")
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    logger.info(
+        "Manager user_id=%s revealed camera credentials record_id=%s",
+        manager.id,
+        ipcamlist_id,
+    )
+    return ipcamlist.IpCamCredentialReveal(
+        admin_password=decrypt_credential(record.admin_pass),
+        user_password=decrypt_credential(record.user_pass),
+    )
 
 
 @router.put("/{ipcamlist_id}", response_model=MessageResponse)

@@ -73,7 +73,6 @@
               <i class="nav-icon fas fa-tachometer-alt"></i>
               <p>
                 Dashboard
-                <span class="right badge badge-danger">New</span>
               </p>
             </router-link>
           </li>
@@ -82,7 +81,6 @@
               <i class="nav-icon fas fa-copy"></i>
               <p>
                 報修紀錄
-                <span class="right badge badge-danger">New</span>
               </p>
             </router-link>
           </li>
@@ -91,7 +89,6 @@
               <i class="nav-icon fas fa-edit"></i>
               <p>
                 設備清單
-                <span class="right badge badge-danger">New</span>
               </p>
             </router-link>
           </li>
@@ -100,7 +97,6 @@
               <i class="nav-icon fas fa-edit"></i>
               <p>
                 春水-遠傳電信資料
-                <span class="right badge badge-danger">New</span>
               </p>
             </router-link>
           </li>
@@ -109,8 +105,32 @@
               <i class="nav-icon fas fa-edit"></i>
               <p>
                 監視器資料
-                <span class="right badge badge-danger">New</span>
               </p>
+            </router-link>
+          </li>
+          <li class="nav-item" v-if="showElement">
+            <router-link to="/monitoring" class="nav-link">
+              <i class="nav-icon fas fa-heartbeat"></i>
+              <p>
+                基礎設施監控
+                <span
+                  v-if="criticalProblemCount > 0"
+                  class="right badge monitoring-critical-badge"
+                  :aria-label="`${criticalProblemCount} 筆 High 或 Disaster 事件`"
+                >{{ criticalProblemCount }}</span>
+              </p>
+            </router-link>
+          </li>
+          <li class="nav-item" v-if="showElement">
+            <router-link to="/master-data" class="nav-link">
+              <i class="nav-icon fas fa-database"></i>
+              <p>基礎資料管理</p>
+            </router-link>
+          </li>
+          <li class="nav-item" v-if="showElement">
+            <router-link to="/user-management" class="nav-link">
+              <i class="nav-icon fas fa-users-cog"></i>
+              <p>使用者管理</p>
             </router-link>
           </li>
 
@@ -738,19 +758,35 @@
 </template>
 
 <script>
+import {
+  monitoringState,
+  startMonitoringPolling,
+  stopMonitoringPolling,
+} from "@/service/monitoringBackground";
+
 export default {
   data() {
     return {
-      showServerListNav: false
+      showServerListNav: false,
     }
+  },
+  mounted() {
+    if (this.showElement) {
+      startMonitoringPolling();
+    }
+  },
+  beforeUnmount() {
+    stopMonitoringPolling();
   },
   methods: {
     async redirecthome() {
       this.$router.push("/home");
     },
-
   },
   computed: {
+    criticalProblemCount() {
+      return monitoringState.criticalProblemCount;
+    },
     showElement: function () {
       return (this.$store.getters.getUsername === "11203501" ||
         this.$store.getters.getUsername === "11005004" ||
@@ -763,4 +799,24 @@ export default {
 };
 </script>
 
-<style></style>
+<style scoped>
+.monitoring-critical-badge {
+  min-width: 24px;
+  padding: 4px 7px;
+  color: #fff;
+  background: #dc3545;
+  border-radius: 999px;
+  font-weight: 700;
+  line-height: 1;
+  animation: monitoring-alert-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes monitoring-alert-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 53, 69, .7); }
+  50% { transform: scale(1.18); box-shadow: 0 0 0 6px rgba(220, 53, 69, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monitoring-critical-badge { animation: none; }
+}
+</style>

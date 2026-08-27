@@ -62,7 +62,7 @@ def test_migrations_upgrade_and_downgrade(tmp_path, monkeypatch):
         revision = connection.execute(
             text("SELECT version_num FROM alembic_version")
         ).scalar_one()
-    assert revision == "20260817_02"
+    assert revision == "20260821_03"
 
     # Keep typed ORM refactors from silently drifting away from the migration
     # history used by existing deployments and fresh installations.

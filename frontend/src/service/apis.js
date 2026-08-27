@@ -52,6 +52,29 @@ export function postUserAPI(data) {
   });
 }
 
+export function createAdminUserAPI(data) {
+  return axios({
+    url: "/user/admin",
+    method: "post",
+    data,
+  });
+}
+
+export function updateAdminUserAPI(userId, data) {
+  return axios({
+    url: `/user/admin/${userId}`,
+    method: "put",
+    data,
+  });
+}
+
+export function deleteAdminUserAPI(userId) {
+  return axios({
+    url: `/user/admin/${userId}`,
+    method: "delete",
+  });
+}
+
 export function registerUserAPI(data) {
   return axios({
     url: "/user/register",
@@ -269,10 +292,102 @@ export function getBranchListAPI() {
   });
 }
 
+export function createBranchListAPI(data) {
+  return axios({
+    url: "/branchlist/",
+    method: "post",
+    data,
+  });
+}
+
+export function updateBranchListAPI(id, data) {
+  return axios({
+    url: `/branchlist/${id}`,
+    method: "put",
+    data,
+  });
+}
+
+export function deleteBranchListAPI(id) {
+  return axios({
+    url: `/branchlist/${id}`,
+    method: "delete",
+  });
+}
+
+export function getCstShopsAPI(mainDepartmentId) {
+  return axios({
+    url: "/cstshop/",
+    method: "get",
+    params: { main_department_id: mainDepartmentId },
+  });
+}
+
+export function createCstShopAPI(data) {
+  return axios({
+    url: "/cstshop/",
+    method: "post",
+    data,
+  });
+}
+
+export function updateCstShopAPI(id, data) {
+  return axios({
+    url: `/cstshop/${id}`,
+    method: "put",
+    data,
+  });
+}
+
+export function deleteCstShopAPI(id) {
+  return axios({
+    url: `/cstshop/${id}`,
+    method: "delete",
+  });
+}
+
+export function createDepartmentAPI(data) {
+  return axios({
+    url: "/department/",
+    method: "post",
+    data,
+  });
+}
+
+export function updateDepartmentAPI(id, data) {
+  return axios({
+    url: `/department/${id}`,
+    method: "put",
+    data,
+  });
+}
+
+export function deleteDepartmentAPI(id) {
+  return axios({
+    url: `/department/${id}`,
+    method: "delete",
+  });
+}
+
 export function getServerListAPI() {
   return axios({
     url: "/serverlist/",
     method: "get",
+  });
+}
+
+export function createServerListAPI(data) {
+  return axios({
+    url: "/serverlist/",
+    method: "post",
+    data,
+  });
+}
+
+export function deleteServerListAPI(serverlist_id) {
+  return axios({
+    url: `/serverlist/${serverlist_id}`,
+    method: "delete",
   });
 }
 
@@ -291,10 +406,25 @@ export function updateServerListByIdAPI(serverlist_id, data) {
   });
 }
 
+export function revealServerPasswordAPI(serverlist_id) {
+  return axios({
+    url: `/serverlist/${serverlist_id}/reveal-password`,
+    method: "post",
+  });
+}
+
 export function getFetnetListAPI() {
   return axios({
     url: "/fetnetlist/",
     method: "get",
+  });
+}
+
+export function createFetnetListAPI(data) {
+  return axios({
+    url: "/fetnetlist/",
+    method: "post",
+    data,
   });
 }
 
@@ -320,10 +450,35 @@ export function getIpcamListAPI() {
   });
 }
 
+export function createIpcamListAPI(data) {
+  return axios({
+    url: "/ipcamlist/",
+    method: "post",
+    data,
+  });
+}
+
 export function updateIpCamListByIdAPI(ipcamlist_id, data) {
   return axios({
     url: `/ipcamlist/${ipcamlist_id}`,
     method: "put",
     data: data,
+  });
+}
+
+export function revealIpCamPasswordsAPI(ipcamlist_id) {
+  return axios({
+    url: `/ipcamlist/${ipcamlist_id}/reveal-passwords`,
+    method: "post",
+  });
+}
+
+export function getMonitoringSummaryAPI({ background = false, silent = false } = {}) {
+  return axios({
+    url: "/monitoring/summary",
+    method: "get",
+    // Background polling must not cover whichever page the user is viewing.
+    background,
+    silent,
   });
 }

@@ -82,3 +82,29 @@ def test_settings_normalize_cors_origins() -> None:
         "http://localhost:8080",
         "https://workhour.example.com",
     ]
+
+
+@pytest.mark.parametrize(
+    "url",
+    ["file:///etc/passwd", "https://user:password@monitor.example.com", "monitor.local"],
+)
+def test_settings_reject_unsafe_monitoring_urls(url: str) -> None:
+    with pytest.raises(ValidationError, match=r"Monitoring URLs"):
+        Settings(
+            **VALID_SETTINGS,
+            ZABBIX_URL=url,
+            _env_file=None,
+        )
+
+
+def test_settings_allow_disabled_monitoring_integrations() -> None:
+    settings = Settings(**VALID_SETTINGS, _env_file=None)
+
+    assert settings.ZABBIX_URL == ""
+
+
+def test_manager_session_defaults_to_four_hours() -> None:
+    settings = Settings(**VALID_SETTINGS, _env_file=None)
+
+    assert settings.ACCESS_TOKEN_EXPIRE_MINUTES == 30
+    assert settings.MANAGER_ACCESS_TOKEN_EXPIRE_MINUTES == 240

@@ -52,27 +52,29 @@ window.addEventListener("workhour:navigation", resetLoading);
 
 http.interceptors.request.use(
   (config) => {
-    startLoading();
+    if (!config.background) startLoading();
     const token = store.getters.getToken || window.sessionStorage.getItem("token");
     if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => {
-    endLoading();
+    if (!error.config?.background) endLoading();
     return Promise.reject(error);
   },
 );
 
 http.interceptors.response.use(
   (response) => {
-    endLoading();
+    if (!response.config.background) endLoading();
     return response;
   },
   async (error) => {
-    endLoading();
+    if (!error.config?.background) endLoading();
     const status = error.response?.status;
     const detail = error.response?.data?.detail;
-    ElMessage.error(typeof detail === "string" ? detail : "伺服器連線失敗，請稍後再試");
+    if (!error.config?.silent) {
+      ElMessage.error(typeof detail === "string" ? detail : "伺服器連線失敗，請稍後再試");
+    }
 
     if (status === 401) {
       await store.dispatch("LogOut");

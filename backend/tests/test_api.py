@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import httpx
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -140,6 +140,114 @@ async def test_authenticated_branch_route_applies_limit(api_engine) -> None:
 
 
 @pytest.mark.anyio
+async def test_manager_can_create_server_inventory_for_existing_branch(api_engine) -> None:
+    with Session(api_engine) as session:
+        branch = BranchList(branch_name="A1", branch_title="Taipei")
+        session.add(branch)
+        session.commit()
+        branch_id = branch.id
+
+    payload = {
+        "branch_id": branch_id,
+        "server_location": "Taipei - A1",
+        "server_name": "ERP Server",
+        "server_ip": "192.0.2.10",
+        "server_acc": "operator",
+        "server_pass": "credential",
+        "server_remark": "Primary server",
+    }
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        create_response = await client.post("/api/serverlist/", json=payload)
+        newer_response = await client.post(
+            "/api/serverlist/",
+            json={**payload, "server_name": "Newest Server"},
+        )
+        missing_branch_response = await client.post(
+            "/api/serverlist/",
+            json={**payload, "branch_id": branch_id + 999},
+        )
+        list_response = await client.get("/api/serverlist/")
+
+    assert create_response.status_code == 201
+    assert create_response.json()["server_name"] == "ERP Server"
+    assert create_response.json()["branch_id"] == branch_id
+    assert newer_response.status_code == 201
+    assert [item["server_name"] for item in list_response.json()[:2]] == [
+        "Newest Server",
+        "ERP Server",
+    ]
+    assert missing_branch_response.status_code == 422
+    assert missing_branch_response.json() == {"detail": "Selected branch does not exist"}
+
+    server_id = create_response.json()["id"]
+    newer_server_id = newer_response.json()["id"]
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        delete_response = await client.delete(f"/api/serverlist/{server_id}")
+        newer_delete_response = await client.delete(f"/api/serverlist/{newer_server_id}")
+        missing_delete_response = await client.delete(f"/api/serverlist/{server_id}")
+
+    assert delete_response.status_code == 204
+    assert newer_delete_response.status_code == 204
+    assert missing_delete_response.status_code == 404
+    assert missing_delete_response.json() == {"detail": "Server device not found"}
+
+
+@pytest.mark.anyio
+async def test_manager_reveals_device_credentials_only_on_explicit_request(
+    api_engine,
+) -> None:
+    with Session(api_engine) as session:
+        branch = BranchList(branch_name="A1", branch_title="Taipei")
+        session.add(branch)
+        session.commit()
+        branch_id = branch.id
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        server_response = await client.post(
+            "/api/serverlist/",
+            json={
+                "branch_id": branch_id,
+                "server_location": "Taipei - A1",
+                "server_name": "ERP Server",
+                "server_ip": "192.0.2.10",
+                "server_acc": "operator",
+                "server_pass": "server-secret",
+                "server_remark": "",
+            },
+        )
+        camera_response = await client.post(
+            "/api/ipcamlist/",
+            json={
+                "shop_id": 1,
+                "shop_name": "Shop",
+                "admin_pass": "admin-secret",
+                "user_pass": "viewer-secret",
+            },
+        )
+        server_id = server_response.json()["id"]
+        camera_id = camera_response.json()["id"]
+        server_reveal = await client.post(
+            f"/api/serverlist/{server_id}/reveal-password"
+        )
+        camera_reveal = await client.post(
+            f"/api/ipcamlist/{camera_id}/reveal-passwords"
+        )
+
+    assert server_response.json()["server_pass"] == "••••••••"
+    assert camera_response.json()["admin_pass"] == "••••••••"
+    assert camera_response.json()["user_pass"] == "••••••••"
+    assert server_reveal.json() == {"password": "server-secret"}
+    assert camera_reveal.json() == {
+        "admin_password": "admin-secret",
+        "user_password": "viewer-secret",
+    }
+    assert server_reveal.headers["cache-control"] == "no-store"
+    assert camera_reveal.headers["cache-control"] == "no-store"
+
+
+@pytest.mark.anyio
 async def test_empty_collection_routes_return_successful_empty_lists(api_engine) -> None:
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(
@@ -254,7 +362,8 @@ def test_openapi_marks_every_resource_path_id_as_positive() -> None:
                     resource_parameters.append(parameter)
 
     # This guards every current ID-bearing operation, not only one sample route.
-    assert len(resource_parameters) == 19
+    # CRUD routes for managed resources contribute positive ID path parameters.
+    assert len(resource_parameters) == 30
     assert all(
         parameter["schema"]["exclusiveMinimum"] == 0
         for parameter in resource_parameters
@@ -468,6 +577,81 @@ async def test_user_creation_requires_manager_token(authenticated_api_engine) ->
     assert duplicate_response.json() == {"detail": "Username already registered"}
     assert staff_response.status_code == 403
     assert anonymous_response.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_login_treats_sql_injection_payloads_as_bound_values(
+    authenticated_api_engine,
+) -> None:
+    with Session(authenticated_api_engine) as session:
+        session.add(
+            User(
+                username="manager",
+                fullname="Manager",
+                password=Hasher.get_password_hash("manager-password"),
+                is_active=True,
+                checklistAll_permission=1,
+            )
+        )
+        session.commit()
+
+    statements: list[str] = []
+    parameters: list[object] = []
+
+    def capture_sql(_connection, _cursor, statement, params, _context, _many):
+        statements.append(statement)
+        parameters.append(params)
+
+    event.listen(authenticated_api_engine, "before_cursor_execute", capture_sql)
+    username_payload = "manager' OR '1'='1' --"
+    password_payload = "' OR '1'='1' --"
+    transport = httpx.ASGITransport(app=app)
+    try:
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://testserver",
+        ) as client:
+            username_response = await client.post(
+                "/api/user/login",
+                data={"username": username_payload, "password": "anything"},
+            )
+            password_response = await client.post(
+                "/api/user/login",
+                data={"username": "manager", "password": password_payload},
+            )
+    finally:
+        event.remove(authenticated_api_engine, "before_cursor_execute", capture_sql)
+
+    assert username_response.status_code == 401
+    assert password_response.status_code == 401
+    # Payloads may occur only in DB-driver parameters, never in SQL syntax.
+    assert all(username_payload not in statement for statement in statements)
+    assert any(username_payload in values for values in parameters)
+
+
+@pytest.mark.anyio
+async def test_sql_metacharacters_are_data_and_path_ids_remain_typed(api_engine) -> None:
+    task_name = "'; DROP TABLE task; --"
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        create_response = await client.post(
+            "/api/task/",
+            json={
+                "taskname": task_name,
+                "fullname": "Injection regression test",
+                "organization": "WorkHour",
+            },
+        )
+        invalid_id_response = await client.get("/api/task/1%20OR%201=1")
+        list_response = await client.get("/api/task/")
+
+    assert create_response.status_code == 200
+    assert invalid_id_response.status_code == 422
+    assert list_response.status_code == 200
+    assert [task["taskname"] for task in list_response.json()] == [task_name]
 
 
 @pytest.mark.anyio

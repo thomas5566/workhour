@@ -19,7 +19,6 @@
               <b-navbar-brand to="/home">首頁 |</b-navbar-brand>
               <b-navbar-brand to="/workhour">計畫項目 |</b-navbar-brand>
               <b-navbar-brand to="/expen">支出費用 |</b-navbar-brand>
-              <b-navbar-brand to="/excel">匯出Excel |</b-navbar-brand>
               <b-navbar-brand to="/task">計畫項目清單 | </b-navbar-brand>
               <b-navbar-brand to="/expentask">支出費用清單 |</b-navbar-brand>
               <div v-show="checklistAll_permission === 1">
@@ -62,7 +61,6 @@
           <router-link to="/home">首頁</router-link> |
           <router-link to="/workhour">計畫項目</router-link> |
           <router-link to="/expen">支出費用</router-link> |
-          <router-link to="/excel">匯出Excel</router-link> |
           <router-link to="/task">計畫項目清單</router-link> |
           <router-link to="/expentask">支出費用清單</router-link> |
           <router-link to="/user">組員名單</router-link> |

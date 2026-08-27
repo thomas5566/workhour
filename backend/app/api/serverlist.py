@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import logging
 
-from ..auth import require_manager
-from ..repository import serverlist_crud
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+
+from ..auth import ManagerUser, require_manager
+from ..core.credentials import decrypt_credential
+from ..repository import branch_crud, serverlist_crud
 from ..schemas import serverlist
 from ..schemas.common import MessageResponse
 from .dependencies import (
@@ -19,6 +22,7 @@ router = APIRouter(
     tags=["ServerList"],
     dependencies=[Depends(require_manager)],
 )
+logger = logging.getLogger(__name__)
 
 
 @router.get("/", response_model=list[serverlist.ServerList])
@@ -29,6 +33,58 @@ def read_serverlist(
 ):
     serverlist_items = serverlist_crud.get_serverlists(db, skip=skip, limit=limit)
     return serverlist_items
+
+
+@router.post("/", response_model=serverlist.ServerList, status_code=status.HTTP_201_CREATED)
+def create_serverlist(
+    serverlist_items: serverlist.ServerListCreate,
+    db: DatabaseSession,
+) -> serverlist.ServerList:
+    # Reject stale or forged branch IDs before creating inventory records.
+    if branch_crud.get_branchlist_by_id(db, serverlist_items.branch_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Selected branch does not exist",
+        )
+    return serverlist_crud.create_serverlist(db, serverlist_items)
+
+
+@router.delete("/{serverlist_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_serverlist(
+    serverlist_id: PositivePathId,
+    db: DatabaseSession,
+) -> None:
+    if not serverlist_crud.delete_serverlist_by_id(db, serverlist_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Server device not found",
+        )
+
+
+@router.post(
+    "/{serverlist_id}/reveal-password",
+    response_model=serverlist.ServerCredentialReveal,
+)
+def reveal_server_password(
+    serverlist_id: PositivePathId,
+    db: DatabaseSession,
+    manager: ManagerUser,
+    response: Response,
+) -> serverlist.ServerCredentialReveal:
+    record = serverlist_crud.get_serverlist_by_id(db, serverlist_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Server device not found")
+    # Explicit reveal responses must not be retained by browsers or proxies.
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    logger.info(
+        "Manager user_id=%s revealed server credential record_id=%s",
+        manager.id,
+        serverlist_id,
+    )
+    return serverlist.ServerCredentialReveal(
+        password=decrypt_credential(record.server_pass)
+    )
 
 
 @router.get(
@@ -52,6 +108,14 @@ def edit_serverlist(
     serverlist_items: serverlist.ServerListUpdate,
     db: DatabaseSession,
 ) -> MessageResponse:
+    if (
+        serverlist_items.branch_id is not None
+        and branch_crud.get_branchlist_by_id(db, serverlist_items.branch_id) is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Selected branch does not exist",
+        )
     serverlist_retrieved = serverlist_crud.get_serverlist_by_id(
         db=db,
         serverlist_id=serverlist_id,

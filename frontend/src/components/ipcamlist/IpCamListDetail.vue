@@ -1,7 +1,10 @@
 <template>
   <div v-if="isLoggedIn">
-    <div class="form-row">
-      <div class="col">
+    <div class="inventory-filter-row">
+      <div class="inventory-filter-action">
+        <router-link to="/ipcamlist/add" class="btn btn-primary"><i class="fas fa-plus"></i> 新增監視器資料</router-link>
+      </div>
+      <div class="inventory-filter-select">
         <select class="custom-select" v-model="selected_branch" @change="onSelectedChange(selected_branch)">
           <option value="0" selected>監視器清單 - 全部門店</option>
           <!-- <option v-for="branch in branch_lists" :key="branch.id" :value="branch.id">
@@ -9,7 +12,7 @@
           </option> -->
         </select>
       </div>
-      <div class="col">
+      <div class="inventory-filter-search">
         <input type="search" v-model="searchKeyWord" class="form-control" placeholder="Search Key Word">
       </div>
     </div>
@@ -43,14 +46,18 @@
                   <td>{{ ipcam.ipcam_brand }}</td>
                   <td>{{ ipcam.ipcam_ip }}</td>
                   <td>{{ ipcam.admin_acc }}</td>
-                  <td>{{ ipcam.admin_pass }}</td>
+                  <td><code v-if="revealedCredentials[ipcam.id]">{{ revealedCredentials[ipcam.id].admin_password || "未設定" }}</code><span v-else>{{ ipcam.admin_pass ? "••••••••" : "未設定" }}</span></td>
                   <td>{{ ipcam.user_acc }}</td>
-                  <td>{{ ipcam.user_pass }}</td>
+                  <td><code v-if="revealedCredentials[ipcam.id]">{{ revealedCredentials[ipcam.id].user_password || "未設定" }}</code><span v-else>{{ ipcam.user_pass ? "••••••••" : "未設定" }}</span></td>
                   <td>{{ ipcam.phone_port }}</td>
                   <td>{{ ipcam.http_port }}</td>
                   <td>{{ ipcam.tcp_port }}</td>
                   <td>{{ ipcam.remark }}</td>
                   <td>
+                    <button type="button" class="btn btn-sm btn-outline-primary" :disabled="revealingIpcamId === ipcam.id" @click="toggleCredentials(ipcam)">
+                      <i :class="revealedCredentials[ipcam.id] ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                      {{ revealedCredentials[ipcam.id] ? "隱藏密碼" : (revealingIpcamId === ipcam.id ? "讀取中…" : "顯示密碼") }}
+                    </button>
                     <button type="button" class="btn btn-sm btn-outline-warning" @click="toggleIpcamListId(ipcam.id)">
                       編輯
                     </button>
@@ -67,14 +74,13 @@
     </div>
     <div class="row">
       <transition name="fade">
-        <div v-if="this.activeIpcamList" class="backdrop">
+        <div v-if="activeIpcamList" class="backdrop">
           <EditIpcamListDetail :key="activeIpcamList.id" :id="activeIpcamList.id" :shop-id="activeIpcamList.shop_id"
             :shop-name="activeIpcamList.shop_name" :ipcam-brand="activeIpcamList.ipcam_brand"
             :ipcam-ip="activeIpcamList.ipcam_ip" :admin-acc="activeIpcamList.admin_acc"
-            :admin-pass="activeIpcamList.admin_pass" :user-acc="activeIpcamList.user_acc"
-            :user-pass="activeIpcamList.user_pass" :phone-port="activeIpcamList.phone_port"
+            :user-acc="activeIpcamList.user_acc" :phone-port="activeIpcamList.phone_port"
             :http-port="activeIpcamList.http_port" :tcp-port="activeIpcamList.tcp_port"
-            :re-mark="activeIpcamList.remark" @onClose="toggleIpcamListId">
+            :re-mark="activeIpcamList.remark" @onClose="activeIpcamList = null" @updated="handleUpdated">
           </EditIpcamListDetail>
         </div>
       </transition>
@@ -86,7 +92,8 @@
 <script>
 import {
   getBranchListAPI,
-  getIpcamListAPI
+  getIpcamListAPI,
+  revealIpCamPasswordsAPI
 } from "../../service/apis.js";
 
 import EditIpcamListDetail from "./EditIpCamListDetail.vue"
@@ -107,6 +114,9 @@ export default {
       searchKeyWord: null,
       activeIpcamList: null,
       dialogIsVisible: true,
+      revealingIpcamId: null,
+      revealedCredentials: {},
+      revealTimers: {},
     };
   },
   computed: {
@@ -139,9 +149,9 @@ export default {
     this.get_branch_lists();
     this.get_ipcam_lists();
   },
-  created() {
-    // reflash data list when chiled component update data
-    this.$root.$on("get_ipcam_lists", this.get_ipcam_lists);
+  beforeUnmount() {
+    Object.values(this.revealTimers).forEach((timer) => window.clearTimeout(timer));
+    this.revealedCredentials = {};
   },
   methods: {
     async get_branch_lists() {
@@ -168,10 +178,35 @@ export default {
       this.pageOfIpcams = pageOfIpcams;
     },
     toggleIpcamListId(ipcamId) {
-      console.log(ipcamId);
       this.activeIpcamList = this.ipcam_lists.find((item) => item.id === ipcamId);
-      console.log(this.activeIpcamList);
       this.dialogIsVisible = false;
+    },
+    async toggleCredentials(ipcam) {
+      if (this.revealedCredentials[ipcam.id]) {
+        this.hideCredentials(ipcam.id);
+        return;
+      }
+      this.revealingIpcamId = ipcam.id;
+      try {
+        const response = await revealIpCamPasswordsAPI(ipcam.id);
+        this.revealedCredentials = { ...this.revealedCredentials, [ipcam.id]: response.data };
+        window.clearTimeout(this.revealTimers[ipcam.id]);
+        this.revealTimers[ipcam.id] = window.setTimeout(() => this.hideCredentials(ipcam.id), 30000);
+      } catch (error) {
+        window.alert(error.response?.data?.detail || "無法顯示密碼。請確認管理者權限。");
+      } finally {
+        this.revealingIpcamId = null;
+      }
+    },
+    hideCredentials(ipcamId) {
+      window.clearTimeout(this.revealTimers[ipcamId]);
+      const credentials = { ...this.revealedCredentials };
+      delete credentials[ipcamId];
+      this.revealedCredentials = credentials;
+    },
+    async handleUpdated() {
+      this.activeIpcamList = null;
+      await this.get_ipcam_lists();
     },
   },
 };
@@ -213,4 +248,12 @@ export default {
   z-index: 10;
   background-color: rgba(0, 0, 0, 0.75);
 }
+
+.inventory-filter-row { display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 14px; }
+.inventory-filter-action { flex: 0 0 auto; }
+.inventory-filter-select { flex: 0 1 340px; min-width: 230px; }
+.inventory-filter-search { flex: 1 1 360px; min-width: 240px; }
+.inventory-filter-row select, .inventory-filter-row input { width: 100%; height: 42px; margin: 0; }
+td code { color: #b42318; }.table td:last-child { display: flex; justify-content: center; gap: 6px; white-space: nowrap; }
+@media (max-width: 700px) { .inventory-filter-row { align-items: stretch; flex-direction: column; }.inventory-filter-action a { width: 100%; }.inventory-filter-select, .inventory-filter-search { flex-basis: auto; width: 100%; min-width: 0; } }
 </style>

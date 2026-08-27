@@ -25,7 +25,7 @@
                   <td>{{ server.server_name }}</td>
                   <td>{{ server.server_ip }}</td>
                   <td>{{ server.server_acc }}</td>
-                  <td>{{ server.server_pass }}</td>
+                  <td>{{ server.server_pass ? "已設定" : "未設定" }}</td>
                   <td>{{ server.server_remark }}</td>
                   <td>
                     <button type="button" class="btn btn-sm btn-outline-warning" @click="toggleServerListId(server.id)">

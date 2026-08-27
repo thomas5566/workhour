@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..auth import require_manager
-from ..repository import fetnetlist_crud
+from ..repository import branch_crud, fetnetlist_crud
 from ..schemas import fetnetlist
 from ..schemas.common import MessageResponse
 from .dependencies import (
@@ -30,6 +30,22 @@ def read_fetnetlist(
     return fetnetlist_items
 
 
+@router.post("/", response_model=fetnetlist.FetnetList, status_code=status.HTTP_201_CREATED)
+def create_fetnetlist(
+    items: fetnetlist.FetnetListCreate,
+    db: DatabaseSession,
+) -> fetnetlist.FetnetList:
+    if (
+        items.branch_id is not None
+        and branch_crud.get_branchlist_by_id(db, items.branch_id) is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Selected branch does not exist",
+        )
+    return fetnetlist_crud.create_fetnetlist(db, items)
+
+
 @router.get(
     "/fetnetlist-branchid",
     response_model=list[fetnetlist.FetnetList],
@@ -51,6 +67,14 @@ def edit_fetnetlist(
     fetnetlist_items: fetnetlist.FetnetListUpdate,
     db: DatabaseSession,
 ) -> MessageResponse:
+    if (
+        fetnetlist_items.branch_id is not None
+        and branch_crud.get_branchlist_by_id(db, fetnetlist_items.branch_id) is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Selected branch does not exist",
+        )
     fetnetlist_retrieved = fetnetlist_crud.get_fetnetlist_by_id(
         db=db,
         fetnetlist_id=fetnetlist_id,

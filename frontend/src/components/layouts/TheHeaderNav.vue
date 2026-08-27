@@ -16,7 +16,7 @@
           <b-nav-item to="/task" v-show="checklistAll_permission === 1"
             >計畫項目清單</b-nav-item
           >
-          <b-nav-item to="/excel">匯出Excel</b-nav-item> -->
+          -->
           <b-nav-item href="./123.pdf" target="_blank">
             <b-icon icon="info-circle-fill" variant="info"></b-icon>
           </b-nav-item>

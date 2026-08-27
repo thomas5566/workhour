@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -151,7 +151,7 @@ class ServerList(IdMixin, Base):
     server_ip: Mapped[str | None] = mapped_column(String(255))
     server_location: Mapped[str | None] = mapped_column(String(255))
     server_acc: Mapped[str | None] = mapped_column(String(255))
-    server_pass: Mapped[str | None] = mapped_column(String(255))
+    server_pass: Mapped[str | None] = mapped_column(Text)
     server_remark: Mapped[str | None] = mapped_column(String(255))
 
 
@@ -199,9 +199,9 @@ class IpCamList(IdMixin, Base):
     ipcam_brand: Mapped[str | None] = mapped_column(String(255))
     ipcam_ip: Mapped[str | None] = mapped_column(String(255))
     admin_acc: Mapped[str | None] = mapped_column(String(255))
-    admin_pass: Mapped[str | None] = mapped_column(String(255))
+    admin_pass: Mapped[str | None] = mapped_column(Text)
     user_acc: Mapped[str | None] = mapped_column(String(255))
-    user_pass: Mapped[str | None] = mapped_column(String(255))
+    user_pass: Mapped[str | None] = mapped_column(Text)
     phone_port: Mapped[str | None] = mapped_column(String(255))
     http_port: Mapped[str | None] = mapped_column(String(255))
     tcp_port: Mapped[str | None] = mapped_column(String(255))

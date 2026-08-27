@@ -14,6 +14,9 @@ describe("Sidebar navigation", () => {
       "/serverlist",
       "/fetnetlist",
       "/ipcamlist",
+      "/monitoring",
+      "/master-data",
+      "/user-management",
     ]);
   });
 });

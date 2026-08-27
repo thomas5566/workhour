@@ -82,3 +82,47 @@ def create_user(
     commit_or_rollback(db)
     db.refresh(db_user)
     return db_user
+
+
+def create_admin_user(
+    db: Session,
+    user_item: users.UserAdminCreate,
+    hashed_password: str,
+) -> User:
+    db_user = User(
+        username=user_item.username,
+        fullname=user_item.fullname or "",
+        password=hashed_password,
+        department_id=user_item.department_id,
+        is_active=user_item.is_active,
+        is_superuser=user_item.is_superuser,
+        checklistAll_permission=user_item.checklistAll_permission,
+    )
+    db.add(db_user)
+    commit_or_rollback(db)
+    db.refresh(db_user)
+    return db_user
+
+
+def update_admin_user(
+    db: Session,
+    db_user: User,
+    user_item: users.UserAdminUpdate,
+    hashed_password: str | None,
+) -> User:
+    db_user.username = user_item.username
+    db_user.fullname = user_item.fullname
+    db_user.department_id = user_item.department_id
+    db_user.is_active = user_item.is_active
+    db_user.is_superuser = user_item.is_superuser
+    db_user.checklistAll_permission = user_item.checklistAll_permission
+    if hashed_password is not None:
+        db_user.password = hashed_password
+    commit_or_rollback(db)
+    db.refresh(db_user)
+    return db_user
+
+
+def delete_user(db: Session, db_user: User) -> None:
+    db.delete(db_user)
+    commit_or_rollback(db)

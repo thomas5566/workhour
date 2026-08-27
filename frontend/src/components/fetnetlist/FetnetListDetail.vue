@@ -1,7 +1,10 @@
 <template>
   <div v-if="isLoggedIn">
-    <div class="form-row">
-      <div class="col">
+    <div class="inventory-filter-row">
+      <div class="inventory-filter-action">
+        <router-link to="/fetnetlist/add" class="btn btn-primary"><i class="fas fa-plus"></i> 新增遠傳資料</router-link>
+      </div>
+      <div class="inventory-filter-select">
         <select class="custom-select" v-model="selected_branch" @change="onSelectedChange(selected_branch)">
           <option value="0" selected>遠傳清單 - 全部門店</option>
           <!-- <option v-for="branch in branch_lists" :key="branch.id" :value="branch.id">
@@ -9,7 +12,7 @@
           </option> -->
         </select>
       </div>
-      <div class="col">
+      <div class="inventory-filter-search">
         <input type="search" v-model="searchKeyWord" class="form-control" placeholder="Search Key Word">
       </div>
     </div>
@@ -66,7 +69,7 @@
     </div>
     <div class="row">
       <transition name="fade">
-        <div v-if="this.activeFetnetList" class="backdrop">
+        <div v-if="activeFetnetList" class="backdrop">
           <EditFetnetListDetail :key="activeFetnetList.id" :id="activeFetnetList.id"
             :branch-id="activeFetnetList.branch_id" :shop-id="activeFetnetList.shop_id"
             :shop-name="activeFetnetList.shop_name" :shop-tax="activeFetnetList.shop_tax"
@@ -74,7 +77,8 @@
             :shop-phone-short-code="activeFetnetList.shop_phone_short_code" :adsl-number="activeFetnetList.adsl_number"
             :fetnet-phone-number="activeFetnetList.fetnet_phone_number"
             :adsl-bank-number="activeFetnetList.adsl_bank_number"
-            :fetnetlist-remark="activeFetnetList.fetnetlist_remark" @onClose="toggleFetnetListId">
+            :fetnetlist-remark="activeFetnetList.fetnetlist_remark" @onClose="activeFetnetList = null"
+            @updated="handleUpdated">
           </EditFetnetListDetail>
         </div>
       </transition>
@@ -140,10 +144,6 @@ export default {
     this.get_branch_lists();
     this.get_fetnet_lists();
   },
-  created() {
-    // reflash data list when chiled component update data
-    this.$root.$on("get_fetnet_lists", this.get_fetnet_lists);
-  },
   methods: {
     async get_branch_lists() {
       await getBranchListAPI().then((response) => (this.branch_lists = response.data))
@@ -176,10 +176,12 @@ export default {
       this.pageOfFetnets = pageOfFetnets;
     },
     toggleFetnetListId(fetnetId) {
-      console.log(fetnetId);
       this.activeFetnetList = this.fetnet_lists.find((item) => item.id === fetnetId);
-      console.log(this.activeFetnetList);
       this.dialogIsVisible = false;
+    },
+    async handleUpdated() {
+      this.activeFetnetList = null;
+      await this.get_fetnet_lists();
     },
   },
 };
@@ -221,4 +223,11 @@ export default {
   z-index: 10;
   background-color: rgba(0, 0, 0, 0.75);
 }
+
+.inventory-filter-row { display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 14px; }
+.inventory-filter-action { flex: 0 0 auto; }
+.inventory-filter-select { flex: 0 1 340px; min-width: 230px; }
+.inventory-filter-search { flex: 1 1 360px; min-width: 240px; }
+.inventory-filter-row select, .inventory-filter-row input { width: 100%; height: 42px; margin: 0; }
+@media (max-width: 700px) { .inventory-filter-row { align-items: stretch; flex-direction: column; }.inventory-filter-action a { width: 100%; }.inventory-filter-select, .inventory-filter-search { flex-basis: auto; width: 100%; min-width: 0; } }
 </style>

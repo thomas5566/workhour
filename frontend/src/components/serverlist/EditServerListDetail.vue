@@ -1,235 +1,118 @@
 <template>
-    <section>
-        <form @submit.prevent="onEditServerListSubmit">
-            <b-container fluid>
-                <b-row class="my-1">
-                    <b-col class="form-control" sm="3">
-                        <label for="server-location">地點</label>
-                    </b-col>
-                    <b-col>
-                        <b-form-input class="form-control" sm="8" v-model="editServerListData.server_location"
-                            placeholder="server_location"></b-form-input>
-                    </b-col>
-                </b-row>
-                <b-row class="my-1">
-                    <b-col class="form-control" sm="3">
-                        <label for="server-name">設備名稱</label>
-                    </b-col>
-                    <b-col>
-                        <b-form-input class="form-control" sm="8" v-model="editServerListData.server_name"
-                            placeholder="server_name"></b-form-input>
-                    </b-col>
-                </b-row>
-                <b-row class="my-1">
-                    <b-col class="form-control" sm="3">
-                        <label for="server-ip">Server IP</label>
-                    </b-col>
-                    <b-col>
-                        <b-form-input class="form-control" sm="8" v-model="editServerListData.server_ip"
-                            placeholder="server_ip"></b-form-input>
-                    </b-col>
-                </b-row>
-                <b-row class="my-1">
-                    <b-col class="form-control" sm="3">
-                        <label for="server-acc">帳號</label>
-                    </b-col>
-                    <b-col>
-                        <b-form-input class="form-control" sm="8" v-model="editServerListData.server_acc"
-                            placeholder="server_acc"></b-form-input>
-                    </b-col>
-                </b-row>
-                <b-row class="my-1">
-                    <b-col class="form-control" sm="3">
-                        <label for="server-pass">密碼</label>
-                    </b-col>
-                    <b-col>
-                        <b-form-input class="form-control" sm="8" v-model="editServerListData.server_pass"
-                            placeholder="server-pass"></b-form-input>
-                    </b-col>
-                </b-row>
-                <b-row class="my-1">
-                    <b-col class="form-control" sm="3">
-                        <label for="server-remark">備註</label>
-                    </b-col>
-                    <b-col>
-                        <b-form-input class="form-control" sm="8" v-model="editServerListData.server_remark"
-                            placeholder="server-remark"></b-form-input>
-                    </b-col>
-                </b-row>
-                <b-row class="my-1">
-                    <div>
-                        <button @click=onEditServerListSubmit()>更新</button>
-                        <button @click.prevent="$emit('onClose')">取消</button>
-                    </div>
-                </b-row>
-            </b-container>
-        </form>
-    </section>
+  <section class="editor-dialog" role="dialog" aria-modal="true" aria-labelledby="edit-server-title">
+    <form @submit.prevent="submitUpdate">
+      <header>
+        <div><p>SERVER INVENTORY</p><h2 id="edit-server-title">編輯設備</h2></div>
+        <button type="button" class="close-button" aria-label="關閉" @click="$emit('onClose')">×</button>
+      </header>
+      <div v-if="errorMessage" class="form-alert" role="alert">{{ errorMessage }}</div>
+      <label>
+        <span>地點 <b>*</b></span>
+        <select v-model.number="form.branch_id" required @change="syncLocation">
+          <option :value="0" disabled>請選擇地點</option>
+          <option v-for="branch in branches" :key="branch.id" :value="branch.id">
+            {{ branch.branch_title }} - {{ branch.branch_name }}
+          </option>
+        </select>
+      </label>
+      <label><span>設備名稱 <b>*</b></span><input v-model.trim="form.server_name" required maxlength="255"></label>
+      <label><span>Server IP <b>*</b></span><input v-model.trim="form.server_ip" required maxlength="255"></label>
+      <label><span>帳號 <b>*</b></span><input v-model.trim="form.server_acc" required maxlength="255" autocomplete="off"></label>
+      <label><span>新密碼（留空表示不變）</span><input v-model="form.server_pass" maxlength="255" type="password" autocomplete="new-password"></label>
+      <label><span>備註</span><textarea v-model.trim="form.server_remark" maxlength="255" rows="3"></textarea></label>
+      <footer>
+        <button type="button" class="btn btn-outline-secondary" @click="$emit('onClose')">取消</button>
+        <button type="submit" class="btn btn-primary" :disabled="submitting || loadingBranches">
+          {{ submitting ? "更新中…" : "更新" }}
+        </button>
+      </footer>
+    </form>
+  </section>
 </template>
-<script>
-import { updateServerListByIdAPI } from "../../service/apis.js";
-export default {
-    computed: {},
-    components: {},
-    props: {
-        id: {
-            type: Number,
-            required: true,
-        },
-        branchId: {
-            type: Number,
-            required: true,
-        },
-        serverAcc: {
-            type: String,
-            required: true,
-        },
-        serverIp: {
-            type: String,
-            required: true,
-        },
-        serverLocation: {
-            type: String,
-            required: true,
-        },
-        serverName: {
-            type: String,
-            required: true,
-        },
-        serverPass: {
-            type: String,
-            required: true,
-        },
-        serverRemark: {
-            type: String,
-            required: true,
-        }
-    },
-    data() {
-        return {
-            editServerListID: this.id,
-            editServerListData: {
-                server_acc: this.serverAcc,
-                server_ip: this.serverIp,
-                server_location: this.serverLocation,
-                server_name: this.serverName,
-                server_pass: this.serverPass,
-                server_remark: this.serverRemark,
-            },
-            emits: ["onClose"],
-        };
-    },
-    methods: {
-        onEditServerListSubmit() {
-            updateServerListByIdAPI(this.editServerListID, this.editServerListData)
-                .then((response) => {
-                    this.$root.$emit("get_serverlists");
-                    this.editServerListID = "";
-                    this.editServerListData.server_acc = "";
-                    this.editServerListData.server_ip = "";
-                    this.editServerListData.server_location = "";
-                    this.editServerListData.server_name = "";
-                    this.editServerListData.server_pass = "";
-                    this.editServerListData.server_remark = "";
-                    this.$emit('onClose')
 
-                    console.log(response.data);
-                    this.message = "The Server List was updated successfully!!";
-                })
-                .catch((e) => {
-                    console.log(e);
-                });
-        }
+<script>
+import { getBranchListAPI, updateServerListByIdAPI } from "@/service/apis";
+
+export default {
+  name: "EditServerListDetail",
+  emits: ["onClose", "updated"],
+  props: {
+    id: { type: Number, required: true },
+    branchId: { type: Number, default: 0 },
+    serverAcc: { type: String, default: "" },
+    serverIp: { type: String, default: "" },
+    serverLocation: { type: String, default: "" },
+    serverName: { type: String, default: "" },
+    serverRemark: { type: String, default: "" },
+  },
+  data() {
+    return {
+      branches: [],
+      loadingBranches: false,
+      submitting: false,
+      errorMessage: "",
+      form: {
+        branch_id: this.branchId || 0,
+        server_acc: this.serverAcc || "",
+        server_ip: this.serverIp || "",
+        server_location: this.serverLocation || "",
+        server_name: this.serverName || "",
+        server_pass: "",
+        server_remark: this.serverRemark || "",
+      },
+    };
+  },
+  mounted() {
+    this.loadBranches();
+  },
+  methods: {
+    async loadBranches() {
+      this.loadingBranches = true;
+      try {
+        const response = await getBranchListAPI();
+        this.branches = response.data;
+      } catch {
+        this.errorMessage = "無法取得地點清單。";
+      } finally {
+        this.loadingBranches = false;
+      }
     },
+    syncLocation() {
+      const branch = this.branches.find((item) => item.id === this.form.branch_id);
+      if (branch) this.form.server_location = `${branch.branch_title} - ${branch.branch_name}`;
+    },
+    async submitUpdate() {
+      if (!this.form.branch_id) {
+        this.errorMessage = "請選擇地點。";
+        return;
+      }
+      this.submitting = true;
+      this.errorMessage = "";
+      try {
+        const payload = { ...this.form };
+        // Never send a placeholder or an empty value that could overwrite the secret.
+        if (!payload.server_pass) delete payload.server_pass;
+        await updateServerListByIdAPI(this.id, payload);
+        this.$emit("updated");
+      } catch (error) {
+        this.errorMessage = error.response?.data?.detail || "更新失敗，請檢查輸入資料。";
+      } finally {
+        this.submitting = false;
+      }
+    },
+  },
 };
 </script>
+
 <style scoped>
-section {
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
-    padding: 1rem;
-    margin: 2rem auto;
-    max-width: 80rem;
-}
-
-form {
-    margin: 8rem auto;
-    max-width: 40rem;
-    height: auto;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
-    padding: 2rem;
-    background-color: #ffffff;
-}
-
-.form-control {
-    margin: 0.5rem 0;
-}
-
-.form-control.invalid input {
-    border-color: red;
-}
-
-.form-control.invalid label {
-    color: red;
-}
-
-label {
-    font-weight: bold;
-}
-
-h2 {
-    font-size: 1rem;
-    margin: 0.5rem 0;
-}
-
-input,
-select {
-    display: block;
-    width: 100%;
-    font: inherit;
-    margin-top: 0.5rem;
-}
-
-select {
-    width: auto;
-}
-
-input[type="checkbox"],
-input[type="radio"] {
-    display: inline-block;
-    width: auto;
-    margin-right: 1rem;
-}
-
-input[type="checkbox"]+label,
-input[type="radio"]+label {
-    font-weight: normal;
-}
-
-button {
-    font: inherit;
-    border: 1px solid #0076bb;
-    background-color: #0076bb;
-    color: white;
-    cursor: pointer;
-    padding: 0.75rem 2rem;
-    border-radius: 30px;
-}
-
-button:hover,
-button:active {
-    border-color: #002350;
-    background-color: #002350;
-}
-
-.backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    z-index: 10;
-    background-color: rgba(0, 0, 0, 0.75);
-}
+.editor-dialog { display: grid; min-height: 100vh; padding: 24px; place-items: center; }
+form { width: min(720px, 100%); max-height: calc(100vh - 48px); padding: 25px; overflow-y: auto; border-radius: 14px; background: white; box-shadow: 0 18px 50px rgba(0, 0, 0, .28); }
+form > header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
+header p { margin: 0 0 4px; color: #68809b; font-size: .7rem; font-weight: 800; letter-spacing: .15em; }
+h2 { margin: 0; }.close-button { padding: 0 8px; color: #667085; border: 0; background: transparent; font-size: 1.8rem; }
+label { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }label span { font-weight: 700; }label b { color: #d92d20; }
+input, select, textarea { width: 100%; padding: 10px 12px; color: #172033; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
+input:focus, select:focus, textarea:focus { outline: 3px solid rgba(23, 105, 224, .14); border-color: #1769e0; }
+.form-alert { padding: 11px 13px; margin-bottom: 14px; color: #b42318; border-radius: 8px; background: #fff0ef; }
+footer { display: flex; justify-content: flex-end; gap: 9px; padding-top: 6px; }
 </style>

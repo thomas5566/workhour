@@ -152,6 +152,10 @@ node_modules/
 .env.*.local
 .env.production
 
+# Ubuntu deployment credentials and database archives must never be committed.
+deploy/ubuntu/.env
+deploy/ubuntu/private/
+
 # Log files
 npm-debug.log*
 yarn-debug.log*

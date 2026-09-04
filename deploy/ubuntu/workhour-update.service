@@ -1,0 +1,16 @@
+[Unit]
+Description=Update WorkHour from approved GHCR images
+After=docker.service network-online.target
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=webservice
+WorkingDirectory=/opt/workhour
+ExecStart=/opt/workhour/deploy/ubuntu/update-from-ghcr.sh
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

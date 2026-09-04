@@ -4,7 +4,7 @@
       <div>
         <p class="eyebrow">INFRASTRUCTURE HEALTH</p>
         <h1 id="monitoring-title">基礎設施監控</h1>
-        <p class="subtitle">由 Zabbix 統一提供 Server 與 FortiGate 唯讀健康狀態</p>
+        <p class="subtitle">由 Zabbix 統一提供 Server、MSSQL 與網路設備唯讀健康狀態</p>
       </div>
       <button class="refresh-button" type="button" :disabled="loading" @click="loadSummary">
         <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading }"></i>
@@ -98,10 +98,12 @@
             </span>
           </header>
           <p>{{ firewall.message }}</p>
+          <MonitoringSampleTime :sampled-at="firewall.last_updated_at" :reference-time="summary.checked_at" label="Zabbix 最新指標取樣" />
           <div class="firewall-metrics">
             <div v-for="(value, key) in firewall.metrics" :key="key">
               <span>{{ metricLabel(key) }}</span>
               <strong>{{ displayValue(value, key) }}</strong>
+              <MonitoringSampleTime :sampled-at="firewall.metric_sampled_at?.[key]" :reference-time="summary.checked_at" />
             </div>
           </div>
         </article>
@@ -129,6 +131,7 @@
             </span>
           </header>
           <p>{{ server.message }}</p>
+          <MonitoringSampleTime :sampled-at="server.last_updated_at" :reference-time="summary.checked_at" label="Zabbix 最新指標取樣" />
           <div v-if="server.group_names.length" class="group-list">
             <span v-for="group in server.group_names" :key="group">{{ group }}</span>
           </div>
@@ -140,12 +143,16 @@
             >
               <span>{{ metricLabel(key) }}</span>
               <strong>{{ displayValue(value, key) }}</strong>
+              <MonitoringSampleTime :sampled-at="server.metric_sampled_at?.[key]" :reference-time="summary.checked_at" />
             </div>
           </div>
         </article>
       </div>
       <div v-if="!summary.servers.length" class="page-empty">Zabbix 中沒有 VM Server 監控資料。</div>
     </section>
+
+    <BranchPeplinkMonitoring v-if="activeTab === 'branch-peplinks'" :devices="summary.branch_peplinks || []" :error="summary.branch_peplinks_error || ''" />
+    <MssqlMonitoring v-if="activeTab === 'mssql'" :servers="summary.mssql || []" :error="summary.mssql_error || ''" />
 
     <section v-if="activeTab === 'nutanix'" class="firewall-section" aria-labelledby="nutanix-title">
       <header class="section-heading">
@@ -221,6 +228,7 @@
             {{ speedFusionDrops[device.name].current }}
           </div>
           <p>{{ device.message }}</p>
+          <MonitoringSampleTime :sampled-at="device.last_updated_at" :reference-time="summary.checked_at" label="Zabbix 最新指標取樣" />
           <div v-if="Object.keys(device.metrics).length" class="firewall-metrics">
             <div
               v-for="(value, key) in device.metrics"
@@ -229,6 +237,7 @@
             >
               <span>{{ metricLabel(key) }}</span>
               <strong>{{ displayValue(value, key) }}</strong>
+              <MonitoringSampleTime :sampled-at="device.metric_sampled_at?.[key]" :reference-time="summary.checked_at" />
             </div>
           </div>
           <div v-else class="device-empty">建立 Zabbix Host 並連接 SNMP Template 後自動顯示指標。</div>
@@ -246,14 +255,15 @@
       </header>
       <div class="problem-table-wrap">
         <table v-if="summary.problems.length" class="problem-table">
-          <thead><tr><th>等級</th><th>主機</th><th>事件內容</th><th>發生時間</th><th>確認</th></tr></thead>
+          <thead><tr><th>等級</th><th>主機</th><th>來源</th><th>事件內容</th><th>發生／觀測時間</th><th>確認</th></tr></thead>
           <tbody>
             <tr v-for="problem in summary.problems" :key="problem.event_id">
               <td><span class="severity" :class="`severity-${problem.severity}`">{{ problem.severity_label }}</span></td>
               <td>{{ problem.host_name }}</td>
+              <td>{{ problem.source === 'workhour' ? '本頁規則' : 'Zabbix' }}</td>
               <td>{{ problem.message }}</td>
               <td>{{ formatDate(problem.occurred_at) }}</td>
-              <td>{{ problem.acknowledged ? "已確認" : "未確認" }}</td>
+              <td>{{ problem.source === 'workhour' ? '不適用' : problem.acknowledged ? "已確認" : "未確認" }}</td>
             </tr>
           </tbody>
         </table>
@@ -270,9 +280,13 @@ import {
   startMonitoringPolling,
 } from "@/service/monitoringBackground";
 import { getResourceUtilizationClass } from "@/utils/monitoringAlerts";
+import MssqlMonitoring from "@/components/MssqlMonitoring.vue";
+import BranchPeplinkMonitoring from "@/components/BranchPeplinkMonitoring.vue";
+import MonitoringSampleTime from "@/components/MonitoringSampleTime.vue";
 
 export default {
   name: "InfrastructureMonitoring",
+  components: { MssqlMonitoring, BranchPeplinkMonitoring, MonitoringSampleTime },
   data() {
     return {
       activeTab: "overview",
@@ -296,7 +310,9 @@ export default {
         { id: "overview", label: "總覽", icon: "fas fa-chart-pie", count: null },
         { id: "firewalls", label: "FortiGate", icon: "fas fa-shield-alt", count: this.summary.firewalls.length },
         { id: "peplinks", label: "Peplink", icon: "fas fa-network-wired", count: this.summary.peplinks.length },
+        { id: "branch-peplinks", label: "分店Peplink", icon: "fas fa-store", count: (this.summary.branch_peplinks || []).length },
         { id: "servers", label: "VM Server", icon: "fas fa-server", count: this.summary.servers.length },
+        { id: "mssql", label: "MSSQL", icon: "fas fa-database", count: (this.summary.mssql || []).length },
         { id: "nutanix", label: "Nutanix", icon: "fas fa-cubes", count: this.summary.nutanix.length },
         { id: "problems", label: "警告事件", icon: "fas fa-exclamation-triangle", count: this.summary.problems.length },
       ];
@@ -338,7 +354,7 @@ export default {
         hosts: "主機總數",
         enabled_hosts: "啟用主機",
         available_agents: "Agent 可用",
-        active_problems: "目前問題",
+        active_problems: "目前問題（本頁規則）",
         supported_items: "正常監控項目",
         unsupported_items: "不支援監控項目",
         storage_containers: "Storage Container",

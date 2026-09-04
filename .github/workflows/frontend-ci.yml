@@ -45,7 +45,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint frontend
-        run: pnpm lint -- --max-warnings=0
+        run: pnpm exec eslint . --max-warnings=0
 
       - name: Run frontend tests
         run: pnpm test
@@ -78,7 +78,7 @@ jobs:
             --publish 8080:8080 \
             workhour-frontend-ci
 
-          for attempt in $(seq 1 20); do
+          for _ in $(seq 1 20); do
             if curl --fail --silent http://127.0.0.1:8080/healthz > /dev/null; then
               curl --fail --silent --show-error http://127.0.0.1:8080/
               exit 0

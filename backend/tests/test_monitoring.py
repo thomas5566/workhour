@@ -108,10 +108,12 @@ def test_fortigate_health_uses_only_supported_zabbix_items(monkeypatch) -> None:
             },
             {
                 "hostid": "7", "key_": "vm.memory.util[x]", "lastvalue": "49",
+                "lastclock": str(int(datetime.now(UTC).timestamp())),
                 "units": "%", "status": "0", "state": "0",
             },
             {
                 "hostid": "7", "key_": "system.uptime[x]", "lastvalue": "3600",
+                "lastclock": str(int(datetime.now(UTC).timestamp())),
                 "units": "uptime", "status": "0", "state": "0",
             },
             {
@@ -346,10 +348,12 @@ def test_peplink_health_includes_missing_and_monitored_hosts(monkeypatch) -> Non
         return [
             {
                 "hostid": "20", "key_": "system.uptime", "lastvalue": "3600",
+                "lastclock": str(int(datetime.now(UTC).timestamp())),
                 "units": "uptime", "status": "0", "state": "0",
             },
             {
                 "hostid": "20", "key_": "wanState[WAN 1]", "lastvalue": "3",
+                "lastclock": str(int(datetime.now(UTC).timestamp())),
                 "units": "", "status": "0", "state": "0",
                 "valuemap": {"mappings": [
                     {"type": "0", "value": "3", "newvalue": "Connected"},
@@ -357,6 +361,7 @@ def test_peplink_health_includes_missing_and_monitored_hosts(monkeypatch) -> Non
             },
             {
                 "hostid": "20", "key_": "pepVpnStatusConnectionState[Branch]",
+                "lastclock": str(int(datetime.now(UTC).timestamp())),
                 "lastvalue": "4", "units": "", "status": "0", "state": "0",
                 "valuemap": {"mappings": [
                     {"type": "0", "value": "4", "newvalue": "Connected"},

@@ -1,0 +1,93 @@
+name: workhour-vm
+
+x-api-environment: &api-environment
+  # Use a URL-safe random hex password for the application DB role.
+  DATABASE_URL: postgresql+psycopg2://workhour:${DB_APP_PASSWORD:?required}@db:5432/workhour
+  SECRET_KEY: ${SECRET_KEY:?preserve the existing signing key}
+  DEVICE_CREDENTIAL_KEY: ${DEVICE_CREDENTIAL_KEY:?preserve the existing encryption key}
+  ALGORITHM: ${ALGORITHM:-HS256}
+  ACCESS_TOKEN_EXPIRE_MINUTES: 30
+  MANAGER_ACCESS_TOKEN_EXPIRE_MINUTES: 240
+  ENABLE_API_DOCS: "false"
+  BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:?required JSON origin array}
+  ZABBIX_URL: ${ZABBIX_URL:?required}
+  ZABBIX_TOKEN: ${ZABBIX_TOKEN:?required}
+  MONITORING_TIMEOUT_SECONDS: ${MONITORING_TIMEOUT_SECONDS:-5}
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: workhour_admin
+      POSTGRES_DB: workhour
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?required}
+      WORKHOUR_APP_PASSWORD: ${DB_APP_PASSWORD:?required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-app-role.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
+    networks: [database]
+    # No host port: neither PostgreSQL nor FastAPI is exposed to the LAN.
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U workhour_admin -d workhour"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+    logging: *logging
+
+  app:
+    image: ${BACKEND_IMAGE:-workhour-backend:local}
+    build:
+      context: ../../backend
+    environment: *api-environment
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [database, application]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    logging: *logging
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-workhour-frontend:local}
+    build:
+      context: ../../frontend
+    ports:
+      - "${BIND_IP:?required}:${WEB_PORT:-8082}:8080"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks: [application]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    logging: *logging
+
+  # Explicit maintenance operation only; do not migrate before restoring the DB.
+  migrate:
+    profiles: [maintenance]
+    image: ${BACKEND_IMAGE:-workhour-backend:local}
+    build:
+      context: ../../backend
+    environment: *api-environment
+    command: [python, -m, alembic, upgrade, head]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [database]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+    logging: *logging
+
+networks:
+  database:
+    internal: true
+  application:
+
+volumes:
+  postgres_data:

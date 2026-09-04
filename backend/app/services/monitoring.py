@@ -1,5 +1,6 @@
 import ipaddress
 import json
+import math
 import re
 import socket
 import ssl
@@ -11,10 +12,13 @@ from urllib.request import Request, urlopen
 
 from app.core.config import Settings
 from app.schemas.monitoring import (
+    BranchPeplinkHealth,
     FirewallHealth,
     IntegrationHealth,
     MonitoringProblem,
     MonitoringSummary,
+    MssqlHealth,
+    MssqlMetric,
     NetworkDeviceHealth,
     ServerHealth,
 )
@@ -194,6 +198,20 @@ def _metric_value(value: Any, units: str) -> int | float | str | None:
     return str(value) if value is not None else None
 
 
+def _item_sample_time(item: dict[str, Any]) -> datetime | None:
+    """Use the actual Zabbix sample clock, never the API request/refresh time."""
+    clock = int(item.get("lastclock") or 0)
+    return datetime.fromtimestamp(clock, UTC) if clock > 0 else None
+
+
+def _latest_sample(samples: dict[str, datetime | None]) -> datetime | None:
+    return max((value for value in samples.values() if value is not None), default=None)
+
+
+def _sample_is_fresh(sample: datetime | None) -> bool:
+    return sample is not None and 0 <= (datetime.now(UTC) - sample).total_seconds() <= 600
+
+
 def get_fortigate_health(settings: Settings) -> list[FirewallHealth]:
     """Read FortiGate health exclusively from existing Zabbix SNMP items."""
     if not settings.ZABBIX_URL or not settings.ZABBIX_TOKEN:
@@ -219,14 +237,17 @@ def get_fortigate_health(settings: Settings) -> list[FirewallHealth]:
             settings,
             "item.get",
             {
-                "output": ["hostid", "key_", "lastvalue", "units", "status", "state"],
+                "output": ["hostid", "key_", "lastvalue", "units", "status", "state", "lastclock"],
                 "hostids": host_ids,
             },
         )
         metrics_by_host: dict[str, dict[str, int | float | str | bool | None]] = {
             host_id: {} for host_id in host_ids
         }
-        for item in items:
+        samples_by_host: dict[str, dict[str, datetime | None]] = {h: {} for h in host_ids}
+        for item in sorted(items, key=lambda row: (
+            _metric_name(str(row.get("key_", ""))) or "", -int(row.get("lastclock") or 0),
+        )):
             if str(item.get("status")) != "0" or str(item.get("state")) != "0":
                 continue
             metric = _metric_name(str(item.get("key_", "")))
@@ -235,6 +256,7 @@ def get_fortigate_health(settings: Settings) -> list[FirewallHealth]:
                 metrics_by_host[host_id][metric] = _metric_value(
                     item.get("lastvalue"), str(item.get("units", ""))
                 )
+                samples_by_host[host_id][metric] = _item_sample_time(item)
 
         results: list[FirewallHealth] = []
         for host in firewall_hosts:
@@ -246,8 +268,12 @@ def get_fortigate_health(settings: Settings) -> list[FirewallHealth]:
             available = bool(snmp_interface and str(snmp_interface.get("available")) == "1")
             host_id = str(host["hostid"])
             metrics = metrics_by_host[host_id]
+            samples = samples_by_host[host_id]
+            latest = _latest_sample(samples)
             has_core_metrics = "memory" in metrics and "uptime_seconds" in metrics
-            healthy = available and has_core_metrics and str(host.get("status")) == "0"
+            healthy = (available and has_core_metrics and str(host.get("status")) == "0"
+                       and all(_sample_is_fresh(samples.get(key))
+                               for key in ("memory", "uptime_seconds")))
             results.append(
                 FirewallHealth(
                     host_id=host_id,
@@ -257,9 +283,11 @@ def get_fortigate_health(settings: Settings) -> list[FirewallHealth]:
                     message=(
                         "SNMP monitoring is available"
                         if healthy
-                        else "SNMP or core monitoring items are unavailable"
+                        else "SNMP or core monitoring items are unavailable or stale"
                     ),
                     metrics=metrics,
+                    last_updated_at=latest,
+                    metric_sampled_at=samples,
                 )
             )
         return results
@@ -340,6 +368,7 @@ def get_server_health(settings: Settings) -> list[ServerHealth]:
                 for device_type in ("fortigate", "peplink")
             )
             and not _is_nutanix_host(host)
+            and not _is_branch_peplink(host)
         ]
         host_ids = [str(host["hostid"]) for host in server_hosts]
         if not host_ids:
@@ -360,9 +389,11 @@ def get_server_health(settings: Settings) -> list[ServerHealth]:
         metrics_by_host: dict[str, dict[str, int | float | str | bool | None]] = {
             host_id: {} for host_id in host_ids
         }
-        latest_by_host = {host_id: 0 for host_id in host_ids}
-        for item in items:
-            if str(item.get("state")) != "0":
+        samples_by_host: dict[str, dict[str, datetime | None]] = {h: {} for h in host_ids}
+        for item in sorted(items, key=lambda row: (
+            _server_metric_name(str(row.get("key_", ""))) or "", -int(row.get("lastclock") or 0),
+        )):
+            if str(item.get("state")) != "0" or str(item.get("status", "0")) != "0":
                 continue
             key = str(item.get("key_", ""))
             metric = _server_metric_name(key)
@@ -371,19 +402,17 @@ def get_server_health(settings: Settings) -> list[ServerHealth]:
                 metrics_by_host[host_id][metric] = _metric_value(
                     item.get("lastvalue"), str(item.get("units", ""))
                 )
-            if host_id in latest_by_host:
-                latest_by_host[host_id] = max(
-                    latest_by_host[host_id], int(item.get("lastclock") or 0)
-                )
+                samples_by_host[host_id][metric] = _item_sample_time(item)
 
-        now = int(datetime.now(UTC).timestamp())
         results: list[ServerHealth] = []
         for host in server_hosts:
             host_id = str(host["hostid"])
             interfaces = host.get("interfaces", [])
             interface = next((row for row in interfaces if row.get("ip")), None)
             metrics = metrics_by_host[host_id]
-            data_is_fresh = latest_by_host[host_id] >= now - 600
+            samples = samples_by_host[host_id]
+            latest = _latest_sample(samples)
+            data_is_fresh = bool(samples) and all(_sample_is_fresh(t) for t in samples.values())
             healthy = str(host.get("status")) == "0" and data_is_fresh and bool(metrics)
             results.append(
                 ServerHealth(
@@ -399,6 +428,8 @@ def get_server_health(settings: Settings) -> list[ServerHealth]:
                         else "Zabbix agent data is unavailable or stale"
                     ),
                     metrics=metrics,
+                    last_updated_at=latest,
+                    metric_sampled_at=samples,
                 )
             )
         return results
@@ -668,7 +699,7 @@ def get_peplink_health(settings: Settings) -> list[NetworkDeviceHealth]:
         host_by_name = {
             str(host.get("name") or host.get("host")): host
             for host in hosts
-            if "peplink" in f"{host.get('host', '')} {host.get('name', '')}".lower()
+            if str(host.get("name") or host.get("host")) in EXPECTED_PEPLINK_HOSTS
         }
         host_ids = [str(host["hostid"]) for host in host_by_name.values()]
         items: list[dict[str, Any]] = []
@@ -677,7 +708,9 @@ def get_peplink_health(settings: Settings) -> list[NetworkDeviceHealth]:
                 settings,
                 "item.get",
                 {
-                    "output": ["hostid", "key_", "lastvalue", "units", "status", "state"],
+                    "output": [
+                        "hostid", "key_", "lastvalue", "units", "status", "state", "lastclock",
+                    ],
                     "hostids": host_ids,
                     "filter": {"status": "0"},
                     "selectValueMap": ["name", "mappings"],
@@ -689,8 +722,12 @@ def get_peplink_health(settings: Settings) -> list[NetworkDeviceHealth]:
         vpn_counts = {
             host_id: {"total": 0, "connected": 0} for host_id in host_ids
         }
-        for item in items:
-            if str(item.get("state")) != "0":
+        samples_by_host: dict[str, dict[str, datetime | None]] = {h: {} for h in host_ids}
+        vpn_samples: dict[str, list[datetime | None]] = {h: [] for h in host_ids}
+        for item in sorted(items, key=lambda row: (
+            _peplink_metric_name(str(row.get("key_", ""))) or "", -int(row.get("lastclock") or 0),
+        )):
+            if str(item.get("state")) != "0" or str(item.get("status", "0")) != "0":
                 continue
             metric = _peplink_metric_name(str(item.get("key_", "")))
             host_id = str(item.get("hostid", ""))
@@ -698,14 +735,21 @@ def get_peplink_health(settings: Settings) -> list[NetworkDeviceHealth]:
                 continue
             value = _mapped_item_value(item)
             if metric.startswith("SpeedFusion "):
+                vpn_samples[host_id].append(_item_sample_time(item))
                 vpn_counts[host_id]["total"] += 1
                 if value == "Connected":
                     vpn_counts[host_id]["connected"] += 1
             elif metric not in metrics_by_host[host_id]:
                 metrics_by_host[host_id][metric] = value
+                samples_by_host[host_id][metric] = _item_sample_time(item)
 
         for host_id, counts in vpn_counts.items():
             if counts["total"]:
+                # A derived count is only as recent as its oldest contributing item.
+                times = vpn_samples[host_id]
+                oldest = min(times) if all(t is not None for t in times) else None
+                for key in ("SpeedFusion 總數", "SpeedFusion 已連線", "SpeedFusion 異常"):
+                    samples_by_host[host_id][key] = oldest
                 metrics_by_host[host_id].update(
                     {
                         "SpeedFusion 總數": counts["total"],
@@ -734,23 +778,220 @@ def get_peplink_health(settings: Settings) -> list[NetworkDeviceHealth]:
             available = bool(snmp_interface and str(snmp_interface.get("available")) == "1")
             host_id = str(host["hostid"])
             enabled = str(host.get("status")) == "0"
+            samples = samples_by_host[host_id]
+            latest = _latest_sample(samples)
+            fresh = bool(samples) and all(_sample_is_fresh(t) for t in samples.values())
+            healthy = available and enabled and fresh
             results.append(
                 NetworkDeviceHealth(
                     host_id=host_id,
                     name=expected_name,
                     ip_address=str(snmp_interface.get("ip")) if snmp_interface else None,
-                    status="ok" if available and enabled else "degraded",
+                    status="ok" if healthy else "degraded",
                     message=(
                         "SNMP monitoring is available"
-                        if available and enabled
-                        else "SNMP monitoring is unavailable"
+                        if healthy
+                        else "SNMP monitoring is unavailable or data is stale"
                     ),
                     metrics=metrics_by_host[host_id],
+                    last_updated_at=latest,
+                    metric_sampled_at=samples,
                 )
             )
         return results
     except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError):
         return []
+
+
+# Discover every refresh; new numbered hosts and Peplink-group members need no deployment.
+BRANCH_PEPLINK_HOST = re.compile(r"Peplink-0*[1-9][0-9]*", re.IGNORECASE)
+HIDDEN_BRANCH_WANS = {"wi-fi wan", "wi-fi wan on 2.4 ghz", "wi-fi wan on 5 ghz", "vlan wan"}
+
+
+def _is_branch_peplink(host: dict[str, Any]) -> bool:
+    name = str(host.get("host", ""))
+    if name.casefold() in {value.casefold() for value in EXPECTED_PEPLINK_HOSTS}:
+        return False
+    return bool(BRANCH_PEPLINK_HOST.fullmatch(name)) or any(
+        str(group.get("name", "")).casefold() == "peplink"
+        for group in host.get("hostgroups", [])
+    )
+
+
+def _branch_wan_name(key: str) -> str | None:
+    match = re.fullmatch(r"wan(?:State|HealthCheckState)\[(.+)\]", key)
+    return match[1] if match else None
+
+
+def _is_backup_wan(wan: str) -> bool:
+    return bool(re.fullmatch(r"(?:FET|Cellular)(?:\s+\d+)?", wan, re.IGNORECASE))
+
+
+def _hidden_branch_wan(wan: str) -> bool:
+    return wan.strip().casefold() in HIDDEN_BRANCH_WANS or bool(
+        re.fullmatch(r"VLAN WAN\s+\d+", wan.strip(), re.IGNORECASE)
+    )
+
+
+BRANCH_RESOURCE_KEYS = {
+    "system.cpu.util": "cpu", "system.cpu.util[,idle]": "cpu_idle",
+    "vm.memory.util": "memory",
+    # Template preprocessing must normalize uptime to seconds, not SNMP TimeTicks.
+    "system.uptime": "uptime_seconds",
+}
+BRANCH_WAN_STATES = {
+    "0": "Unknown", "1": "Disable", "2": "Disconnect", "3": "Connected",
+    "5": "Activating", "6": "Health-check-fail", "7": "Disconnected-manually", "8": "Standby",
+}
+
+
+def _branch_metric_alerts(device: BranchPeplinkHealth) -> list[tuple[str, list[str], int, str]]:
+    """One policy drives card colors and local events; never alarm on invalid samples."""
+    if not device.enabled:
+        return []
+    alerts = []
+    for key, value in device.metrics.items():
+        if device.metric_states.get(key) != "ok" or value is None:
+            continue
+        if key in {"cpu", "memory"} and isinstance(value, (int, float)) and value >= 80:
+            item_keys = (["system.cpu.util", "system.cpu.util[,idle]"] if key == "cpu"
+                         else ["vm.memory.util"])
+            alerts.append((key, item_keys, 4 if value >= 90 else 2,
+                           f"{'CPU' if key == 'cpu' else 'Memory'} 使用率 {value}%"))
+        elif key == "uptime_seconds" and isinstance(value, (int, float)) and value > 90 * 86400:
+            alerts.append((key, ["system.uptime"], 2,
+                           f"運行時間超過 90 天（{value / 86400:.2f} 天）"))
+        elif key.endswith((" 狀態", " 健康檢查")):
+            wan, suffix = key.rsplit(" ", 1)
+            if _hidden_branch_wan(wan):
+                continue
+            state_key = f"{wan} 狀態"
+            # A fresh disabled/standby state explains the idle health check.
+            if (suffix == "健康檢查" and device.metric_states.get(state_key) == "ok"
+                    and device.metrics.get(state_key) in {"Disable", "Disabled", "Standby"}):
+                continue
+            if value in {"Disconnect", "Disconnected", "Fail", "Health-check-fail"}:
+                # A failed health check and disconnect on the same WAN form one incident.
+                if (suffix == "健康檢查" and device.metric_states.get(state_key) == "ok"
+                        and device.metrics.get(state_key) in {
+                            "Disconnect", "Disconnected", "Health-check-fail"}):
+                    continue
+                alerts.append((key, [f"wanState[{wan}]", f"wanHealthCheckState[{wan}]"],
+                               2, f"{wan} {suffix}: {value}"))
+    return alerts
+
+
+def get_branch_peplink_health(settings: Settings) -> list[BranchPeplinkHealth]:
+    """Batch-read branch SNMP metrics; no per-host requests or Zabbix writes.
+
+    Missing, unsupported and stale values stay unknown, never a fabricated 0%.
+    The original six Peplink devices remain on their existing tab.
+    """
+    if not settings.ZABBIX_URL or not settings.ZABBIX_TOKEN:
+        return []
+    hosts, _ = _zabbix_call(settings, "host.get", {
+        "output": ["hostid", "host", "name", "status"],
+        "selectHostGroups": ["name"],
+        "selectInterfaces": ["ip", "type", "available"],
+    })
+    hosts = [host for host in hosts if _is_branch_peplink(host)]
+    if not hosts:
+        return []
+    items, _ = _zabbix_call(settings, "item.get", {
+        "output": ["itemid", "hostid", "key_", "lastvalue", "lastclock", "state", "units"],
+        "hostids": [str(host["hostid"]) for host in hosts], "filter": {"status": "0"},
+        "selectValueMap": ["mappings"],
+    })
+    by_host: dict[str, list[dict[str, Any]]] = {}
+    for item in items:
+        by_host.setdefault(str(item["hostid"]), []).append(item)
+    now = int(datetime.now(UTC).timestamp())
+    result = []
+    for host in sorted(hosts, key=lambda row: row["host"].lower()):
+        host_id = str(host["hostid"])
+        snmp = next((i for i in host.get("interfaces", []) if str(i.get("type")) == "2"), {})
+        available = str(snmp.get("available")) == "1" and str(host.get("status")) == "0"
+        device = BranchPeplinkHealth(
+            host_id=host_id, host_name=str(host["host"]),
+            name=str(host.get("name") or host["host"]),
+            enabled=str(host.get("status")) == "0",
+            ip_address=snmp.get("ip"), status="ok" if available else "degraded",
+            message="SNMP 可用" if available else "主機已停用或 SNMP 無法連線",
+            metrics={"cpu": None, "memory": None, "uptime_seconds": None},
+            metric_states={"cpu": "missing", "memory": "missing", "uptime_seconds": "missing"},
+        )
+        # Newest sample wins if multiple equivalent resource keys are present.
+        host_items = sorted(
+            by_host.get(host_id, []), key=lambda row: int(row.get("lastclock") or 0)
+        )
+        for item in host_items:
+            key = str(item.get("key_", ""))
+            wan = _branch_wan_name(key)
+            if wan and _hidden_branch_wan(wan):
+                continue
+            resource = BRANCH_RESOURCE_KEYS.get(key)
+            metric = "cpu" if resource == "cpu_idle" else resource
+            if not metric and key.startswith(("wanState[", "wanHealthCheckState[")):
+                metric = _peplink_metric_name(key)
+            if not metric:
+                continue
+            clock = int(item.get("lastclock") or 0)
+            state = "ok"
+            value = None
+            if str(item.get("state")) != "0":
+                state = "unsupported"
+            elif clock <= 0:
+                state = "unknown"
+            elif clock < now - 600:
+                state = "stale"
+            elif resource:
+                try:
+                    numeric = float(item.get("lastvalue", ""))
+                    if resource == "cpu_idle":
+                        numeric = 100 - numeric
+                    if not math.isfinite(numeric) or numeric < 0 or (
+                        metric in {"cpu", "memory"} and numeric > 100
+                    ):
+                        raise ValueError("Invalid utilization")
+                    value = round(numeric, 2)
+                except (ValueError, TypeError):
+                    state = "unknown"
+            else:
+                raw = str(item.get("lastvalue", ""))
+                mapping = BRANCH_WAN_STATES if key.startswith("wanState[") else {
+                    "0": "Fail", "1": "Success",
+                }
+                value = _mapped_item_value(item)
+                if not isinstance(value, str):
+                    value = mapping.get(raw, "Unknown")
+                if value == "Unknown":
+                    state = "unknown"
+            device.metrics[metric] = value
+            device.metric_states[metric] = state
+            device.metric_sampled_at[metric] = (
+                datetime.fromtimestamp(clock, UTC) if clock > 0 else None
+            )
+        times = [time for time in device.metric_sampled_at.values() if time is not None]
+        device.last_updated_at = max(times) if times else None
+        has_wan = any(key.endswith(" 狀態") for key in device.metrics)
+        if not has_wan or any(state != "ok" for state in device.metric_states.values()):
+            device.status = "degraded"
+            device.message += "；部分指標尚未提供、過期或採集異常"
+        if any(
+            key.endswith(" 狀態") and value in {"Disconnect", "Disconnected"}
+            and device.metric_states.get(key) == "ok"
+            for key, value in device.metrics.items()
+        ):
+            device.status = "degraded"
+            device.message += "；WAN 連線中斷"
+        device.metric_severities = {
+            key: severity for key, _, severity, _ in _branch_metric_alerts(device)
+        }
+        device.alert_severity = max(device.metric_severities.values(), default=0)
+        if device.alert_severity:
+            device.status = "degraded"
+        result.append(device)
+    return result
 
 
 SEVERITY_LABELS = {2: "Warning", 3: "Average", 4: "High", 5: "Disaster"}
@@ -784,6 +1025,7 @@ def get_warning_problems(settings: Settings) -> list[MonitoringProblem]:
                 "output": ["triggerid"],
                 "triggerids": trigger_ids,
                 "selectHosts": ["hostid", "name"],
+                "selectItems": ["key_"],
             },
         ) if trigger_ids else ([], 0)
         hosts_by_trigger = {
@@ -792,6 +1034,7 @@ def get_warning_problems(settings: Settings) -> list[MonitoringProblem]:
             )
             for trigger in triggers
         }
+        triggers_by_id = {str(row["triggerid"]): row for row in triggers}
         return [
             MonitoringProblem(
                 event_id=str(problem.get("eventid")),
@@ -801,6 +1044,10 @@ def get_warning_problems(settings: Settings) -> list[MonitoringProblem]:
                 occurred_at=datetime.fromtimestamp(int(problem.get("clock", 0)), UTC),
                 acknowledged=str(problem.get("acknowledged")) == "1",
                 message=str(problem.get("name") or "Zabbix problem"),
+                host_ids=[str(row["hostid"]) for row in triggers_by_id.get(
+                    str(problem.get("objectid")), {}).get("hosts", [])],
+                item_keys=[str(row["key_"]) for row in triggers_by_id.get(
+                    str(problem.get("objectid")), {}).get("items", [])],
             )
             for problem in problems
         ]
@@ -808,19 +1055,234 @@ def get_warning_problems(settings: Settings) -> list[MonitoringProblem]:
         return []
 
 
+def apply_branch_wan_rules(
+    problems: list[MonitoringProblem], devices: list[BranchPeplinkHealth],
+) -> list[MonitoringProblem]:
+    """Filter this page only; never acknowledge, close or modify Zabbix events.
+
+    Local resource/WAN alerts are current observations, not persisted incident history.
+    Keep Zabbix events when associations are ambiguous or samples are stale,
+    except the explicitly excluded Zabbix FET Link down event name.
+    """
+    by_id = {device.host_id: device for device in devices}
+
+    def excluded(device: BranchPeplinkHealth, key: str) -> bool:
+        wan = _branch_wan_name(key)
+        if not wan:
+            return False
+        if _hidden_branch_wan(wan):
+            return True
+        state_key = f"{wan} 狀態"
+        return (_is_backup_wan(wan) and device.metric_states.get(state_key) == "ok"
+                and (device.metrics.get(state_key) in {"Disable", "Disabled"}
+                     or (key.startswith("wanHealthCheckState[")
+                         and device.metrics.get(state_key) == "Standby")))
+
+    visible = []
+    for problem in problems:
+        # Page-only exclusion, independent of host discovery or current FET state.
+        # Anchor the whole event name so unrelated/mixed link alerts remain visible.
+        if problem.source == "zabbix" and re.fullmatch(
+            r"\s*(?:[^\r\n:：]+[:：]\s*)?FET\s+Link\s+down\s*",
+            problem.message, re.IGNORECASE,
+        ):
+            continue
+        device = by_id.get(problem.host_ids[0]) if len(problem.host_ids) == 1 else None
+        if device and problem.item_keys and all(excluded(device, key) for key in problem.item_keys):
+            continue
+        visible.append(problem)
+    for device in devices:
+        device.metric_severities = {}
+        device.alert_severity = 0
+        if not device.enabled:
+            continue
+        for key, item_keys, severity, message in _branch_metric_alerts(device):
+            device.metric_severities[key] = severity
+            # The native incident takes precedence over the local fallback.
+            if any(device.host_id in p.host_ids and set(item_keys).intersection(p.item_keys)
+                   for p in visible):
+                continue
+            sampled_at = device.metric_sampled_at.get(key)
+            if sampled_at is None:
+                continue
+            visible.append(MonitoringProblem(
+                event_id=f"branch-metric:{device.host_id}:{key}", host_name=device.name,
+                host_ids=[device.host_id], item_keys=item_keys, source="workhour",
+                severity=severity, severity_label="Critical" if severity >= 4 else "Warning",
+                occurred_at=sampled_at, acknowledged=False,
+                message=f"{message}（本頁規則；目前取樣）",
+            ))
+        for problem in visible:
+            if device.host_id not in problem.host_ids:
+                continue
+            device.alert_severity = max(device.alert_severity, problem.severity)
+            # Multi-host trigger keys cannot safely be attributed to one card metric.
+            if len(problem.host_ids) != 1:
+                continue
+            for item_key in problem.item_keys:
+                resource = BRANCH_RESOURCE_KEYS.get(item_key)
+                metric = "cpu" if resource == "cpu_idle" else resource
+                if not metric and _branch_wan_name(item_key):
+                    metric = _peplink_metric_name(item_key)
+                if metric in device.metrics:
+                    device.metric_severities[metric] = max(
+                        device.metric_severities.get(metric, 0), problem.severity)
+        device.alert_severity = max(
+            device.alert_severity, max(device.metric_severities.values(), default=0)
+        )
+        if device.alert_severity:
+            device.status = "degraded"
+    return sorted(visible, key=lambda row: row.occurred_at, reverse=True)
+
+
+# Match only the audited custom collector contract. Unknown MSSQL keys may
+# contain raw responses, so do not send them to the browser automatically.
+MSSQL_KEY = re.compile(
+    r'^mssql\.([\w-]+)\.(version|service|agent|db\.(?:state|recovery|logused|'
+    r'fullbackup\.age|logbackup\.age))(?:\["([^"\r\n]+)"\])?$'
+)
+MSSQL_LABELS = {
+    "version": "SQL Server 版本", "service": "SQL Server 服務",
+    "agent": "SQL Server Agent", "db.state": "資料庫狀態",
+    "db.recovery": "復原模式", "db.logused": "Transaction Log 使用率",
+    "db.fullbackup.age": "Full Backup 距今", "db.logbackup.age": "Log Backup 距今",
+}
+
+
+def get_mssql_health(settings: Settings) -> list[MssqlHealth]:
+    """Read existing collectors without renaming keys or modifying Zabbix objects.
+
+    Freshness is checked per item; a fresh service sample must not hide an old
+    backup sample. Threshold severity comes from active Zabbix problems, not a
+    second set of backup/log thresholds maintained in the Vue application.
+    """
+    if not settings.ZABBIX_URL or not settings.ZABBIX_TOKEN:
+        return []
+    items, _ = _zabbix_call(settings, "item.get", {
+        "output": ["itemid", "hostid", "key_", "lastvalue", "lastclock", "state", "status"],
+        "search": {"key_": "mssql."}, "startSearch": True,
+        "monitored": True, "selectHosts": ["hostid", "host", "name"],
+    })
+    selected = [(item, MSSQL_KEY.fullmatch(str(item.get("key_", "")))) for item in items]
+    selected = [(item, match) for item, match in selected if match is not None
+                and bool(match[2].startswith("db.")) == bool(match[3])]
+    if not selected:
+        return []
+    host_ids = sorted({str(item["hostid"]) for item, _ in selected})
+    problems, _ = _zabbix_call(settings, "problem.get", {
+        "output": ["eventid", "objectid", "name", "severity", "clock", "acknowledged"],
+        "hostids": host_ids, "severities": WARNING_SEVERITIES,
+        "recent": False, "suppressed": False,
+    })
+    trigger_ids = list({str(row["objectid"]) for row in problems})
+    triggers, _ = _zabbix_call(settings, "trigger.get", {
+        "output": ["triggerid"], "triggerids": trigger_ids,
+        "selectFunctions": ["itemid"],
+    }) if trigger_ids else ([], 0)
+    item_ids_by_trigger = {
+        str(row["triggerid"]): {str(fn["itemid"]) for fn in row.get("functions", [])}
+        for row in triggers
+    }
+    now = int(datetime.now(UTC).timestamp())
+    grouped: dict[tuple[str, str], MssqlHealth] = {}
+    for item, match in selected:
+        host_id, instance, kind, database = str(item["hostid"]), match[1], match[2], match[3]
+        host = next((h for h in item.get("hosts", []) if str(h["hostid"]) == host_id), {})
+        group = grouped.setdefault((host_id, instance), MssqlHealth(
+            host_id=host_id, name=str(host.get("name") or host.get("host") or host_id),
+            host_name=str(host.get("host") or host_id), instance=instance, status="ok",
+        ))
+        item_id = str(item["itemid"])
+        related = [p for p in problems
+                   if item_id in item_ids_by_trigger.get(str(p["objectid"]), set())]
+        severity = max((int(p["severity"]) for p in related), default=0)
+        clock = int(item.get("lastclock") or 0)
+        value: int | float | str | None = None
+        state = "ok"
+        if str(item.get("state")) != "0":
+            state = "unsupported"
+        elif clock <= 0:
+            state = "unknown"
+        else:
+            # Version/recovery mode are collected less often than live health.
+            max_age = {"version": 86400, "db.recovery": 3600,
+                       "db.fullbackup.age": 900}.get(kind, 300)
+            state = "stale" if clock < now - max_age else "ok"
+            if kind == "version":
+                raw = str(item.get("lastvalue", ""))
+                value = raw if re.fullmatch(r"\d+(?:\.\d+){1,4}", raw) else None
+            else:
+                try:
+                    numeric = float(item.get("lastvalue", ""))
+                    if math.isfinite(numeric) and numeric >= 0:
+                        value = round(numeric, 4)
+                except (ValueError, TypeError):
+                    pass
+            if value is None:
+                state = "unknown"
+            elif state == "ok":
+                failed = (kind in {"service", "agent"} and value != 1) or (
+                    kind == "db.state" and value != 0
+                )
+                state = "critical" if failed or severity >= 4 else (
+                    "warning" if severity >= 2 else "ok"
+                )
+        if state != "ok" or severity:
+            group.status = "degraded"
+        group.metrics.append(MssqlMetric(
+            item_id=item_id, key=kind, label=f"{database} · {MSSQL_LABELS[kind]}"
+            if database else MSSQL_LABELS[kind], value=value,
+            units="%" if kind == "db.logused" else "s" if kind.endswith(".age") else "",
+            sampled_at=datetime.fromtimestamp(clock, UTC) if clock > 0 else None,
+            status=state, severity=severity,
+        ))
+        for problem in related:
+            if any(p.event_id == str(problem["eventid"]) for p in group.problems):
+                continue
+            group.problems.append(MonitoringProblem(
+                event_id=str(problem["eventid"]), host_name=group.name,
+                severity=int(problem["severity"]),
+                severity_label=SEVERITY_LABELS[int(problem["severity"])],
+                occurred_at=datetime.fromtimestamp(int(problem["clock"]), UTC),
+                acknowledged=str(problem.get("acknowledged")) == "1",
+                message=str(problem["name"]),
+            ))
+    for group in grouped.values():
+        group.metrics.sort(key=lambda metric: (list(MSSQL_LABELS).index(metric.key), metric.label))
+    return sorted(grouped.values(), key=lambda group: (group.name, group.instance))
+
+
 def build_monitoring_summary(settings: Settings) -> MonitoringSummary:
     integrations = [check_zabbix(settings)]
     firewalls = get_fortigate_health(settings)
     peplinks = get_peplink_health(settings)
+    branch_peplinks_error = None
+    try:
+        branch_peplinks = get_branch_peplink_health(settings)
+    except (HTTPError, URLError, TimeoutError, ValueError) as error:
+        branch_peplinks = []
+        branch_peplinks_error = _connection_failure_message("Branch Peplink", error)
     servers = get_server_health(settings)
     nutanix = get_nutanix_health(settings)
-    problems = get_warning_problems(settings)
+    problems = apply_branch_wan_rules(get_warning_problems(settings), branch_peplinks)
+    for integration in integrations:
+        if integration.name == "zabbix" and integration.status == "ok":
+            integration.metrics["active_problems"] = len(problems)
+    mssql_error = None
+    try:
+        mssql = get_mssql_health(settings)
+    except (HTTPError, URLError, TimeoutError, ValueError) as error:
+        # An API failure must not look like zero healthy SQL servers.
+        mssql = []
+        mssql_error = _connection_failure_message("MSSQL monitoring", error)
     states = {integration.status for integration in integrations}
-    resources = [*firewalls, *servers, *peplinks, *nutanix]
+    resources = [*firewalls, *servers, *peplinks, *branch_peplinks, *nutanix, *mssql]
     if (
         "degraded" in states
         or any(resource.status == "degraded" for resource in resources)
         or problems
+        or mssql_error
+        or branch_peplinks_error
     ):
         overall = "degraded"
     elif states == {"unconfigured"}:
@@ -833,7 +1295,11 @@ def build_monitoring_summary(settings: Settings) -> MonitoringSummary:
         integrations=integrations,
         firewalls=firewalls,
         peplinks=peplinks,
+        branch_peplinks=branch_peplinks,
+        branch_peplinks_error=branch_peplinks_error,
         servers=servers,
         nutanix=nutanix,
+        mssql=mssql,
+        mssql_error=mssql_error,
         problems=problems,
     )

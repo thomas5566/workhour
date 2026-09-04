@@ -11,8 +11,12 @@ const emptySummary = () => ({
   ],
   firewalls: [],
   peplinks: [],
+  branch_peplinks: [],
+  branch_peplinks_error: null,
   servers: [],
   nutanix: [],
+  mssql: [],
+  mssql_error: null,
   problems: [],
 });
 

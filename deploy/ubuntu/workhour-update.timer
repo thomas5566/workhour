@@ -1,0 +1,12 @@
+[Unit]
+Description=Check for an approved WorkHour release
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30
+Persistent=true
+Unit=workhour-update.service
+
+[Install]
+WantedBy=timers.target

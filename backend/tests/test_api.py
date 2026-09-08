@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from types import SimpleNamespace
 
 import httpx
@@ -43,7 +43,7 @@ def api_engine():
     manager = SimpleNamespace(
         id=1,
         department_id=1,
-        is_superuser=False,
+        is_superuser=True,
         checklistAll_permission=1,
     )
     # Overrides apply only inside this fixture. Production requests still use
@@ -500,7 +500,9 @@ async def test_expense_task_crud_and_permissions(api_engine) -> None:
 
 
 @pytest.mark.anyio
-async def test_user_creation_requires_manager_token(authenticated_api_engine) -> None:
+async def test_user_creation_requires_administrator_token(
+    authenticated_api_engine,
+) -> None:
     with Session(authenticated_api_engine) as session:
         session.add_all(
             [
@@ -512,6 +514,7 @@ async def test_user_creation_requires_manager_token(authenticated_api_engine) ->
                     fullname="Manager",
                     password=Hasher.get_password_hash("manager-password"),
                     is_active=True,
+                    is_superuser=True,
                     checklistAll_permission=1,
                     department_id=1,
                 ),
@@ -523,6 +526,16 @@ async def test_user_creation_requires_manager_token(authenticated_api_engine) ->
                     is_active=True,
                     checklistAll_permission=0,
                     department_id=2,
+                ),
+                User(
+                    id=3,
+                    username="report-manager",
+                    fullname="Report Manager",
+                    password=Hasher.get_password_hash("report-password"),
+                    is_active=True,
+                    is_superuser=False,
+                    checklistAll_permission=1,
+                    department_id=1,
                 ),
             ]
         )
@@ -541,8 +554,13 @@ async def test_user_creation_requires_manager_token(authenticated_api_engine) ->
             "/api/user/login",
             data={"username": "staff", "password": "staff-password"},
         )
+        report_login = await client.post(
+            "/api/user/login",
+            data={"username": "report-manager", "password": "report-password"},
+        )
         assert manager_login.status_code == 200
         assert staff_login.status_code == 200
+        assert report_login.status_code == 200
 
         account = {
             "username": "new-user",
@@ -565,6 +583,11 @@ async def test_user_creation_requires_manager_token(authenticated_api_engine) ->
             json={**account, "username": "staff-created-user"},
             headers={"Authorization": f"Bearer {staff_login.json()['token']}"},
         )
+        report_response = await client.post(
+            "/api/user/",
+            json={**account, "username": "report-created-user"},
+            headers={"Authorization": f"Bearer {report_login.json()['token']}"},
+        )
         anonymous_response = await client.post(
             "/api/user/",
             json={**account, "username": "anonymous-created-user"},
@@ -576,7 +599,62 @@ async def test_user_creation_requires_manager_token(authenticated_api_engine) ->
     assert duplicate_response.status_code == 409
     assert duplicate_response.json() == {"detail": "Username already registered"}
     assert staff_response.status_code == 403
+    assert report_response.status_code == 403
     assert anonymous_response.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_login_lockout_handles_naive_database_timestamps(
+    authenticated_api_engine,
+) -> None:
+    password = "correct-password"
+    with Session(authenticated_api_engine) as session:
+        session.add(
+            User(
+                username="lockout-user",
+                password=Hasher.get_password_hash(password),
+                is_active=True,
+                department_id=1,
+            )
+        )
+        session.commit()
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        for _ in range(5):
+            response = await client.post(
+                "/api/user/login",
+                data={"username": "lockout-user", "password": "wrong-password"},
+            )
+            assert response.status_code == 401
+
+        locked_response = await client.post(
+            "/api/user/login",
+            data={"username": "lockout-user", "password": password},
+        )
+        assert locked_response.status_code == 401
+
+        # SQLite returns a naive datetime even for DateTime(timezone=True).
+        with Session(authenticated_api_engine) as session:
+            user = user_crud.get_user_by_username(session, "lockout-user")
+            user.locked_until = datetime.now(UTC).replace(tzinfo=None) - timedelta(
+                seconds=1
+            )
+            session.commit()
+
+        unlocked_response = await client.post(
+            "/api/user/login",
+            data={"username": "lockout-user", "password": password},
+        )
+
+    assert unlocked_response.status_code == 200
+    with Session(authenticated_api_engine) as session:
+        user = user_crud.get_user_by_username(session, "lockout-user")
+        assert user.failed_login_attempts == 0
+        assert user.locked_until is None
 
 
 @pytest.mark.anyio

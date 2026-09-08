@@ -66,6 +66,18 @@ class UserAdminUpdate(BaseModel):
         return value
 
 
+class PasswordChange(BaseModel):
+    current_password: SecretStr = Field(min_length=1)
+    new_password: SecretStr = Field(min_length=8)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password_length(cls, value: SecretStr) -> SecretStr:
+        if len(value.get_secret_value().encode("utf-8")) > BCRYPT_MAX_PASSWORD_BYTES:
+            raise ValueError("password must not exceed 72 UTF-8 bytes")
+        return value
+
+
 class User(BaseModel):
     id: int
     # Legacy rows can contain NULL values even though new writes are validated.

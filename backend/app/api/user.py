@@ -2,10 +2,12 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, Response, status
 
-from ..auth import CurrentUser, ManagerUser, is_manager, login_manager
+from ..auth import AdminUser, CurrentUser, ManagerUser, is_manager, login_manager
 from ..core.config import settings
 from ..core.hashing import DUMMY_PASSWORD_HASH, Hasher
+from ..models import User as UserModel
 from ..repository import department_crud, user_crud
+from ..repository.transaction import commit_or_rollback
 from ..schemas import allfull, departments, users
 from .dependencies import (
     DatabaseSession,
@@ -57,15 +59,20 @@ def read_registration_departments(db: DatabaseSession):
     status_code=status.HTTP_201_CREATED,
 )
 def register_user(user_item: users.UserCreate, db: DatabaseSession):
-    # UserCreate has no role fields; public callers cannot grant privileges.
-    return _create_user_account(user_item, db)
+    # Public registration creates an inactive account pending administrator approval.
+    return user_crud.create_user(
+        db,
+        user_item,
+        Hasher.get_password_hash(user_item.password.get_secret_value()),
+        is_active=False,
+    )
 
 
 @router.post("/", response_model=users.User)
 def create_user(
     user_item: users.UserCreate,
     db: DatabaseSession,
-    manager: ManagerUser,
+    manager: AdminUser,
 ):
     # Bootstrap administrators are provisioned outside the public API, so
     # account creation can stay manager-only without a registration backdoor.
@@ -111,7 +118,7 @@ def _validate_user_department(db: DatabaseSession, department_id: int) -> None:
 def admin_create_user(
     user_item: users.UserAdminCreate,
     db: DatabaseSession,
-    manager: ManagerUser,
+    manager: AdminUser,
 ):
     if user_crud.get_user_by_username(db, user_item.username):
         raise HTTPException(status_code=409, detail="Username already registered")
@@ -125,7 +132,7 @@ def admin_update_user(
     user_id: PositivePathId,
     user_item: users.UserAdminUpdate,
     db: DatabaseSession,
-    manager: ManagerUser,
+    manager: AdminUser,
 ):
     db_user = user_crud.get_user(db, user_id)
     if db_user is None:
@@ -146,7 +153,7 @@ def admin_update_user(
 def admin_delete_user(
     user_id: PositivePathId,
     db: DatabaseSession,
-    manager: ManagerUser,
+    manager: AdminUser,
 ) -> None:
     if manager.id == user_id:
         raise HTTPException(status_code=400, detail="You cannot delete your own account")
@@ -166,12 +173,25 @@ def read_user_my(
 
 @router.post("/login", response_model=users.UserToken)
 def login(data: LoginForm, db: DatabaseSession, response: Response):
+    now = datetime.now(UTC)
     user = user_crud.get_user_by_username(db, username=data.username)
     # Always verify a hash, even for an unknown account, so username probing
     # cannot rely on a noticeably faster missing-user response.
     stored_hash = user.password if user else DUMMY_PASSWORD_HASH
     password_is_valid = Hasher.verify_password(data.password, stored_hash)
-    if not user or not password_is_valid or not user.is_active:
+    locked_until = getattr(user, "locked_until", None) if user else None
+    if locked_until is not None and locked_until.tzinfo is None:
+        # SQLite drops timezone information; PostgreSQL keeps it. Normalize
+        # either representation before comparing it with the UTC clock.
+        locked_until = locked_until.replace(tzinfo=UTC)
+    locked = bool(user and locked_until and locked_until > now)
+    if not user or not password_is_valid or not user.is_active or locked:
+        if user and not locked and user.is_active:
+            user.failed_login_attempts = (getattr(user, "failed_login_attempts", 0) or 0) + 1
+            if user.failed_login_attempts >= 5:
+                user.locked_until = now + timedelta(minutes=15)
+            if db is not None:
+                commit_or_rollback(db)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -186,7 +206,7 @@ def login(data: LoginForm, db: DatabaseSession, response: Response):
         else settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
     access_token = login_manager.create_access_token(
-        data={"sub": str(user.id)},
+        data={"sub": f"{user.id}:{getattr(user, 'auth_version', 0) or 0}"},
         expires=timedelta(minutes=token_lifetime_minutes),
     )
     user.token = access_token
@@ -196,7 +216,32 @@ def login(data: LoginForm, db: DatabaseSession, response: Response):
     # Bearer tokens must never be retained by browser or intermediary caches.
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
+    if hasattr(user, "failed_login_attempts"):
+        user.failed_login_attempts = 0
+        user.locked_until = None
+    if db is not None:
+        commit_or_rollback(db)
     return user
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(db: DatabaseSession, user: CurrentUser) -> None:
+    db_user = db.get(UserModel, user.id)
+    if db_user is not None:
+        db_user.auth_version = (db_user.auth_version or 0) + 1
+        commit_or_rollback(db)
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(data: users.PasswordChange, db: DatabaseSession, user: CurrentUser) -> None:
+    db_user = db.get(UserModel, user.id)
+    if db_user is None or not Hasher.verify_password(
+        data.current_password.get_secret_value(), db_user.password
+    ):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    db_user.password = Hasher.get_password_hash(data.new_password.get_secret_value())
+    db_user.auth_version = (db_user.auth_version or 0) + 1
+    commit_or_rollback(db)
 
 
 @router.get("/{user_id}", response_model=allfull.UserFull)

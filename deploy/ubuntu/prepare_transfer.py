@@ -76,7 +76,7 @@ def prepare(output):
     git = ["git", "-c", f"safe.directory={ROOT.as_posix()}"]
     commit = run_checked([*git, "rev-parse", "HEAD"], cwd=ROOT).decode().strip()
     branch = run_checked([*git, "branch", "--show-current"], cwd=ROOT).decode().strip()
-    if branch != "refactor/vue3-fastapi-modernization":
+    if branch != "main":
         raise ValueError("The working tree is not on the authorized deployment branch")
     config = dotenv_values(ROOT / ".env.production")
     for key in ("EXTERNAL_DATABASE_URL", "SECRET_KEY", "DEVICE_CREDENTIAL_KEY",

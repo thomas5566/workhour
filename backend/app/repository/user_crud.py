@@ -71,12 +71,14 @@ def create_user(
     db: Session,
     user_item: users.UserCreate,
     hashed_password: str,
+    is_active: bool = True,
 ) -> User:
     db_user = User(
         username=user_item.username,
         fullname=user_item.fullname or "",
         password=hashed_password,
         department_id=user_item.department_id,
+        is_active=is_active,
     )
     db.add(db_user)
     commit_or_rollback(db)
@@ -118,6 +120,7 @@ def update_admin_user(
     db_user.checklistAll_permission = user_item.checklistAll_permission
     if hashed_password is not None:
         db_user.password = hashed_password
+        db_user.auth_version = (db_user.auth_version or 0) + 1
     commit_or_rollback(db)
     db.refresh(db_user)
     return db_user

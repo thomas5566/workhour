@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from ..auth import ManagerUser, require_manager
+from ..auth import AdminUser, require_manager
 from ..core.credentials import decrypt_credential
 from ..repository import ipcamlist_crud
 from ..schemas import ipcamlist
@@ -43,7 +43,7 @@ def create_ipcamlist(
 def reveal_ipcam_passwords(
     ipcamlist_id: PositivePathId,
     db: DatabaseSession,
-    manager: ManagerUser,
+    manager: AdminUser,
     response: Response,
 ) -> ipcamlist.IpCamCredentialReveal:
     record = ipcamlist_crud.get_ipcamlist_by_id(db, ipcamlist_id)

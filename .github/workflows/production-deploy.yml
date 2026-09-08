@@ -2,7 +2,7 @@ name: Production deployment
 
 on:
   push:
-    branches: [refactor/vue3-fastapi-modernization]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -58,7 +58,7 @@ jobs:
 
   build-and-publish:
     needs: [backend-verification, frontend-verification]
-    if: github.ref == 'refs/heads/refactor/vue3-fastapi-modernization'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production

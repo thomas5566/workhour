@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 
-from ..auth import CurrentUser, ManagerUser
+from ..auth import CurrentUser, ManagerUser, is_manager
 from ..repository import task_crud
 from ..schemas import allfull, tasks
 from .dependencies import DatabaseSession, PageLimit, PageOffset, PositivePathId
@@ -53,6 +53,12 @@ def read_task(
     db_task = task_crud.get_task(db, task_id=task_id)
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
+    if not is_manager(user):
+        # Do not expose another user's work-hour rows through the nested
+        # TaskFull relationship.
+        response = allfull.TaskFull.model_validate(db_task)
+        response.workhours = [item for item in response.workhours if item.user_id == user.id]
+        return response
     return db_task
 
 

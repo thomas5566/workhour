@@ -1,7 +1,7 @@
 # Ubuntu VM deployment preparation
 
 Target: dedicated Ubuntu 22.04.5 amd64 VM on the trusted LAN.
-Branch: `refactor/vue3-fastapi-modernization`.
+Branch: `main`.
 The LAN bind address and browser origin remain private environment values.
 This directory is preparation only; it does not enable CI/CD or migrate data.
 
@@ -98,7 +98,7 @@ Security requirements before enabling the job:
   this repository is public. Fork pull requests are not trusted production
   workloads and Docker access is effectively root-equivalent.
 - Create the GitHub `production` environment and restrict its deployment branch
-  to `refactor/vue3-fastapi-modernization`. Require an approver when the
+  to `main`. Require an approver when the
   repository visibility and GitHub plan provide that protection rule.
 - Protect that branch: require the CI checks and disallow force pushes.
 - Keep `/opt/workhour/deploy/ubuntu/.env` only on the VM. No production secret

@@ -7,7 +7,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.api import user as user_api
-from app.auth import ensure_owner_or_manager, login_manager, require_manager
+from app.auth import ensure_owner_or_manager, login_manager, require_admin, require_manager
 from app.core.config import settings
 from app.core.hashing import DUMMY_PASSWORD_HASH, Hasher
 from app.database import get_db
@@ -73,6 +73,15 @@ def test_manager_dependency_rejects_regular_user() -> None:
 
     with pytest.raises(HTTPException) as error:
         require_manager(regular_user)
+
+    assert error.value.status_code == 403
+
+
+def test_admin_dependency_rejects_report_only_manager() -> None:
+    report_manager = SimpleNamespace(is_superuser=False, checklistAll_permission=1)
+
+    with pytest.raises(HTTPException) as error:
+        require_admin(report_manager)
 
     assert error.value.status_code == 403
 
@@ -173,7 +182,7 @@ async def test_login_returns_bearer_token_without_password(monkeypatch) -> None:
         settings.SECRET_KEY,
         algorithms=[settings.ALGORITHM],
     )
-    assert claims["sub"] == "7"
+    assert claims["sub"] == "7:0"
 
 
 @pytest.mark.anyio

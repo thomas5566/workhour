@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from ..auth import ManagerUser, require_manager
+from ..auth import AdminUser, require_manager
 from ..core.credentials import decrypt_credential
 from ..repository import branch_crud, serverlist_crud
 from ..schemas import serverlist
@@ -68,7 +68,7 @@ def delete_serverlist(
 def reveal_server_password(
     serverlist_id: PositivePathId,
     db: DatabaseSession,
-    manager: ManagerUser,
+    manager: AdminUser,
     response: Response,
 ) -> serverlist.ServerCredentialReveal:
     record = serverlist_crud.get_serverlist_by_id(db, serverlist_id)

@@ -4,7 +4,7 @@
 # checkout on the production VM.
 set -Eeuo pipefail
 
-readonly branch="refactor/vue3-fastapi-modernization"
+readonly branch="main"
 readonly repository="https://github.com/thomas5566/workhour.git"
 readonly state_dir="${WORKHOUR_RUNNER_STATE:-/opt/workhour/runner-state}"
 readonly state_file="$state_dir/deployed-sha"

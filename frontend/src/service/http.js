@@ -76,7 +76,7 @@ http.interceptors.response.use(
       ElMessage.error(typeof detail === "string" ? detail : "伺服器連線失敗，請稍後再試");
     }
 
-    if (status === 401) {
+    if (status === 401 && !error.config?.skipAuthLogout) {
       await store.dispatch("LogOut");
       if (router.currentRoute.value.name !== "LoginPage") {
         await router.push({ name: "LoginPage" });

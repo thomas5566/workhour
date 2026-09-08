@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 
-from ..auth import CurrentUser, ManagerUser
+from ..auth import CurrentUser, ManagerUser, is_manager
 from ..repository import expentask_crud
 from ..schemas import allfull, expentasks
 from .dependencies import DatabaseSession, PageLimit, PageOffset, PositivePathId
@@ -54,6 +54,10 @@ def read_expentask(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Expense task not found",
         )
+    if not is_manager(user):
+        response = allfull.ExpenTaskFull.model_validate(db_expentask)
+        response.expenditures = [item for item in response.expenditures if item.user_id == user.id]
+        return response
     return db_expentask
 
 

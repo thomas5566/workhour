@@ -9,6 +9,18 @@ export function postUserLogInAPI(data) {
   });
 }
 
+export function postUserLogoutAPI() {
+  return axios({
+    url: "/user/logout",
+    method: "post",
+    background: true,
+    silent: true,
+    // An expired token may make logout return 401. Avoid dispatching logout
+    // recursively from the global response interceptor.
+    skipAuthLogout: true,
+  });
+}
+
 export function getUserAPI() {
   return axios({
     url: "/user/",

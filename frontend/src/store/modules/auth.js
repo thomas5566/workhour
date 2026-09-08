@@ -1,5 +1,5 @@
 //store/modules/auth.js
-import { postUserLogInAPI } from "../../service/apis.js";
+import { postUserLogInAPI, postUserLogoutAPI } from "../../service/apis.js";
 
 const state = {
   token: "",
@@ -24,8 +24,17 @@ const actions = {
       }
     });
   },
-  async LogOut({ commit }) {
-    commit("LogOut");
+  async LogOut({ commit, state }) {
+    try {
+      if (state.token) await postUserLogoutAPI();
+    } catch {
+      // The local session must still end when the token is already invalid or
+      // the API is unreachable.
+    } finally {
+      // Local cleanup must still happen if the token already expired or the
+      // backend is temporarily unavailable.
+      commit("LogOut");
+    }
   },
 };
 const mutations = {

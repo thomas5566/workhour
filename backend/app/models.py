@@ -61,6 +61,14 @@ class User(IdMixin, TimestampMixin, Base):
     is_active: Mapped[bool | None] = mapped_column(Boolean(), default=True)
     is_superuser: Mapped[bool | None] = mapped_column(Boolean(), default=False)
     checklistAll_permission: Mapped[int | None] = mapped_column(Integer, default=0)
+    # Incremented whenever credentials or an explicit logout invalidates JWTs.
+    auth_version: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+    failed_login_attempts: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     workhours: Mapped[list[Workhour]] = relationship(back_populates="user")
     expenditures: Mapped[list[Expenditure]] = relationship(back_populates="user")

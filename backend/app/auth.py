@@ -52,6 +52,13 @@ CurrentUser = Annotated[User, Depends(login_manager)]
 
 
 def is_manager(user: User) -> bool:
+    # ``ManagerUser`` is a legacy dependency name.  Administrative/reporting
+    # APIs are restricted to real system administrators; IT inventory access
+    # is handled separately by ``ITUser`` below.
+    return bool(user.is_superuser)
+
+
+def is_it_user(user: User) -> bool:
     return bool(user.is_superuser or user.checklistAll_permission == 1)
 
 
@@ -60,11 +67,23 @@ def require_manager(user: CurrentUser) -> User:
         return user
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="Manager permission required",
+        detail="Administrator permission required",
     )
 
 
 ManagerUser = Annotated[User, Depends(require_manager)]
+
+
+def require_it_user(user: CurrentUser) -> User:
+    if is_it_user(user):
+        return user
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="IT permission required",
+    )
+
+
+ITUser = Annotated[User, Depends(require_it_user)]
 
 
 def require_admin(user: CurrentUser) -> User:

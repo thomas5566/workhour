@@ -42,6 +42,6 @@ class ServerListUpdate(BaseModel):
 
 
 class ServerCredentialReveal(BaseModel):
-    """Returned only from the explicit manager-only reveal endpoint."""
+    """Returned only from the explicit IT-authorized reveal endpoint."""
 
     password: str | None = None

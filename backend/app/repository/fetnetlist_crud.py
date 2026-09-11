@@ -53,3 +53,12 @@ def update_fetnetlist_by_id(
     commit_or_rollback(db)
     db.refresh(db_fetnetlist)
     return db_fetnetlist
+
+
+def delete_fetnetlist_by_id(db: Session, fetnetlist_id: int) -> bool:
+    record = db.get(FetnetList, fetnetlist_id)
+    if record is None:
+        return False
+    db.delete(record)
+    commit_or_rollback(db)
+    return True

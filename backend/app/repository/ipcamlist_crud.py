@@ -60,3 +60,12 @@ def update_ipcamlist_by_id(
     commit_or_rollback(db)
     db.refresh(db_ipcamlist)
     return db_ipcamlist
+
+
+def delete_ipcamlist_by_id(db: Session, ipcamlist_id: int) -> bool:
+    record = db.get(IpCamList, ipcamlist_id)
+    if record is None:
+        return False
+    db.delete(record)
+    commit_or_rollback(db)
+    return True

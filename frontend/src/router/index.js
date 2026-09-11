@@ -30,6 +30,32 @@ const InfrastructureMonitoring = () => import("../pages/InfrastructureMonitoring
 const MasterDataManagement = () => import("../pages/MasterDataManagement.vue");
 const UserManagement = () => import("../pages/UserManagement.vue");
 
+export const GENERAL_USER_PATHS = new Set([
+  "/home",
+  "/allworkhourlist",
+  "/fetnetlist",
+  "/fetnetlist/add",
+  "/ipcamlist",
+  "/ipcamlist/add",
+]);
+
+export const IT_USER_PATHS = new Set([
+  ...GENERAL_USER_PATHS,
+  "/serverlist",
+  "/serverlist/add",
+]);
+
+export function getAccessRole(authStore = store) {
+  if (authStore.getters.getSuperUser) return "admin";
+  if (authStore.getters.getchecklistAll_permission === 1) return "it";
+  return "general";
+}
+
+export function canAccessPath(path, role) {
+  if (role === "admin") return true;
+  return (role === "it" ? IT_USER_PATHS : GENERAL_USER_PATHS).has(path);
+}
+
 const routes = [
   {
     path: "/",
@@ -197,15 +223,16 @@ router.beforeEach((to) => {
   // Clear any data-loading overlay left by the page being navigated away from.
   window.dispatchEvent(new window.Event("workhour:navigation"));
   const token = window.sessionStorage.getItem("token");
-  if (to.name === "LoginPage" && token) {
+  if (to.meta.guest && token) {
     return { name: "HomePage" };
   }
-  if (to.matched.some((res) => res.meta.requiresAuth)) {
-    if (token) {
-      store.commit("RestoreToken", token);
-      return true;
-    }
+  if (to.meta.guest) return true;
+  if (!token) {
     return { name: "LoginPage", query: { redirect: to.fullPath } };
+  }
+  store.commit("RestoreToken", token);
+  if (!canAccessPath(to.path, getAccessRole())) {
+    return { name: "HomePage" };
   }
   return true;
 });

@@ -7,7 +7,13 @@ import pytest
 from fastapi import HTTPException
 
 from app.api import user as user_api
-from app.auth import ensure_owner_or_manager, login_manager, require_admin, require_manager
+from app.auth import (
+    ensure_owner_or_manager,
+    login_manager,
+    require_admin,
+    require_it_user,
+    require_manager,
+)
 from app.core.config import settings
 from app.core.hashing import DUMMY_PASSWORD_HASH, Hasher
 from app.database import get_db
@@ -57,12 +63,16 @@ def test_public_user_schema_never_serializes_password() -> None:
     assert "password" not in response
 
 
-def test_manager_dependency_accepts_manager_and_superuser() -> None:
-    manager = SimpleNamespace(is_superuser=False, checklistAll_permission=1)
+def test_it_and_administrator_dependencies_are_separate() -> None:
+    it_user = SimpleNamespace(is_superuser=False, checklistAll_permission=1)
     superuser = SimpleNamespace(is_superuser=True, checklistAll_permission=0)
 
-    assert require_manager(manager) is manager
+    assert require_it_user(it_user) is it_user
+    assert require_it_user(superuser) is superuser
     assert require_manager(superuser) is superuser
+    with pytest.raises(HTTPException) as error:
+        require_manager(it_user)
+    assert error.value.status_code == 403
 
 
 def test_manager_dependency_rejects_regular_user() -> None:
@@ -92,17 +102,25 @@ def test_owner_or_manager_access_control() -> None:
         is_superuser=False,
         checklistAll_permission=0,
     )
-    manager = SimpleNamespace(
+    it_user = SimpleNamespace(
         id=4,
         is_superuser=False,
         checklistAll_permission=1,
     )
+    administrator = SimpleNamespace(
+        id=5,
+        is_superuser=True,
+        checklistAll_permission=0,
+    )
 
     ensure_owner_or_manager(owner, owner_id=3)
-    ensure_owner_or_manager(manager, owner_id=3)
+    ensure_owner_or_manager(administrator, owner_id=3)
 
     with pytest.raises(HTTPException) as error:
         ensure_owner_or_manager(owner, owner_id=99)
+    assert error.value.status_code == 403
+    with pytest.raises(HTTPException) as error:
+        ensure_owner_or_manager(it_user, owner_id=3)
     assert error.value.status_code == 403
 
 

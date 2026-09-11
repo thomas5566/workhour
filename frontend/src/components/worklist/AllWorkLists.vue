@@ -138,6 +138,7 @@
 <script>
 import {
     getAllWorkhourAPI,
+    getWorkhourAPI,
     getAllWorkListsByDateAPI,
     getAllWorkListsByShopIdAPI,
     getAllWorkListsByUserIdAPI,
@@ -320,14 +321,19 @@ export default {
         },
         isLoggedIn: function () {
             return this.$store.getters.isAuthenticated;
+        },
+        isAdmin: function () {
+            return Boolean(this.$store.getters.getSuperUser);
         }
     },
     mounted: function () {
-        this.get_user_lists();
         this.get_all_workhour();
-        this.get_worklists_by_date();
-        this.get_worklists_by_userid();
-        this.get_worklists_by_shopid();
+        if (this.isAdmin) {
+            this.get_user_lists();
+            this.get_worklists_by_date();
+            this.get_worklists_by_userid();
+            this.get_worklists_by_shopid();
+        }
     },
     methods: {
         onChangeWorkhourPage(pageOfWorkhours) {
@@ -344,7 +350,8 @@ export default {
             });
         },
         async get_all_workhour() {
-            await getAllWorkhourAPI().then(
+            const request = this.isAdmin ? getAllWorkhourAPI : getWorkhourAPI;
+            await request().then(
                 (response) => (this.workhours = response.data)
             ).catch((err) => {
                 console.error(err)

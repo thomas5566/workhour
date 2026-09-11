@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ..auth import require_manager
+from ..auth import login_manager
 from ..repository import branch_crud, fetnetlist_crud
 from ..schemas import fetnetlist
 from ..schemas.common import MessageResponse
@@ -12,11 +12,11 @@ from .dependencies import (
     PositiveQueryId,
 )
 
-# Telecom inventory includes account and circuit details and is manager-only.
+# Authenticated users may maintain telecom inventory.
 router = APIRouter(
     prefix="/fetnetlist",
     tags=["FetnetList"],
-    dependencies=[Depends(require_manager)],
+    dependencies=[Depends(login_manager)],
 )
 
 
@@ -91,3 +91,15 @@ def edit_fetnetlist(
         db=db,
     )
     return MessageResponse(detail="Successfully updated data.")
+
+
+@router.delete("/{fetnetlist_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_fetnetlist(
+    fetnetlist_id: PositivePathId,
+    db: DatabaseSession,
+) -> None:
+    if not fetnetlist_crud.delete_fetnetlist_by_id(db, fetnetlist_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Fetnet item not found",
+        )

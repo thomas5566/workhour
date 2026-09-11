@@ -455,6 +455,13 @@ export function updateFetnetListByIdAPI(fetnetlist_id, data) {
   });
 }
 
+export function deleteFetnetListAPI(fetnetlist_id) {
+  return axios({
+    url: `/fetnetlist/${fetnetlist_id}`,
+    method: "delete",
+  });
+}
+
 export function getIpcamListAPI() {
   return axios({
     url: "/ipcamlist/",
@@ -475,6 +482,13 @@ export function updateIpCamListByIdAPI(ipcamlist_id, data) {
     url: `/ipcamlist/${ipcamlist_id}`,
     method: "put",
     data: data,
+  });
+}
+
+export function deleteIpCamListAPI(ipcamlist_id) {
+  return axios({
+    url: `/ipcamlist/${ipcamlist_id}`,
+    method: "delete",
   });
 }
 

@@ -68,7 +68,7 @@
               </li>
             </ul> -->
           </li>
-          <li class="nav-item" v-if="showElement">
+          <li class="nav-item" v-if="canUseSelfService">
             <router-link to="/allworkhourlist" class="nav-link">
               <i class="nav-icon fas fa-tachometer-alt"></i>
               <p>
@@ -76,7 +76,7 @@
               </p>
             </router-link>
           </li>
-          <li class="nav-item" v-if="showElement">
+          <li class="nav-item" v-if="canUseSelfService">
             <router-link to="/home" class="nav-link">
               <i class="nav-icon fas fa-copy"></i>
               <p>
@@ -84,7 +84,7 @@
               </p>
             </router-link>
           </li>
-          <li class="nav-item" v-if="showElement">
+          <li class="nav-item" v-if="canUseServerInventory">
             <router-link to="/serverlist" class="nav-link">
               <i class="nav-icon fas fa-edit"></i>
               <p>
@@ -92,7 +92,7 @@
               </p>
             </router-link>
           </li>
-          <li class="nav-item" v-if="showElement">
+          <li class="nav-item" v-if="canUseSelfService">
             <router-link to="/fetnetlist" class="nav-link">
               <i class="nav-icon fas fa-edit"></i>
               <p>
@@ -100,7 +100,7 @@
               </p>
             </router-link>
           </li>
-          <li class="nav-item" v-if="showElement">
+          <li class="nav-item" v-if="canUseSelfService">
             <router-link to="/ipcamlist" class="nav-link">
               <i class="nav-icon fas fa-edit"></i>
               <p>
@@ -108,7 +108,7 @@
               </p>
             </router-link>
           </li>
-          <li class="nav-item" v-if="showElement">
+          <li class="nav-item" v-if="isAdmin">
             <router-link to="/monitoring" class="nav-link">
               <i class="nav-icon fas fa-heartbeat"></i>
               <p>
@@ -121,13 +121,13 @@
               </p>
             </router-link>
           </li>
-          <li class="nav-item" v-if="showElement">
+          <li class="nav-item" v-if="isAdmin">
             <router-link to="/master-data" class="nav-link">
               <i class="nav-icon fas fa-database"></i>
               <p>基礎資料管理</p>
             </router-link>
           </li>
-          <li class="nav-item" v-if="showElement">
+          <li class="nav-item" v-if="isAdmin">
             <router-link to="/user-management" class="nav-link">
               <i class="nav-icon fas fa-users-cog"></i>
               <p>使用者管理</p>
@@ -771,7 +771,7 @@ export default {
     }
   },
   mounted() {
-    if (this.showElement) {
+    if (this.isAdmin) {
       startMonitoringPolling();
     }
   },
@@ -787,14 +787,18 @@ export default {
     criticalProblemCount() {
       return monitoringState.criticalProblemCount;
     },
-    showElement: function () {
-      return (this.$store.getters.getUsername === "11203501" ||
-        this.$store.getters.getUsername === "11005004" ||
-        this.$store.getters.getUsername === "10205006" ||
-        this.$store.getters.getUsername === "11401001" ||
-        this.$store.getters.getUsername === "11202510" ||
-        this.$store.getters.getUsername === "10205037");
-    }
+    isAdmin() {
+      return Boolean(this.$store.getters.getSuperUser);
+    },
+    isITUser() {
+      return this.$store.getters.getchecklistAll_permission === 1;
+    },
+    canUseSelfService() {
+      return this.$store.getters.isAuthenticated;
+    },
+    canUseServerInventory() {
+      return this.isAdmin || this.isITUser;
+    },
   },
 };
 </script>

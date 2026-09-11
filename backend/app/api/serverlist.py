@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from ..auth import AdminUser, require_manager
+from ..auth import ITUser, require_it_user
 from ..core.credentials import decrypt_credential
 from ..repository import branch_crud, serverlist_crud
 from ..schemas import serverlist
@@ -15,12 +15,12 @@ from .dependencies import (
     PositiveQueryId,
 )
 
-# Server inventory responses include credentials, so every route requires a
-# manager even when the caller only reads data.
+# Server inventory and explicit secret reveal are available to IT users and
+# system administrators.
 router = APIRouter(
     prefix="/serverlist",
     tags=["ServerList"],
-    dependencies=[Depends(require_manager)],
+    dependencies=[Depends(require_it_user)],
 )
 logger = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ def delete_serverlist(
 def reveal_server_password(
     serverlist_id: PositivePathId,
     db: DatabaseSession,
-    manager: AdminUser,
+    operator: ITUser,
     response: Response,
 ) -> serverlist.ServerCredentialReveal:
     record = serverlist_crud.get_serverlist_by_id(db, serverlist_id)
@@ -78,8 +78,8 @@ def reveal_server_password(
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
     logger.info(
-        "Manager user_id=%s revealed server credential record_id=%s",
-        manager.id,
+        "IT operator user_id=%s revealed server credential record_id=%s",
+        operator.id,
         serverlist_id,
     )
     return serverlist.ServerCredentialReveal(

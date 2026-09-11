@@ -54,12 +54,15 @@
                   <td>{{ ipcam.tcp_port }}</td>
                   <td>{{ ipcam.remark }}</td>
                   <td>
-                    <button type="button" class="btn btn-sm btn-outline-primary" :disabled="revealingIpcamId === ipcam.id" @click="toggleCredentials(ipcam)">
+                    <button v-if="canRevealCredentials" type="button" class="btn btn-sm btn-outline-primary" :disabled="revealingIpcamId === ipcam.id" @click="toggleCredentials(ipcam)">
                       <i :class="revealedCredentials[ipcam.id] ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                       {{ revealedCredentials[ipcam.id] ? "隱藏密碼" : (revealingIpcamId === ipcam.id ? "讀取中…" : "顯示密碼") }}
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-warning" @click="toggleIpcamListId(ipcam.id)">
                       編輯
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" @click="deleteIpcam(ipcam)">
+                      刪除
                     </button>
                   </td>
                 </tr>
@@ -93,7 +96,8 @@
 import {
   getBranchListAPI,
   getIpcamListAPI,
-  revealIpCamPasswordsAPI
+  revealIpCamPasswordsAPI,
+  deleteIpCamListAPI,
 } from "../../service/apis.js";
 
 import EditIpcamListDetail from "./EditIpCamListDetail.vue"
@@ -122,6 +126,10 @@ export default {
   computed: {
     isLoggedIn: function () {
       return this.$store.getters.isAuthenticated;
+    },
+    canRevealCredentials() {
+      return Boolean(this.$store.getters.getSuperUser) ||
+        this.$store.getters.getchecklistAll_permission === 1;
     },
     filteredIpcamLists() {
       // KeyWord Search
@@ -193,7 +201,7 @@ export default {
         window.clearTimeout(this.revealTimers[ipcam.id]);
         this.revealTimers[ipcam.id] = window.setTimeout(() => this.hideCredentials(ipcam.id), 30000);
       } catch (error) {
-        window.alert(error.response?.data?.detail || "無法顯示密碼。請確認管理者權限。");
+        window.alert(error.response?.data?.detail || "無法顯示密碼。請確認 IT 使用者權限。");
       } finally {
         this.revealingIpcamId = null;
       }
@@ -206,6 +214,12 @@ export default {
     },
     async handleUpdated() {
       this.activeIpcamList = null;
+      await this.get_ipcam_lists();
+    },
+    async deleteIpcam(ipcam) {
+      if (!window.confirm(`確定刪除 ${ipcam.shop_name || ipcam.id} 的監視器資料？`)) return;
+      this.hideCredentials(ipcam.id);
+      await deleteIpCamListAPI(ipcam.id);
       await this.get_ipcam_lists();
     },
   },

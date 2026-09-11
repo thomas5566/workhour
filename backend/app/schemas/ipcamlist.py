@@ -46,7 +46,7 @@ class IpCamListUpdate(IpCamListCreate):
 
 
 class IpCamCredentialReveal(BaseModel):
-    """Returned only from the explicit manager-only reveal endpoint."""
+    """Returned only from the explicit IT-authorized reveal endpoint."""
 
     admin_password: str | None = None
     user_password: str | None = None

@@ -10,7 +10,7 @@
     </div>
     <div v-if="editorOpen" class="backdrop" @click.self="closeEditor"><form class="editor" @submit.prevent="save"><header><h2>{{ editingId ? "編輯使用者" : "新增使用者" }}</h2><button type="button" @click="closeEditor">×</button></header>
       <div class="fields"><label><span>帳號 *</span><input v-model.trim="form.username" required maxlength="100" autocomplete="off"></label><label><span>姓名 *</span><input v-model.trim="form.fullname" required maxlength="255"></label><label><span>部門 *</span><select v-model.number="form.department_id" required><option :value="0" disabled>請選擇部門</option><option v-for="department in departments" :key="department.id" :value="department.id">{{ department.department_name }}</option></select></label><label><span>{{ editingId ? "重設密碼（留空表示不變）" : "密碼 *" }}</span><div class="password-input"><input v-model="form.password" :required="!editingId" minlength="8" maxlength="72" :type="showTypedPassword ? 'text' : 'password'" autocomplete="new-password"><button type="button" :aria-label="showTypedPassword ? '隱藏輸入密碼' : '顯示輸入密碼'" @click="showTypedPassword = !showTypedPassword"><i :class="showTypedPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i></button></div></label>
-        <label class="check"><input v-model="form.is_active" type="checkbox"><span>帳號啟用</span></label><label class="check"><input v-model="form.is_superuser" type="checkbox"><span>系統管理員</span></label><label class="check"><input v-model="managerPermission" type="checkbox"><span>管理功能權限</span></label></div>
+        <label class="check"><input v-model="form.is_active" type="checkbox"><span>帳號啟用</span></label><label class="check"><input v-model="form.is_superuser" type="checkbox"><span>系統管理員</span></label><label class="check"><input v-model="itPermission" type="checkbox"><span>IT 使用者</span></label></div>
       <div v-if="editorError" class="notice error">{{ editorError }}</div><footer><button class="btn btn-outline-secondary" type="button" @click="closeEditor">取消</button><button class="btn btn-primary" :disabled="saving">{{ saving ? "儲存中…" : "儲存" }}</button></footer></form></div>
   </section>
 </template>
@@ -22,7 +22,7 @@ export default {
   computed: {
     currentUserId() { return Number(this.$store.getters.getUserId); },
     filteredUsers() { const term = this.search.toLowerCase(); if (!term) return this.users; return this.users.filter((user) => [user.username, user.fullname, user.department?.department_name].some((value) => String(value || "").toLowerCase().includes(term))); },
-    managerPermission: { get() { return this.form.checklistAll_permission === 1; }, set(value) { this.form.checklistAll_permission = value ? 1 : 0; } },
+    itPermission: { get() { return this.form.checklistAll_permission === 1; }, set(value) { this.form.checklistAll_permission = value ? 1 : 0; } },
   },
   mounted() { this.load(); },
   methods: {
@@ -33,7 +33,7 @@ export default {
     closeEditor() { this.editorOpen = false; this.editorError = ""; },
     async save() { this.saving = true; this.editorError = ""; const payload = { ...this.form }; if (this.editingId && !payload.password) delete payload.password; try { if (this.editingId) await updateAdminUserAPI(this.editingId, payload); else await createAdminUserAPI(payload); this.closeEditor(); this.message = "使用者資料已儲存。"; await this.load(); } catch (error) { this.editorError = error.response?.data?.detail || "儲存失敗，請檢查輸入資料。"; } finally { this.saving = false; } },
     async remove(user) { if (user.id === this.currentUserId || !window.confirm(`確定刪除使用者 ${user.username}？`)) return; try { await deleteAdminUserAPI(user.id); this.message = "使用者已刪除。"; await this.load(); } catch (error) { this.errorMessage = error.response?.status === 409 ? "此使用者仍有報修或其他關聯資料，無法刪除；請改為停用帳號。" : (error.response?.data?.detail || "刪除失敗。"); } },
-    roleLabel(user) { if (user.is_superuser) return "系統管理員"; if (user.checklistAll_permission === 1) return "管理者"; return "一般使用者"; },
+    roleLabel(user) { if (user.is_superuser) return "系統管理員"; if (user.checklistAll_permission === 1) return "IT 使用者"; return "一般使用者"; },
   },
 };
 </script>

@@ -56,6 +56,9 @@
                     <button type="button" class="btn btn-sm btn-outline-warning" @click="toggleFetnetListId(fetnet.id)">
                       編輯
                     </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" @click="deleteFetnet(fetnet)">
+                      刪除
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -91,7 +94,8 @@
 import {
   getBranchListAPI,
   getFetnetListAPI,
-  getFetnetByBranchIdAPI
+  getFetnetByBranchIdAPI,
+  deleteFetnetListAPI,
 } from "../../service/apis.js";
 
 import EditFetnetListDetail from "./EditFetnetListDetail.vue"
@@ -181,6 +185,11 @@ export default {
     },
     async handleUpdated() {
       this.activeFetnetList = null;
+      await this.get_fetnet_lists();
+    },
+    async deleteFetnet(fetnet) {
+      if (!window.confirm(`確定刪除 ${fetnet.shop_name || fetnet.id} 的遠傳資料？`)) return;
+      await deleteFetnetListAPI(fetnet.id);
       await this.get_fetnet_lists();
     },
   },

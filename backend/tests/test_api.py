@@ -194,7 +194,7 @@ async def test_manager_can_create_server_inventory_for_existing_branch(api_engin
 
 
 @pytest.mark.anyio
-async def test_manager_reveals_device_credentials_only_on_explicit_request(
+async def test_administrator_reveals_device_credentials_only_on_explicit_request(
     api_engine,
 ) -> None:
     with Session(api_engine) as session:
@@ -363,7 +363,7 @@ def test_openapi_marks_every_resource_path_id_as_positive() -> None:
 
     # This guards every current ID-bearing operation, not only one sample route.
     # CRUD routes for managed resources contribute positive ID path parameters.
-    assert len(resource_parameters) == 30
+    assert len(resource_parameters) == 32
     assert all(
         parameter["schema"]["exclusiveMinimum"] == 0
         for parameter in resource_parameters
@@ -452,6 +452,172 @@ async def test_inventory_update_rejects_overlong_field_before_database(
 
     # Body validation runs before the endpoint can look up or mutate the row.
     assert response.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_general_it_and_admin_permission_matrix(api_engine) -> None:
+    with Session(api_engine) as session:
+        session.add(BranchList(id=1, branch_name="A1", branch_title="Taipei"))
+        session.commit()
+
+    general = SimpleNamespace(
+        id=2,
+        department_id=1,
+        is_superuser=False,
+        checklistAll_permission=0,
+    )
+    it_user = SimpleNamespace(
+        id=3,
+        department_id=1,
+        is_superuser=False,
+        checklistAll_permission=1,
+    )
+    administrator = SimpleNamespace(
+        id=1,
+        department_id=1,
+        is_superuser=True,
+        checklistAll_permission=0,
+    )
+    fetnet_payload = {"shop_id": 1, "shop_name": "Taipei Shop"}
+    camera_payload = {"shop_id": 1, "shop_name": "Taipei Shop"}
+    server_payload = {
+        "branch_id": 1,
+        "server_name": "Application Server",
+        "server_ip": "192.0.2.10",
+        "server_location": "Taipei",
+        "server_acc": "operator",
+        "server_pass": "server-password",
+        "server_remark": "",
+    }
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        app.dependency_overrides[login_manager] = lambda: general
+        general_fetnet = await client.post("/api/fetnetlist/", json=fetnet_payload)
+        general_camera = await client.post("/api/ipcamlist/", json=camera_payload)
+        general_fetnet_list = await client.get("/api/fetnetlist/")
+        general_camera_list = await client.get("/api/ipcamlist/")
+        general_fetnet_update = await client.put(
+            f"/api/fetnetlist/{general_fetnet.json()['id']}",
+            json={
+                "shop_id": 1,
+                "shop_name": "Updated Taipei Shop",
+                "shop_tax": "",
+                "shop_location": "",
+                "shop_phone_number": "",
+                "shop_phone_short_code": "",
+                "adsl_number": "",
+                "fetnet_phone_number": "",
+                "adsl_bank_number": "",
+                "fetnetlist_remark": "",
+            },
+        )
+        general_camera_update = await client.put(
+            f"/api/ipcamlist/{general_camera.json()['id']}",
+            json={"shop_id": 1, "shop_name": "Updated Taipei Shop"},
+        )
+        general_personal = await client.get("/api/workhour/workhours")
+        general_server = await client.get("/api/serverlist/")
+        general_all_workhours = await client.get("/api/workhour/allworkhours")
+        general_users = await client.get("/api/user/")
+        general_reveal = await client.post(
+            f"/api/ipcamlist/{general_camera.json()['id']}/reveal-passwords"
+        )
+        general_fetnet_delete = await client.delete(
+            f"/api/fetnetlist/{general_fetnet.json()['id']}"
+        )
+        general_camera_delete = await client.delete(
+            f"/api/ipcamlist/{general_camera.json()['id']}"
+        )
+
+        app.dependency_overrides[login_manager] = lambda: it_user
+        it_server = await client.post("/api/serverlist/", json=server_payload)
+        it_camera = await client.post(
+            "/api/ipcamlist/",
+            json={
+                "shop_id": 1,
+                "shop_name": "IT Camera",
+                "admin_pass": "it-admin-secret",
+                "user_pass": "it-viewer-secret",
+            },
+        )
+        it_server_list = await client.get("/api/serverlist/")
+        it_server_update = await client.put(
+            f"/api/serverlist/{it_server.json()['id']}",
+            json={
+                "branch_id": 1,
+                "server_name": "Updated Application Server",
+                "server_ip": "192.0.2.10",
+                "server_location": "Taipei",
+                "server_acc": "operator",
+                "server_remark": "",
+            },
+        )
+        it_personal = await client.get("/api/workhour/workhours")
+        it_server_reveal = await client.post(
+            f"/api/serverlist/{it_server.json()['id']}/reveal-password"
+        )
+        it_camera_reveal = await client.post(
+            f"/api/ipcamlist/{it_camera.json()['id']}/reveal-passwords"
+        )
+        it_all_workhours = await client.get("/api/workhour/allworkhours")
+        it_users = await client.get("/api/user/")
+        it_monitoring = await client.get("/api/monitoring/summary")
+
+        app.dependency_overrides[login_manager] = lambda: general
+        general_server_reveal = await client.post(
+            f"/api/serverlist/{it_server.json()['id']}/reveal-password"
+        )
+
+        app.dependency_overrides[login_manager] = lambda: it_user
+        it_server_delete = await client.delete(
+            f"/api/serverlist/{it_server.json()['id']}"
+        )
+        it_camera_delete = await client.delete(
+            f"/api/ipcamlist/{it_camera.json()['id']}"
+        )
+
+        app.dependency_overrides[login_manager] = lambda: administrator
+        admin_users = await client.get("/api/user/")
+        admin_all_workhours = await client.get("/api/workhour/allworkhours")
+        admin_server = await client.get("/api/serverlist/")
+
+    assert general_fetnet.status_code == 201
+    assert general_camera.status_code == 201
+    assert general_fetnet_list.status_code == 200
+    assert general_camera_list.status_code == 200
+    assert general_fetnet_update.status_code == 200
+    assert general_camera_update.status_code == 200
+    assert general_personal.status_code == 200
+    assert general_fetnet_delete.status_code == 204
+    assert general_camera_delete.status_code == 204
+    assert general_server.status_code == 403
+    assert general_all_workhours.status_code == 403
+    assert general_users.status_code == 403
+    assert general_reveal.status_code == 403
+    assert general_server_reveal.status_code == 403
+
+    assert it_server.status_code == 201
+    assert it_camera.status_code == 201
+    assert it_server_list.status_code == 200
+    assert it_server_update.status_code == 200
+    assert it_personal.status_code == 200
+    assert it_server_reveal.json() == {"password": "server-password"}
+    assert it_camera_reveal.json() == {
+        "admin_password": "it-admin-secret",
+        "user_password": "it-viewer-secret",
+    }
+    assert it_server_reveal.headers["cache-control"] == "no-store"
+    assert it_camera_reveal.headers["cache-control"] == "no-store"
+    assert it_server_delete.status_code == 204
+    assert it_camera_delete.status_code == 204
+    assert it_all_workhours.status_code == 403
+    assert it_users.status_code == 403
+    assert it_monitoring.status_code == 403
+
+    assert admin_users.status_code == 200
+    assert admin_all_workhours.status_code == 200
+    assert admin_server.status_code == 200
 
 
 @pytest.mark.anyio
@@ -833,7 +999,7 @@ async def test_workhour_routes_enforce_authenticated_owner(
                     fullname="Other User",
                     password=Hasher.get_password_hash("other-password"),
                     is_active=True,
-                    checklistAll_permission=0,
+                    checklistAll_permission=1,
                     department_id=2,
                 ),
                 Task(

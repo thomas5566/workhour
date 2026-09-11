@@ -2,18 +2,19 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from ..auth import AdminUser, require_manager
+from ..auth import ITUser, login_manager
 from ..core.credentials import decrypt_credential
 from ..repository import ipcamlist_crud
 from ..schemas import ipcamlist
 from ..schemas.common import MessageResponse
 from .dependencies import DatabaseSession, PageLimit, PageOffset, PositivePathId
 
-# Camera inventory exposes network locations and credentials and is manager-only.
+# Authenticated users may maintain camera inventory. Plaintext credential
+# reveal is restricted to IT users and system administrators.
 router = APIRouter(
     prefix="/ipcamlist",
     tags=["IpCamList"],
-    dependencies=[Depends(require_manager)],
+    dependencies=[Depends(login_manager)],
 )
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ def create_ipcamlist(
 def reveal_ipcam_passwords(
     ipcamlist_id: PositivePathId,
     db: DatabaseSession,
-    manager: AdminUser,
+    operator: ITUser,
     response: Response,
 ) -> ipcamlist.IpCamCredentialReveal:
     record = ipcamlist_crud.get_ipcamlist_by_id(db, ipcamlist_id)
@@ -52,8 +53,8 @@ def reveal_ipcam_passwords(
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
     logger.info(
-        "Manager user_id=%s revealed camera credentials record_id=%s",
-        manager.id,
+        "IT operator user_id=%s revealed camera credentials record_id=%s",
+        operator.id,
         ipcamlist_id,
     )
     return ipcamlist.IpCamCredentialReveal(
@@ -84,3 +85,15 @@ def edit_ipcamlist(
         db=db,
     )
     return MessageResponse(detail="Successfully updated data.")
+
+
+@router.delete("/{ipcamlist_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_ipcamlist(
+    ipcamlist_id: PositivePathId,
+    db: DatabaseSession,
+) -> None:
+    if not ipcamlist_crud.delete_ipcamlist_by_id(db, ipcamlist_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="IP camera not found",
+        )

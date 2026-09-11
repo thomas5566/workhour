@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   createServerListAPI,
+  deleteFetnetListAPI,
+  deleteIpCamListAPI,
   deleteServerListAPI,
   getBranchListAPI,
   getAllWorkListsByShopIdAPI,
   getAllWorkListsByUserIdAPI,
   getTaskAPI,
   getMonitoringSummaryAPI,
+  revealIpCamPasswordsAPI,
+  revealServerPasswordAPI,
 } from "../src/service/apis";
 import http from "../src/service/http";
 
@@ -34,6 +38,10 @@ describe("FastAPI client contract", () => {
     await getBranchListAPI();
     await createServerListAPI({ server_name: "ERP Server" });
     await deleteServerListAPI(7);
+    await deleteFetnetListAPI(8);
+    await deleteIpCamListAPI(9);
+    await revealServerPasswordAPI(10);
+    await revealIpCamPasswordsAPI(11);
 
     expect(requestedUrls).toEqual([
       "/task/",
@@ -43,6 +51,10 @@ describe("FastAPI client contract", () => {
       "/branchlist/",
       "/serverlist/",
       "/serverlist/7",
+      "/fetnetlist/8",
+      "/ipcamlist/9",
+      "/serverlist/10/reveal-password",
+      "/ipcamlist/11/reveal-passwords",
     ]);
     expect(monitoringOptions).toEqual([{ background: true, silent: true }]);
   });

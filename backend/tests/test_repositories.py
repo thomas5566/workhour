@@ -1,8 +1,8 @@
 from collections.abc import Callable
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, select
 from sqlalchemy.orm import Session
 
 from app.database import Base
@@ -11,11 +11,13 @@ from app.models import (
     Department,
     Expenditure,
     ExpenTask,
+    MonitoringAlertLog,
     Task,
     User,
     Workhour,
 )
 from app.repository import (
+    alert_log_crud,
     expen_crud,
     expentask_crud,
     task_crud,
@@ -31,6 +33,7 @@ from app.schemas.allfull import (
 )
 from app.schemas.expens import ExpenditureCreate, ExpenditureUpdate
 from app.schemas.expentasks import ExpenTaskCreate, ExpenTaskUpdate
+from app.schemas.monitoring import MonitoringProblem
 from app.schemas.tasks import TaskCreate, TaskGYBase, TaskUpdate
 from app.schemas.users import DataTotal
 from app.schemas.workhours import WorkhourCreate, WorkhourUpdate
@@ -390,3 +393,90 @@ def test_full_response_graphs_serialize_after_session_closes(db: Session) -> Non
 
         # Validation happens after Session.close(); no lazy SQL is possible.
         schema.model_validate(record)
+
+
+def _problem(
+    event_id: str,
+    severity: int,
+    occurred_at: datetime,
+    *,
+    message: str = "CPU utilization is high",
+) -> MonitoringProblem:
+    return MonitoringProblem(
+        event_id=event_id,
+        host_name="VM-01",
+        severity=severity,
+        severity_label={3: "Average", 4: "High", 5: "Disaster"}[severity],
+        occurred_at=occurred_at,
+        acknowledged=False,
+        message=message,
+    )
+
+
+def test_alert_log_repository_keeps_only_high_and_deduplicates(db: Session) -> None:
+    first_seen = datetime(2026, 10, 2, 1, 0, tzinfo=UTC)
+    observed = first_seen + timedelta(minutes=1)
+
+    created = alert_log_crud.synchronize_alert_logs(
+        db,
+        [_problem("average", 3, first_seen), _problem("high", 4, first_seen)],
+        observed,
+    )
+    refreshed = alert_log_crud.synchronize_alert_logs(
+        db,
+        [_problem("high", 4, first_seen, message="CPU remains high")],
+        observed + timedelta(minutes=1),
+    )
+
+    records = list(db.scalars(select(MonitoringAlertLog)))
+    assert created == 1
+    assert refreshed == 0
+    assert len(records) == 1
+    assert records[0].event_id == "high"
+    assert records[0].message == "CPU remains high"
+    assert records[0].resolved_at is None
+
+
+def test_alert_log_repository_closes_and_records_recurrence(db: Session) -> None:
+    occurred_at = datetime(2026, 10, 2, 2, 0, tzinfo=UTC)
+    alert_log_crud.synchronize_alert_logs(
+        db, [_problem("42", 5, occurred_at)], occurred_at
+    )
+    alert_log_crud.synchronize_alert_logs(db, [], occurred_at + timedelta(minutes=1))
+    alert_log_crud.synchronize_alert_logs(
+        db,
+        [_problem("42", 5, occurred_at + timedelta(minutes=2))],
+        occurred_at + timedelta(minutes=2),
+    )
+
+    records = list(
+        db.scalars(
+            select(MonitoringAlertLog).order_by(MonitoringAlertLog.id)
+        )
+    )
+    assert len(records) == 2
+    assert records[0].resolved_at is not None
+    assert records[1].resolved_at is None
+
+
+def test_alert_log_repository_filters_date_and_literal_message(db: Session) -> None:
+    occurred_at = datetime(2026, 10, 2, 3, 0, tzinfo=UTC)
+    alert_log_crud.synchronize_alert_logs(
+        db,
+        [
+            _problem("percent", 4, occurred_at, message="CPU 95% on VM-01"),
+            _problem("disk", 4, occurred_at + timedelta(hours=1), message="Disk full"),
+        ],
+        occurred_at + timedelta(hours=1),
+    )
+
+    records, total = alert_log_crud.get_alert_logs(
+        db,
+        date_from=occurred_at - timedelta(minutes=1),
+        date_to=occurred_at + timedelta(minutes=1),
+        message="95%",
+        offset=0,
+        limit=100,
+    )
+    assert total == 1
+    assert [record.event_id for record in records] == ["percent"]

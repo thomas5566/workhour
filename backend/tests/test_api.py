@@ -18,6 +18,7 @@ from app.models import (
     Department,
     Expenditure,
     ExpenTask,
+    MonitoringAlertLog,
     Task,
     User,
     Workhour,
@@ -1213,3 +1214,58 @@ async def test_expenditure_routes_enforce_authenticated_owner(
         assert original_expenditure.price == 500
         assert created_expenditure is not None
         assert created_expenditure.user_id == 2
+
+
+@pytest.mark.anyio
+async def test_alert_log_api_filters_time_and_message(api_engine) -> None:
+    first = datetime(2026, 10, 2, 1, 0, tzinfo=UTC)
+    with Session(api_engine) as session:
+        session.add_all(
+            [
+                MonitoringAlertLog(
+                    event_key="zabbix:101",
+                    event_id="101",
+                    host_name="VM-01",
+                    severity=4,
+                    severity_label="High",
+                    occurred_at=first,
+                    last_observed_at=first,
+                    acknowledged=False,
+                    source="zabbix",
+                    message="CPU utilization is high",
+                ),
+                MonitoringAlertLog(
+                    event_key="zabbix:102",
+                    event_id="102",
+                    host_name="FortiGate-01",
+                    severity=5,
+                    severity_label="Disaster",
+                    occurred_at=first + timedelta(hours=2),
+                    last_observed_at=first + timedelta(hours=2),
+                    acknowledged=False,
+                    source="zabbix",
+                    message="Device unavailable",
+                ),
+            ]
+        )
+        session.commit()
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        response = await client.get(
+            "/api/monitoring/alert-logs",
+            params={
+                "from": (first - timedelta(minutes=1)).isoformat(),
+                "to": (first + timedelta(minutes=1)).isoformat(),
+                "message": "CPU",
+            },
+        )
+        invalid_range = await client.get(
+            "/api/monitoring/alert-logs",
+            params={"from": first.isoformat(), "to": (first - timedelta(days=1)).isoformat()},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
+    assert response.json()["items"][0]["event_id"] == "101"
+    assert invalid_range.status_code == 422

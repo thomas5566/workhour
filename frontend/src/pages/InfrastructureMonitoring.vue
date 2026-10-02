@@ -153,6 +153,7 @@
 
     <BranchPeplinkMonitoring v-if="activeTab === 'branch-peplinks'" :devices="summary.branch_peplinks || []" :error="summary.branch_peplinks_error || ''" />
     <MssqlMonitoring v-if="activeTab === 'mssql'" :servers="summary.mssql || []" :error="summary.mssql_error || ''" />
+    <AlertLogHistory v-if="activeTab === 'logs'" />
 
     <section v-if="activeTab === 'nutanix'" class="firewall-section" aria-labelledby="nutanix-title">
       <header class="section-heading">
@@ -283,10 +284,13 @@ import { getResourceUtilizationClass } from "@/utils/monitoringAlerts";
 import MssqlMonitoring from "@/components/MssqlMonitoring.vue";
 import BranchPeplinkMonitoring from "@/components/BranchPeplinkMonitoring.vue";
 import MonitoringSampleTime from "@/components/MonitoringSampleTime.vue";
+import AlertLogHistory from "@/components/AlertLogHistory.vue";
 
 export default {
   name: "InfrastructureMonitoring",
-  components: { MssqlMonitoring, BranchPeplinkMonitoring, MonitoringSampleTime },
+  components: {
+    MssqlMonitoring, BranchPeplinkMonitoring, MonitoringSampleTime, AlertLogHistory,
+  },
   data() {
     return {
       activeTab: "overview",
@@ -315,6 +319,7 @@ export default {
         { id: "mssql", label: "MSSQL", icon: "fas fa-database", count: (this.summary.mssql || []).length },
         { id: "nutanix", label: "Nutanix", icon: "fas fa-cubes", count: this.summary.nutanix.length },
         { id: "problems", label: "警告事件", icon: "fas fa-exclamation-triangle", count: this.summary.problems.length },
+        { id: "logs", label: "告警紀錄", icon: "fas fa-history", count: null },
       ];
     },
     overallLabel() {

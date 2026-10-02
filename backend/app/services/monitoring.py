@@ -27,6 +27,7 @@ from app.schemas.monitoring import (
 # Use one definition for both the overview counter and the event table so the UI
 # cannot report different totals for the same set of active incidents.
 WARNING_SEVERITIES = [2, 3, 4, 5]
+HIGH_SEVERITIES = [4, 5]
 
 
 def _request_json(
@@ -997,28 +998,31 @@ def get_branch_peplink_health(settings: Settings) -> list[BranchPeplinkHealth]:
 SEVERITY_LABELS = {2: "Warning", 3: "Average", 4: "High", 5: "Disaster"}
 
 
-def get_warning_problems(settings: Settings) -> list[MonitoringProblem]:
-    """Return active Warning-or-higher Zabbix problems and their source hosts."""
+def _get_zabbix_problems(
+    settings: Settings,
+    severities: list[int],
+    *,
+    limit: int | None = None,
+) -> list[MonitoringProblem]:
+    """Fetch active Zabbix problems without hiding collection failures."""
     if not settings.ZABBIX_URL or not settings.ZABBIX_TOKEN:
         return []
-    try:
-        problems, _ = _zabbix_call(
-            settings,
-            "problem.get",
-            {
-                "output": ["eventid", "objectid", "name", "severity", "clock", "acknowledged"],
-                "severities": WARNING_SEVERITIES,
-                # `recent=True` also returns recently resolved events, which
-                # made this page disagree with Zabbix's current Problems view.
-                "recent": False,
-                "suppressed": False,
-                "sortfield": ["eventid"],
-                "sortorder": "DESC",
-                "limit": 100,
-            },
-        )
-        trigger_ids = [str(problem.get("objectid")) for problem in problems]
-        triggers, _ = _zabbix_call(
+    params: dict[str, Any] = {
+        "output": ["eventid", "objectid", "name", "severity", "clock", "acknowledged"],
+        "severities": severities,
+        # `recent=True` also returns recently resolved events, which made this
+        # page disagree with Zabbix's current Problems view.
+        "recent": False,
+        "suppressed": False,
+        "sortfield": ["eventid"],
+        "sortorder": "DESC",
+    }
+    if limit is not None:
+        params["limit"] = limit
+    problems, _ = _zabbix_call(settings, "problem.get", params)
+    trigger_ids = [str(problem.get("objectid")) for problem in problems]
+    triggers, _ = (
+        _zabbix_call(
             settings,
             "trigger.get",
             {
@@ -1027,30 +1031,54 @@ def get_warning_problems(settings: Settings) -> list[MonitoringProblem]:
                 "selectHosts": ["hostid", "name"],
                 "selectItems": ["key_"],
             },
-        ) if trigger_ids else ([], 0)
-        hosts_by_trigger = {
-            str(trigger.get("triggerid")): ", ".join(
-                str(host.get("name")) for host in trigger.get("hosts", [])
-            )
-            for trigger in triggers
-        }
-        triggers_by_id = {str(row["triggerid"]): row for row in triggers}
-        return [
-            MonitoringProblem(
-                event_id=str(problem.get("eventid")),
-                host_name=hosts_by_trigger.get(str(problem.get("objectid")), "未知主機"),
-                severity=int(problem.get("severity", 2)),
-                severity_label=SEVERITY_LABELS.get(int(problem.get("severity", 2)), "Warning"),
-                occurred_at=datetime.fromtimestamp(int(problem.get("clock", 0)), UTC),
-                acknowledged=str(problem.get("acknowledged")) == "1",
-                message=str(problem.get("name") or "Zabbix problem"),
-                host_ids=[str(row["hostid"]) for row in triggers_by_id.get(
-                    str(problem.get("objectid")), {}).get("hosts", [])],
-                item_keys=[str(row["key_"]) for row in triggers_by_id.get(
-                    str(problem.get("objectid")), {}).get("items", [])],
-            )
-            for problem in problems
-        ]
+        )
+        if trigger_ids
+        else ([], 0)
+    )
+    hosts_by_trigger = {
+        str(trigger.get("triggerid")): ", ".join(
+            str(host.get("name")) for host in trigger.get("hosts", [])
+        )
+        for trigger in triggers
+    }
+    triggers_by_id = {str(row["triggerid"]): row for row in triggers}
+    return [
+        MonitoringProblem(
+            event_id=str(problem.get("eventid")),
+            host_name=hosts_by_trigger.get(str(problem.get("objectid")), "未知主機"),
+            severity=int(problem.get("severity", 2)),
+            severity_label=SEVERITY_LABELS.get(
+                int(problem.get("severity", 2)), "Warning"
+            ),
+            occurred_at=datetime.fromtimestamp(int(problem.get("clock", 0)), UTC),
+            acknowledged=str(problem.get("acknowledged")) == "1",
+            message=str(problem.get("name") or "Zabbix problem"),
+            host_ids=[
+                str(row["hostid"])
+                for row in triggers_by_id.get(
+                    str(problem.get("objectid")), {}
+                ).get("hosts", [])
+            ],
+            item_keys=[
+                str(row["key_"])
+                for row in triggers_by_id.get(
+                    str(problem.get("objectid")), {}
+                ).get("items", [])
+            ],
+        )
+        for problem in problems
+    ]
+
+
+def get_high_problems(settings: Settings) -> list[MonitoringProblem]:
+    """Return every active High-or-Disaster event for durable logging."""
+    return _get_zabbix_problems(settings, HIGH_SEVERITIES)
+
+
+def get_warning_problems(settings: Settings) -> list[MonitoringProblem]:
+    """Return active Warning-or-higher Zabbix problems and their source hosts."""
+    try:
+        return _get_zabbix_problems(settings, WARNING_SEVERITIES, limit=100)
     except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError):
         return []
 

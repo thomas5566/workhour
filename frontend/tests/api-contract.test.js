@@ -10,6 +10,7 @@ import {
   getAllWorkListsByUserIdAPI,
   getTaskAPI,
   getMonitoringSummaryAPI,
+  getMonitoringAlertLogsAPI,
   revealIpCamPasswordsAPI,
   revealServerPasswordAPI,
 } from "../src/service/apis";
@@ -23,10 +24,14 @@ describe("FastAPI client contract", () => {
   it("maps summary functions to the matching backend endpoints", async () => {
     const requestedUrls = [];
     const monitoringOptions = [];
+    const alertLogQueries = [];
     http.defaults.adapter = async (config) => {
       requestedUrls.push(config.url);
       if (config.url === "/monitoring/summary") {
         monitoringOptions.push({ background: config.background, silent: config.silent });
+      }
+      if (config.url === "/monitoring/alert-logs") {
+        alertLogQueries.push(config.params);
       }
       return { data: [], status: 200, statusText: "OK", headers: {}, config };
     };
@@ -35,6 +40,7 @@ describe("FastAPI client contract", () => {
     await getAllWorkListsByUserIdAPI();
     await getAllWorkListsByShopIdAPI();
     await getMonitoringSummaryAPI({ background: true, silent: true });
+    await getMonitoringAlertLogsAPI({ message: "CPU", limit: 100 });
     await getBranchListAPI();
     await createServerListAPI({ server_name: "ERP Server" });
     await deleteServerListAPI(7);
@@ -48,6 +54,7 @@ describe("FastAPI client contract", () => {
       "/workhour/worklist-userid",
       "/workhour/worklist-shopid",
       "/monitoring/summary",
+      "/monitoring/alert-logs",
       "/branchlist/",
       "/serverlist/",
       "/serverlist/7",
@@ -57,5 +64,6 @@ describe("FastAPI client contract", () => {
       "/ipcamlist/11/reveal-passwords",
     ]);
     expect(monitoringOptions).toEqual([{ background: true, silent: true }]);
+    expect(alertLogQueries).toEqual([{ message: "CPU", limit: 100 }]);
   });
 });

@@ -15,6 +15,7 @@ EXPECTED_TABLES = {
     "expentask",
     "fetnetlist",
     "ipcamlist",
+    "monitoring_alert_log",
     "serverlist",
     "task",
     "transactions",
@@ -62,7 +63,7 @@ def test_migrations_upgrade_and_downgrade(tmp_path, monkeypatch):
         revision = connection.execute(
             text("SELECT version_num FROM alembic_version")
         ).scalar_one()
-    assert revision == "20260908_04"
+    assert revision == "20261002_05"
 
     # Keep typed ORM refactors from silently drifting away from the migration
     # history used by existing deployments and fresh installations.

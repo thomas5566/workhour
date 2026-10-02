@@ -24,12 +24,16 @@ local `.env` or `.env.production` file:
 ZABBIX_URL=http://zabbix.example.com/api_jsonrpc.php
 ZABBIX_TOKEN=replace-with-a-read-only-api-token
 MONITORING_TIMEOUT_SECONDS=5
+ALERT_LOG_POLL_SECONDS=60
 ```
 
 No FortiGate REST API token is required when Zabbix already monitors the
 firewalls through SNMP. Use a dedicated read-only Zabbix service account. The
 backend validates URLs, keeps the token server-side, applies a short timeout,
 and returns only sanitized health fields to the browser.
+The backend also records High and Disaster incidents every 60 seconds for the
+monitoring page's searchable alert history. Apply Alembic migrations before
+starting a release that includes this feature.
 
 Open `http://127.0.0.1:8080`. Nginx forwards browser requests under `/api` to
 the backend container. Swagger remains available directly at

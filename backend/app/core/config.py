@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     ZABBIX_URL: str = ""
     ZABBIX_TOKEN: str = ""
     MONITORING_TIMEOUT_SECONDS: float = Field(default=5.0, gt=0, le=30)
+    ALERT_LOG_POLL_SECONDS: int = Field(default=60, ge=30, le=3600)
 
     BACKEND_CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: [

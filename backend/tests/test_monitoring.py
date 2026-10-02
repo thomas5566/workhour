@@ -330,6 +330,37 @@ def test_warning_problems_include_source_host(monkeypatch) -> None:
     assert result[0].acknowledged is False
 
 
+def test_high_problem_collection_is_unbounded_and_includes_all_hosts(monkeypatch) -> None:
+    settings = Settings(
+        **BASE_SETTINGS,
+        ZABBIX_URL="https://zabbix.example.com/api_jsonrpc.php",
+        ZABBIX_TOKEN="private-zabbix-token",
+        _env_file=None,
+    )
+    problem_params = {}
+
+    def fake_call(_: Settings, method: str, params: dict[str, Any]) -> tuple[Any, int]:
+        if method == "problem.get":
+            problem_params.update(params)
+            return [{
+                "eventid": "501", "objectid": "55", "name": "Disk failure",
+                "severity": "5", "clock": "1700000000", "acknowledged": "0",
+            }], 2
+        return [{
+            "triggerid": "55",
+            "hosts": [{"hostid": "1", "name": "FortiGate"},
+                      {"hostid": "2", "name": "VM-01"}],
+            "items": [],
+        }], 2
+
+    monkeypatch.setattr(monitoring, "_zabbix_call", fake_call)
+    result = monitoring.get_high_problems(settings)
+
+    assert problem_params["severities"] == [4, 5]
+    assert "limit" not in problem_params
+    assert result[0].host_name == "FortiGate, VM-01"
+
+
 def test_peplink_health_includes_missing_and_monitored_hosts(monkeypatch) -> None:
     settings = Settings(
         **BASE_SETTINGS,

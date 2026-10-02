@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
+from sqlalchemy.sql import false, func
 
 from .db.base import Base
 
@@ -214,3 +214,25 @@ class IpCamList(IdMixin, Base):
     http_port: Mapped[str | None] = mapped_column(String(255))
     tcp_port: Mapped[str | None] = mapped_column(String(255))
     remark: Mapped[str | None] = mapped_column(String(255))
+
+
+class MonitoringAlertLog(IdMixin, TimestampMixin, Base):
+    """Persist one row for each continuous High-or-higher alert incident."""
+
+    __tablename__ = "monitoring_alert_log"
+
+    event_key: Mapped[str] = mapped_column(String(512), index=True)
+    event_id: Mapped[str] = mapped_column(String(255), index=True)
+    host_name: Mapped[str] = mapped_column(String(255), index=True)
+    severity: Mapped[int] = mapped_column(Integer, index=True)
+    severity_label: Mapped[str] = mapped_column(String(32))
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    last_observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    resolved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    acknowledged: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
+    )
+    source: Mapped[str] = mapped_column(String(32), index=True)
+    message: Mapped[str] = mapped_column(Text)

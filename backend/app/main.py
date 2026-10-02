@@ -1,5 +1,7 @@
+import asyncio
 import logging
 from collections.abc import Awaitable, Callable
+from contextlib import asynccontextmanager, suppress
 from uuid import uuid4
 
 from fastapi import FastAPI, Request, status
@@ -26,6 +28,7 @@ from app.api import (
 from app.api.dependencies import DatabaseSession
 from app.core.config import settings
 from app.schemas.common import ErrorResponse
+from app.services.alert_logging import run_alert_log_collector
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +36,20 @@ logger = logging.getLogger(__name__)
 class HealthResponse(BaseModel):
     status: str
     version: str
+
+
+@asynccontextmanager
+async def application_lifespan(_: FastAPI):
+    """Run alert history collection independently of browser page polling."""
+    stop_event = asyncio.Event()
+    collector = asyncio.create_task(run_alert_log_collector(stop_event))
+    try:
+        yield
+    finally:
+        stop_event.set()
+        collector.cancel()
+        with suppress(asyncio.CancelledError):
+            await collector
 
 
 def apply_standard_response_headers(
@@ -64,6 +81,7 @@ def create_app() -> FastAPI:
         openapi_url=openapi_url,
         docs_url="/docs" if settings.ENABLE_API_DOCS else None,
         redoc_url="/redoc" if settings.ENABLE_API_DOCS else None,
+        lifespan=application_lifespan,
         # Global database handlers use this shared, sanitized response shape.
         responses={
             status.HTTP_409_CONFLICT: {

@@ -508,3 +508,11 @@ export function getMonitoringSummaryAPI({ background = false, silent = false } =
     silent,
   });
 }
+
+export function getMonitoringAlertLogsAPI(params = {}) {
+  return axios({
+    url: "/monitoring/alert-logs",
+    method: "get",
+    params,
+  });
+}

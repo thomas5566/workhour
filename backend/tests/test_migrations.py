@@ -63,7 +63,7 @@ def test_migrations_upgrade_and_downgrade(tmp_path, monkeypatch):
         revision = connection.execute(
             text("SELECT version_num FROM alembic_version")
         ).scalar_one()
-    assert revision == "20261002_05"
+    assert revision == "20261002_06"
 
     # Keep typed ORM refactors from silently drifting away from the migration
     # history used by existing deployments and fresh installations.
@@ -75,4 +75,43 @@ def test_migrations_upgrade_and_downgrade(tmp_path, monkeypatch):
     engine = create_engine(database_url)
     remaining_tables = set(inspect(engine).get_table_names())
     assert remaining_tables <= {"alembic_version"}
+    engine.dispose()
+
+
+def test_resource_alert_cleanup_preserves_zabbix_incidents(tmp_path, monkeypatch):
+    database_path = tmp_path / "alert-cleanup-test.db"
+    database_url = f"sqlite+pysqlite:///{database_path.as_posix()}"
+    monkeypatch.setenv("DATABASE_URL", database_url)
+    config = _config(database_url)
+
+    command.upgrade(config, "20261002_05")
+    engine = create_engine(database_url)
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                INSERT INTO monitoring_alert_log (
+                    event_key, event_id, host_name, severity, severity_label,
+                    occurred_at, last_observed_at, acknowledged, source, message
+                ) VALUES
+                    ('workhour:branch-metric:101:cpu', 'branch-metric:101:cpu',
+                     'Peplink-01', 4, 'High', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                     0, 'workhour', 'CPU sample'),
+                    ('workhour:branch-metric:101:memory', 'branch-metric:101:memory',
+                     'Peplink-01', 4, 'High', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                     0, 'workhour', 'Memory sample'),
+                    ('zabbix:9002', '9002', 'Peplink-01', 4, 'High',
+                     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, 'zabbix', 'CPU trigger')
+                """
+            )
+        )
+    engine.dispose()
+
+    command.upgrade(config, "head")
+    engine = create_engine(database_url)
+    with engine.connect() as connection:
+        remaining = connection.execute(
+            text("SELECT event_key FROM monitoring_alert_log ORDER BY event_key")
+        ).scalars().all()
+    assert remaining == ["zabbix:9002"]
     engine.dispose()

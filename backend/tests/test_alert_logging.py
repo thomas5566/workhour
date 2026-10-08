@@ -37,6 +37,12 @@ def test_collector_persists_a_complete_high_alert_snapshot(monkeypatch) -> None:
         "apply_branch_wan_rules",
         lambda problems, _: problems,
     )
+    monkeypatch.setattr(
+        alert_logging.monitoring, "get_synology_nas_health", lambda _settings, _problems: []
+    )
+    monkeypatch.setattr(
+        alert_logging.monitoring, "apply_synology_nas_rules", lambda problems, _: problems
+    )
 
     assert alert_logging.collect_alert_logs_once() == 1
     with Session(engine) as db:
@@ -112,6 +118,12 @@ def test_collector_excludes_only_page_derived_cpu_and_memory(monkeypatch) -> Non
         "apply_branch_wan_rules",
         lambda problems, _: [*problems, local_cpu, local_memory, local_wan],
     )
+    monkeypatch.setattr(
+        alert_logging.monitoring, "get_synology_nas_health", lambda _settings, _problems: []
+    )
+    monkeypatch.setattr(
+        alert_logging.monitoring, "apply_synology_nas_rules", lambda problems, _: problems
+    )
 
     assert alert_logging.collect_alert_logs_once() == 2
     with Session(engine) as db:
@@ -120,5 +132,56 @@ def test_collector_excludes_only_page_derived_cpu_and_memory(monkeypatch) -> Non
             "9002",
             "branch-metric:101:WAN 狀態",
         }
+
+    engine.dispose()
+
+
+def test_collector_persists_local_synology_sensor_alert(monkeypatch) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    session_factory = sessionmaker(bind=engine)
+    problem = MonitoringProblem(
+        event_id="synology-metric:10862:disk_bad_sectors:Disk 1",
+        host_name="NAS-50T",
+        host_ids=["10862"],
+        item_keys=["synoDisk.diskTable.diskEntry.diskBadSector.[0]"],
+        severity=4,
+        severity_label="Critical",
+        occurred_at=datetime(2026, 10, 8, 8, 0, tzinfo=UTC),
+        acknowledged=False,
+        message="Disk 1 壞軌數量 1（本頁規則；目前取樣）",
+        source="workhour",
+    )
+
+    monkeypatch.setattr(alert_logging.settings, "ZABBIX_URL", "https://zabbix.test")
+    monkeypatch.setattr(alert_logging.settings, "ZABBIX_TOKEN", "test-token")
+    monkeypatch.setattr(alert_logging, "SessionLocal", session_factory)
+    monkeypatch.setattr(
+        alert_logging.monitoring, "get_branch_peplink_health", lambda _settings: []
+    )
+    monkeypatch.setattr(
+        alert_logging.monitoring, "get_high_problems", lambda _settings: []
+    )
+    monkeypatch.setattr(
+        alert_logging.monitoring, "apply_branch_wan_rules", lambda problems, _: problems
+    )
+    monkeypatch.setattr(
+        alert_logging.monitoring,
+        "get_synology_nas_health",
+        lambda _settings, _problems: [object()],
+    )
+    monkeypatch.setattr(
+        alert_logging.monitoring,
+        "apply_synology_nas_rules",
+        lambda _problems, _devices: [problem],
+    )
+
+    assert alert_logging.collect_alert_logs_once() == 1
+    with Session(engine) as db:
+        record = db.scalar(select(MonitoringAlertLog))
+        assert record is not None
+        assert record.event_id == problem.event_id
+        assert record.host_name == "NAS-50T"
+        assert record.source == "workhour"
 
     engine.dispose()

@@ -359,12 +359,19 @@ SYNOLOGY_DIRECT_ITEM_KEYS = {
     "synoSystem.systemStatus": "system_status",
     "synoSystem.powerStatus": "power_status",
     "synoSystem.sysUpTime": "uptime_seconds",
+    "synoSystem.cpuFanStatus": "cpu_fan_status",
+    "synoSystem.systemFanStatus": "system_fan_status",
 }
 SYNOLOGY_STORAGE_USED_PATTERN = re.compile(
     r"^Storage Used on (?P<volume>.+?) \(%\)$", re.IGNORECASE
 )
 SYNOLOGY_TOP_LEVEL_VOLUME_PATTERN = re.compile(r"^/volume\d+$", re.IGNORECASE)
 SYNOLOGY_DISK_STATUS_PREFIX = "synoDisk.diskTable.diskEntry.diskStatus."
+SYNOLOGY_DISK_TEMPERATURE_PREFIX = "synoDisk.diskTable.diskEntry.diskTemperature."
+SYNOLOGY_DISK_BAD_SECTOR_PREFIX = "synoDisk.diskTable.diskEntry.diskBadSector."
+SYNOLOGY_RAID_STATUS_PREFIX = "synoRaid.raidTable.raidEntry.raidStatus."
+SYNOLOGY_DISK_TEMPERATURE_WARNING = 50
+SYNOLOGY_DISK_TEMPERATURE_HIGH = 60
 
 
 def _synology_metric_name(item_name: str, item_key: str) -> str | None:
@@ -385,6 +392,19 @@ def _synology_metric_name(item_name: str, item_key: str) -> str | None:
     if item_key.startswith(SYNOLOGY_DISK_STATUS_PREFIX):
         drive_name = re.sub(r"\s+Status$", "", item_name.strip(), flags=re.IGNORECASE)
         return f"disk_status:{drive_name or item_key.rsplit('.', 1)[-1]}"
+    if item_key.startswith(SYNOLOGY_DISK_TEMPERATURE_PREFIX):
+        drive_name = re.sub(
+            r"\s+Temperature$", "", item_name.strip(), flags=re.IGNORECASE
+        )
+        return f"disk_temperature:{drive_name or item_key.rsplit('.', 1)[-1]}"
+    if item_key.startswith(SYNOLOGY_DISK_BAD_SECTOR_PREFIX):
+        drive_name = re.sub(
+            r"\s+Bad sectors count$", "", item_name.strip(), flags=re.IGNORECASE
+        )
+        return f"disk_bad_sectors:{drive_name or item_key.rsplit('.', 1)[-1]}"
+    if item_key.startswith(SYNOLOGY_RAID_STATUS_PREFIX):
+        raid_name = re.sub(r"\s+Status$", "", item_name.strip(), flags=re.IGNORECASE)
+        return f"raid_status:{raid_name or item_key.rsplit('.', 1)[-1]}"
     return None
 
 
@@ -404,6 +424,8 @@ def _synology_metric_value(
     status_maps = {
         "system_status": {"1": "Normal", "2": "Failed"},
         "power_status": {"1": "Normal", "2": "Failed"},
+        "cpu_fan_status": {"1": "Normal", "2": "Failed"},
+        "system_fan_status": {"1": "Normal", "2": "Failed"},
     }
     if metric.startswith("disk_status:"):
         status_maps[metric] = {
@@ -413,11 +435,28 @@ def _synology_metric_value(
             "4": "System Partition Failed",
             "5": "Crashed",
         }
+    if metric.startswith("raid_status:"):
+        status_maps[metric] = {
+            "1": "Normal",
+            "2": "Repairing",
+            "3": "Migrating",
+            "4": "Expanding",
+            "5": "Deleting",
+            "6": "Creating",
+            "7": "RAID Syncing",
+            "8": "RAID Parity Checking",
+            "9": "RAID Assembling",
+            "10": "Canceling",
+            "11": "Degraded",
+            "12": "Crashed",
+        }
     if metric in status_maps:
         mapped = _mapped_item_value(item)
         return status_maps[metric].get(raw_value, mapped)
     if metric.startswith("volume_usage:"):
         return _metric_value(raw_value, "%")
+    if metric.startswith(("disk_temperature:", "disk_bad_sectors:")):
+        return _metric_value(raw_value, str(item.get("units", "")))
     return raw_value
 
 
@@ -552,6 +591,9 @@ def get_synology_nas_health(
     samples_by_host: dict[str, dict[str, datetime | None]] = {
         host_id: {} for host_id in host_ids
     }
+    item_keys_by_host: dict[str, dict[str, list[str]]] = {
+        host_id: {} for host_id in host_ids
+    }
     for item in sorted(items, key=lambda row: -int(row.get("lastclock") or 0)):
         host_id = str(item.get("hostid", ""))
         if host_id not in supported:
@@ -569,6 +611,7 @@ def get_synology_nas_health(
                 if value is not None:
                     metrics_by_host[host_id][metric] = value
                     samples_by_host[host_id][metric] = _item_sample_time(item)
+                    item_keys_by_host[host_id][metric] = [str(item.get("key_", ""))]
         else:
             unsupported[host_id] += 1
 
@@ -611,9 +654,108 @@ def get_synology_nas_health(
             ),
             last_updated_at=sampled_at,
             metric_sampled_at=samples_by_host[host_id],
+            metric_item_keys=item_keys_by_host[host_id],
             metrics=metrics,
         ))
     return sorted(results, key=lambda device: device.name.casefold())
+
+
+def _synology_metric_alerts(
+    device: NetworkDeviceHealth,
+) -> list[tuple[str, list[str], int, str]]:
+    """Return current, fresh NAS sensor alerts using conservative thresholds."""
+    alerts: list[tuple[str, list[str], int, str]] = []
+    transitional_raid_states = {
+        "repairing", "migrating", "expanding", "deleting", "creating",
+        "raid syncing", "raid parity checking", "raid assembling", "canceling",
+    }
+    for metric, value in device.metrics.items():
+        sampled_at = device.metric_sampled_at.get(metric)
+        if sampled_at is None or not _sample_is_fresh(sampled_at):
+            continue
+        item_keys = device.metric_item_keys.get(metric, [])
+        label = metric.split(":", 1)[-1]
+        normalized = str(value).strip().casefold()
+        severity = 0
+        message = ""
+        if metric.startswith("raid_status:"):
+            if normalized == "crashed":
+                severity = 5
+            elif normalized == "degraded":
+                severity = 4
+            elif normalized in transitional_raid_states:
+                severity = 2
+            if severity:
+                message = f"{label} 狀態：{value}"
+        elif metric.startswith("disk_temperature:"):
+            try:
+                temperature = float(value)
+            except (TypeError, ValueError):
+                continue
+            if not math.isfinite(temperature):
+                continue
+            if temperature >= SYNOLOGY_DISK_TEMPERATURE_HIGH:
+                severity = 4
+            elif temperature >= SYNOLOGY_DISK_TEMPERATURE_WARNING:
+                severity = 2
+            if severity:
+                message = f"{label} 溫度 {temperature:g}°C"
+        elif metric.startswith("disk_bad_sectors:"):
+            try:
+                bad_sectors = int(float(value))
+            except (TypeError, ValueError):
+                continue
+            if bad_sectors > 0:
+                severity = 4
+                message = f"{label} 壞軌數量 {bad_sectors}"
+        elif metric in {"cpu_fan_status", "system_fan_status"} and normalized != "normal":
+            severity = 4
+            fan_name = "CPU Fan" if metric == "cpu_fan_status" else "System Fan"
+            message = f"{fan_name} 狀態：{value}"
+        if severity:
+            alerts.append((metric, item_keys, severity, message))
+    return alerts
+
+
+def apply_synology_nas_rules(
+    problems: list[MonitoringProblem],
+    devices: list[NetworkDeviceHealth],
+) -> list[MonitoringProblem]:
+    """Add fresh NAS sensor alerts without duplicating native Zabbix triggers."""
+    visible = list(problems)
+    for device in devices:
+        if not device.host_id:
+            continue
+        for metric, item_keys, severity, message in _synology_metric_alerts(device):
+            if any(
+                device.host_id in problem.host_ids
+                and set(item_keys).intersection(problem.item_keys)
+                for problem in visible
+            ):
+                continue
+            sampled_at = device.metric_sampled_at.get(metric)
+            if sampled_at is None:
+                continue
+            visible.append(MonitoringProblem(
+                event_id=f"synology-metric:{device.host_id}:{metric}",
+                host_name=device.name,
+                host_ids=[device.host_id],
+                item_keys=item_keys,
+                source="workhour",
+                severity=severity,
+                severity_label=(
+                    "Disaster" if severity == 5 else "Critical" if severity >= 4 else "Warning"
+                ),
+                occurred_at=sampled_at,
+                acknowledged=False,
+                message=f"{message}（本頁規則；目前取樣）",
+            ))
+        related = [problem for problem in visible if device.host_id in problem.host_ids]
+        device.metrics["active_alerts"] = len(related)
+        if related:
+            device.status = "degraded"
+            device.message = "Synology NAS has an active alert"
+    return sorted(visible, key=lambda row: row.occurred_at, reverse=True)
 
 
 NUTANIX_METRIC_NAMES = {
@@ -1476,6 +1618,7 @@ def build_monitoring_summary(settings: Settings) -> MonitoringSummary:
     synology_nas_error = None
     try:
         synology_nas = get_synology_nas_health(settings, problems)
+        problems = apply_synology_nas_rules(problems, synology_nas)
     except (HTTPError, URLError, TimeoutError, ValueError) as error:
         synology_nas = []
         synology_nas_error = _connection_failure_message("Synology NAS monitoring", error)

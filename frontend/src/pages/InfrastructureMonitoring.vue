@@ -428,6 +428,8 @@ export default {
         dsm_version: "DSM 版本",
         system_status: "System Status",
         power_status: "Power Status",
+        cpu_fan_status: "CPU Fan Status",
+        system_fan_status: "System Fan Status",
         cpu: "CPU",
         memory: "記憶體",
         active_sessions: "IPv4 Sessions",
@@ -444,7 +446,13 @@ export default {
           ? `${key.slice("volume_usage:".length)} 儲存使用率`
           : key.startsWith("disk_status:")
             ? `${key.slice("disk_status:".length)} Disk Status`
-            : key);
+            : key.startsWith("disk_temperature:")
+              ? `${key.slice("disk_temperature:".length)} 硬碟溫度`
+              : key.startsWith("disk_bad_sectors:")
+                ? `${key.slice("disk_bad_sectors:".length)} 壞軌數量`
+                : key.startsWith("raid_status:")
+                  ? `${key.slice("raid_status:".length)} Status`
+                  : key);
     },
     displayValue(value, key) {
       if (value === null || value === "") return "—";
@@ -453,6 +461,7 @@ export default {
         || key.startsWith("disk_usage:")
         || key.startsWith("volume_usage:")) return `${value}%`;
       if (key === "storage_utilization") return `${value}%`;
+      if (key.startsWith("disk_temperature:")) return `${value}°C`;
       if (key.endsWith("_bytes")) {
         const bytes = Number(value);
         if (!Number.isFinite(bytes)) return value;
@@ -474,7 +483,7 @@ export default {
         const normalized = String(value).trim().toLowerCase();
         return ["0", "not degraded", "normal"].includes(normalized) ? "正常" : "已降級";
       }
-      if (["system_status", "power_status"].includes(key)) {
+      if (["system_status", "power_status", "cpu_fan_status", "system_fan_status"].includes(key)) {
         return { Normal: "Normal（正常）", Failed: "Failed（異常）" }[value] || value;
       }
       if (key.startsWith("disk_status:")) {
@@ -486,18 +495,51 @@ export default {
           Crashed: "Crashed（磁碟損壞）",
         }[value] || value;
       }
+      if (key.startsWith("raid_status:")) {
+        return {
+          Normal: "Normal（正常）",
+          Repairing: "Repairing（修復中）",
+          Migrating: "Migrating（移轉中）",
+          Expanding: "Expanding（擴充中）",
+          Deleting: "Deleting（刪除中）",
+          Creating: "Creating（建立中）",
+          "RAID Syncing": "RAID Syncing（同步中）",
+          "RAID Parity Checking": "RAID Parity Checking（同位檢查中）",
+          "RAID Assembling": "RAID Assembling（組裝中）",
+          Canceling: "Canceling（取消中）",
+          Degraded: "Degraded（降級）",
+          Crashed: "Crashed（損毀）",
+        }[value] || value;
+      }
       return value;
     },
     metricStatusClass(key, value) {
       const utilizationClass = getResourceUtilizationClass(key, value);
       if (utilizationClass) return utilizationClass;
-      if (["system_status", "power_status"].includes(key)) {
+      if (["system_status", "power_status", "cpu_fan_status", "system_fan_status"].includes(key)) {
         return value === "Normal" ? "metric-connected" : "metric-disconnected";
       }
       if (String(key).startsWith("disk_status:")) {
         return ["Normal", "Initialized"].includes(value)
           ? "metric-connected"
           : "metric-disconnected";
+      }
+      if (String(key).startsWith("raid_status:")) {
+        if (value === "Normal") return "metric-connected";
+        if (["Degraded", "Crashed"].includes(value)) return "metric-critical";
+        return "metric-warning";
+      }
+      if (String(key).startsWith("disk_temperature:")) {
+        const temperature = Number(value);
+        if (!Number.isFinite(temperature)) return "";
+        if (temperature >= 60) return "metric-critical";
+        if (temperature >= 50) return "metric-warning";
+        return "metric-healthy";
+      }
+      if (String(key).startsWith("disk_bad_sectors:")) {
+        const badSectors = Number(value);
+        if (!Number.isFinite(badSectors)) return "";
+        return badSectors > 0 ? "metric-critical" : "metric-healthy";
       }
       // Only connection-state items receive semantic colors; disabled links stay neutral.
       if (!String(key).endsWith("狀態")) return "";

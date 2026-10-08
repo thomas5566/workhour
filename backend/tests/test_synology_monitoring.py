@@ -53,6 +53,17 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
              "lastvalue": "42", "units": "%"},
             {**common, "hostid": "200", "name": "Drive 1 Status",
              "key_": "synoDisk.diskTable.diskEntry.diskStatus.[0]", "lastvalue": "4"},
+            {**common, "hostid": "200", "name": "CPU Fan Status",
+             "key_": "synoSystem.cpuFanStatus", "lastvalue": "1"},
+            {**common, "hostid": "200", "name": "System Fan Status",
+             "key_": "synoSystem.systemFanStatus", "lastvalue": "2"},
+            {**common, "hostid": "200", "name": "Drive 1 Temperature",
+             "key_": "synoDisk.diskTable.diskEntry.diskTemperature.[0]",
+             "lastvalue": "55", "units": "C"},
+            {**common, "hostid": "200", "name": "Drive 1 Bad sectors count",
+             "key_": "synoDisk.diskTable.diskEntry.diskBadSector.[0]", "lastvalue": "2"},
+            {**common, "hostid": "200", "name": "Volume 1 RAID Status",
+             "key_": "synoRaid.raidTable.raidEntry.raidStatus.[0]", "lastvalue": "11"},
             {**common, "hostid": "200", "name": "Ignored secret-like item",
              "key_": "vendor.private.value", "lastvalue": "must-not-leak"},
             {**common, "hostid": "200", "name": "Unsupported",
@@ -80,7 +91,12 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
         "uptime_seconds": 900000,
         "volume_usage:/volume1": 42,
         "disk_status:Drive 1": "System Partition Failed",
-        "monitored_items": 8,
+        "cpu_fan_status": "Normal",
+        "system_fan_status": "Failed",
+        "disk_temperature:Drive 1": 55,
+        "disk_bad_sectors:Drive 1": 2,
+        "raid_status:Volume 1 RAID": "Degraded",
+        "monitored_items": 13,
         "unsupported_items": 1,
         "active_alerts": 0,
     }
@@ -88,6 +104,8 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
     assert set(result[0].metric_sampled_at) == {
         "serial_number", "dsm_version", "system_status", "power_status",
         "uptime_seconds", "volume_usage:/volume1", "disk_status:Drive 1",
+        "cpu_fan_status", "system_fan_status", "disk_temperature:Drive 1",
+        "disk_bad_sectors:Drive 1", "raid_status:Volume 1 RAID",
     }
     assert result[1].status == "degraded"
     assert result[1].metrics["active_alerts"] == 1
@@ -98,6 +116,37 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
     assert item_params["hostids"] == ["201", "200"]
     assert "lastvalue" in item_params["output"]
     assert item_params["selectValueMap"] == ["name", "mappings"]
+
+    problems = monitoring.apply_synology_nas_rules([], [result[0]])
+    assert [(row.severity, row.event_id) for row in problems] == [
+        (4, "synology-metric:200:system_fan_status"),
+        (2, "synology-metric:200:disk_temperature:Drive 1"),
+        (4, "synology-metric:200:disk_bad_sectors:Drive 1"),
+        (4, "synology-metric:200:raid_status:Volume 1 RAID"),
+    ]
+    assert result[0].status == "degraded"
+    assert result[0].metrics["active_alerts"] == 4
+
+
+def test_synology_native_problem_prevents_duplicate_local_alert() -> None:
+    sampled_at = datetime.now(UTC)
+    item_key = "synoRaid.raidTable.raidEntry.raidStatus.[0]"
+    device = monitoring.NetworkDeviceHealth(
+        host_id="200", name="NAS-A", status="ok", message="current",
+        metrics={"raid_status:Volume 1 RAID": "Degraded"},
+        metric_sampled_at={"raid_status:Volume 1 RAID": sampled_at},
+        metric_item_keys={"raid_status:Volume 1 RAID": [item_key]},
+    )
+    native = MonitoringProblem(
+        event_id="7002", host_name="NAS-A", host_ids=["200"], item_keys=[item_key],
+        severity=4, severity_label="High", occurred_at=sampled_at,
+        acknowledged=False, message="RAID degraded",
+    )
+
+    result = monitoring.apply_synology_nas_rules([native], [device])
+
+    assert result == [native]
+    assert device.metrics["active_alerts"] == 1
 
 
 def test_synology_hosts_are_not_duplicated_in_vm_server_list() -> None:

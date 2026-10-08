@@ -40,6 +40,8 @@ def collect_alert_logs_once() -> int:
     branch_devices = monitoring.get_branch_peplink_health(settings)
     problems = monitoring.get_high_problems(settings)
     problems = monitoring.apply_branch_wan_rules(problems, branch_devices)
+    nas_devices = monitoring.get_synology_nas_health(settings, problems)
+    problems = monitoring.apply_synology_nas_rules(problems, nas_devices)
     problems = [problem for problem in problems if not _is_excluded_local_sample(problem)]
     observed_at = datetime.now(UTC)
 

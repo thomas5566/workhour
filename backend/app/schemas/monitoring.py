@@ -47,6 +47,7 @@ class NetworkDeviceHealth(BaseModel):
     message: str
     last_updated_at: datetime | None = None
     metric_sampled_at: dict[str, datetime | None] = Field(default_factory=dict)
+    metric_item_keys: dict[str, list[str]] = Field(default_factory=dict)
     unsupported_item_details: list[str] = Field(default_factory=list)
     metrics: dict[str, int | float | str | bool | None] = Field(default_factory=dict)
 

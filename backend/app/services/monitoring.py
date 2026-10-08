@@ -392,16 +392,14 @@ def _synology_metric_value(
     metric: str,
     item: dict[str, Any],
 ) -> int | float | str | None:
-    """Normalize vendor status codes and convert SNMP TimeTicks to seconds."""
+    """Normalize approved values after Zabbix has applied item preprocessing."""
     raw_value = str(item.get("lastvalue", "")).strip()
     if not raw_value:
         return None
     if metric == "uptime_seconds":
-        try:
-            value = float(raw_value) / 100
-        except ValueError:
-            return None
-        return int(value) if math.isfinite(value) and value >= 0 else None
+        # The Synology template multiplies SNMP TimeTicks by 0.01 before the
+        # value is stored. item.get therefore already returns seconds.
+        return _metric_value(raw_value, str(item.get("units", "")))
 
     status_maps = {
         "system_status": {"1": "Normal", "2": "Failed"},

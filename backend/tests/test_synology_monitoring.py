@@ -77,7 +77,7 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
         "dsm_version": "DSM 7.2.2",
         "system_status": "Normal",
         "power_status": "Failed",
-        "uptime_seconds": 9000,
+        "uptime_seconds": 900000,
         "volume_usage:/volume1": 42,
         "disk_status:Drive 1": "System Partition Failed",
         "monitored_items": 8,

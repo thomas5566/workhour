@@ -177,9 +177,14 @@
           <p>{{ nas.message }}</p>
           <MonitoringSampleTime :sampled-at="nas.last_updated_at" :reference-time="summary.checked_at" label="Zabbix 最新指標取樣" />
           <div class="firewall-metrics">
-            <div v-for="(value, key) in nas.metrics" :key="key">
+            <div
+              v-for="(value, key) in nas.metrics"
+              :key="key"
+              :class="metricStatusClass(key, value)"
+            >
               <span>{{ metricLabel(key) }}</span>
               <strong>{{ displayValue(value, key) }}</strong>
+              <MonitoringSampleTime :sampled-at="nas.metric_sampled_at?.[key]" :reference-time="summary.checked_at" />
             </div>
           </div>
         </article>
@@ -419,6 +424,10 @@ export default {
         status: "狀態",
         hostname: "設備名稱",
         serial: "序號",
+        serial_number: "Serial Number",
+        dsm_version: "DSM 版本",
+        system_status: "System Status",
+        power_status: "Power Status",
         cpu: "CPU",
         memory: "記憶體",
         active_sessions: "IPv4 Sessions",
@@ -431,12 +440,18 @@ export default {
         ping: "ICMP Ping",
       }[key] || (key.startsWith("disk_usage:")
         ? `${key.slice("disk_usage:".length)} 磁碟使用率`
-        : key);
+        : key.startsWith("volume_usage:")
+          ? `${key.slice("volume_usage:".length)} 儲存使用率`
+          : key.startsWith("disk_status:")
+            ? `${key.slice("disk_status:".length)} Disk Status`
+            : key);
     },
     displayValue(value, key) {
       if (value === null || value === "") return "—";
       if (typeof value === "boolean") return value ? "是" : "否";
-      if (["cpu", "memory"].includes(key) || key.startsWith("disk_usage:")) return `${value}%`;
+      if (["cpu", "memory"].includes(key)
+        || key.startsWith("disk_usage:")
+        || key.startsWith("volume_usage:")) return `${value}%`;
       if (key === "storage_utilization") return `${value}%`;
       if (key.endsWith("_bytes")) {
         const bytes = Number(value);
@@ -459,11 +474,31 @@ export default {
         const normalized = String(value).trim().toLowerCase();
         return ["0", "not degraded", "normal"].includes(normalized) ? "正常" : "已降級";
       }
+      if (["system_status", "power_status"].includes(key)) {
+        return { Normal: "Normal（正常）", Failed: "Failed（異常）" }[value] || value;
+      }
+      if (key.startsWith("disk_status:")) {
+        return {
+          Normal: "Normal（正常）",
+          Initialized: "Initialized（已初始化）",
+          "Not Initialized": "Not Initialized（未初始化）",
+          "System Partition Failed": "System Partition Failed（系統分割區損壞）",
+          Crashed: "Crashed（磁碟損壞）",
+        }[value] || value;
+      }
       return value;
     },
     metricStatusClass(key, value) {
       const utilizationClass = getResourceUtilizationClass(key, value);
       if (utilizationClass) return utilizationClass;
+      if (["system_status", "power_status"].includes(key)) {
+        return value === "Normal" ? "metric-connected" : "metric-disconnected";
+      }
+      if (String(key).startsWith("disk_status:")) {
+        return ["Normal", "Initialized"].includes(value)
+          ? "metric-connected"
+          : "metric-disconnected";
+      }
       // Only connection-state items receive semantic colors; disabled links stay neutral.
       if (!String(key).endsWith("狀態")) return "";
       if (value === "Connected") return "metric-connected";

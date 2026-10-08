@@ -353,6 +353,76 @@ def _is_synology_nas_host(host: dict[str, Any]) -> bool:
     )
 
 
+SYNOLOGY_DIRECT_ITEM_KEYS = {
+    "synoSystem.serialNumber": "serial_number",
+    "synoSystem.version": "dsm_version",
+    "synoSystem.systemStatus": "system_status",
+    "synoSystem.powerStatus": "power_status",
+    "synoSystem.sysUpTime": "uptime_seconds",
+}
+SYNOLOGY_STORAGE_USED_PATTERN = re.compile(
+    r"^Storage Used on (?P<volume>.+?) \(%\)$", re.IGNORECASE
+)
+SYNOLOGY_TOP_LEVEL_VOLUME_PATTERN = re.compile(r"^/volume\d+$", re.IGNORECASE)
+SYNOLOGY_DISK_STATUS_PREFIX = "synoDisk.diskTable.diskEntry.diskStatus."
+
+
+def _synology_metric_name(item_name: str, item_key: str) -> str | None:
+    """Map only approved Synology items while preserving volumes and drives."""
+    direct_metric = SYNOLOGY_DIRECT_ITEM_KEYS.get(item_key)
+    if direct_metric:
+        return direct_metric
+
+    storage_match = SYNOLOGY_STORAGE_USED_PATTERN.match(item_name.strip())
+    volume = storage_match.group("volume").strip() if storage_match else ""
+    if (
+        volume
+        and SYNOLOGY_TOP_LEVEL_VOLUME_PATTERN.match(volume)
+        and item_key.endswith(",pct]")
+    ):
+        return f"volume_usage:{volume}"
+
+    if item_key.startswith(SYNOLOGY_DISK_STATUS_PREFIX):
+        drive_name = re.sub(r"\s+Status$", "", item_name.strip(), flags=re.IGNORECASE)
+        return f"disk_status:{drive_name or item_key.rsplit('.', 1)[-1]}"
+    return None
+
+
+def _synology_metric_value(
+    metric: str,
+    item: dict[str, Any],
+) -> int | float | str | None:
+    """Normalize vendor status codes and convert SNMP TimeTicks to seconds."""
+    raw_value = str(item.get("lastvalue", "")).strip()
+    if not raw_value:
+        return None
+    if metric == "uptime_seconds":
+        try:
+            value = float(raw_value) / 100
+        except ValueError:
+            return None
+        return int(value) if math.isfinite(value) and value >= 0 else None
+
+    status_maps = {
+        "system_status": {"1": "Normal", "2": "Failed"},
+        "power_status": {"1": "Normal", "2": "Failed"},
+    }
+    if metric.startswith("disk_status:"):
+        status_maps[metric] = {
+            "1": "Normal",
+            "2": "Initialized",
+            "3": "Not Initialized",
+            "4": "System Partition Failed",
+            "5": "Crashed",
+        }
+    if metric in status_maps:
+        mapped = _mapped_item_value(item)
+        return status_maps[metric].get(raw_value, mapped)
+    if metric.startswith("volume_usage:"):
+        return _metric_value(raw_value, "%")
+    return raw_value
+
+
 def get_server_health(settings: Settings) -> list[ServerHealth]:
     """Return non-FortiGate hosts with fresh, supported Zabbix agent metrics."""
     if not settings.ZABBIX_URL or not settings.ZABBIX_TOKEN:
@@ -451,12 +521,7 @@ def get_synology_nas_health(
     settings: Settings,
     problems: list[MonitoringProblem],
 ) -> list[NetworkDeviceHealth]:
-    """Discover every visible Synology NAS and expose template-agnostic health.
-
-    Item values vary between Synology templates, so the API deliberately exposes
-    only availability, sample freshness, item support counts, and associated
-    Zabbix alerts. Raw SNMP values and macros never leave Zabbix.
-    """
+    """Discover visible NAS hosts and expose an allowlist of Synology metrics."""
     if not settings.ZABBIX_URL or not settings.ZABBIX_TOKEN:
         return []
 
@@ -471,15 +536,25 @@ def get_synology_nas_health(
         return []
 
     items, _ = _zabbix_call(settings, "item.get", {
-        "output": ["hostid", "lastclock", "status", "state"],
+        "output": [
+            "hostid", "name", "key_", "lastvalue", "units", "lastclock",
+            "status", "state",
+        ],
         "hostids": host_ids,
         "filter": {"status": "0"},
         "monitored": True,
+        "selectValueMap": ["name", "mappings"],
     })
     supported = {host_id: 0 for host_id in host_ids}
     unsupported = {host_id: 0 for host_id in host_ids}
     latest_clock = {host_id: 0 for host_id in host_ids}
-    for item in items:
+    metrics_by_host: dict[str, dict[str, int | float | str | bool | None]] = {
+        host_id: {} for host_id in host_ids
+    }
+    samples_by_host: dict[str, dict[str, datetime | None]] = {
+        host_id: {} for host_id in host_ids
+    }
+    for item in sorted(items, key=lambda row: -int(row.get("lastclock") or 0)):
         host_id = str(item.get("hostid", ""))
         if host_id not in supported:
             continue
@@ -488,6 +563,14 @@ def get_synology_nas_health(
             latest_clock[host_id] = max(
                 latest_clock[host_id], int(item.get("lastclock") or 0)
             )
+            metric = _synology_metric_name(
+                str(item.get("name", "")), str(item.get("key_", ""))
+            )
+            if metric and metric not in metrics_by_host[host_id]:
+                value = _synology_metric_value(metric, item)
+                if value is not None:
+                    metrics_by_host[host_id][metric] = value
+                    samples_by_host[host_id][metric] = _item_sample_time(item)
         else:
             unsupported[host_id] += 1
 
@@ -512,6 +595,12 @@ def get_synology_nas_health(
             and fresh
             and highest == 0
         )
+        metrics = {
+            **metrics_by_host[host_id],
+            "monitored_items": supported[host_id],
+            "unsupported_items": unsupported[host_id],
+            "active_alerts": len(related),
+        }
         results.append(NetworkDeviceHealth(
             host_id=host_id,
             name=str(host.get("name") or host.get("host") or host_id),
@@ -523,11 +612,8 @@ def get_synology_nas_health(
                 else "Synology NAS has an active alert or monitoring data is unavailable or stale"
             ),
             last_updated_at=sampled_at,
-            metrics={
-                "monitored_items": supported[host_id],
-                "unsupported_items": unsupported[host_id],
-                "active_alerts": len(related),
-            },
+            metric_sampled_at=samples_by_host[host_id],
+            metrics=metrics,
         ))
     return sorted(results, key=lambda device: device.name.casefold())
 

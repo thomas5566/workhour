@@ -19,4 +19,15 @@ describe("Synology NAS monitoring tab", () => {
       count: 2,
     });
   });
+
+  it("formats the approved NAS fields and dynamic disk metrics", () => {
+    const methods = InfrastructureMonitoring.methods;
+    expect(methods.metricLabel("serial_number")).toBe("Serial Number");
+    expect(methods.metricLabel("volume_usage:/volume1")).toBe("/volume1 儲存使用率");
+    expect(methods.metricLabel("disk_status:Drive 1")).toBe("Drive 1 Disk Status");
+    expect(methods.displayValue(42, "volume_usage:/volume1")).toBe("42%");
+    expect(methods.displayValue(90000, "uptime_seconds")).toBe("1 天 1 小時");
+    expect(methods.displayValue("System Partition Failed", "disk_status:Drive 1"))
+      .toBe("System Partition Failed（系統分割區損壞）");
+  });
 });

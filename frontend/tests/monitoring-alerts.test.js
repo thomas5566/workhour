@@ -31,6 +31,7 @@ describe("VM resource utilization colors", () => {
     expect(getResourceUtilizationClass("memory", 80)).toBe("metric-warning");
     expect(getResourceUtilizationClass("disk_usage:C:", 89.9)).toBe("metric-warning");
     expect(getResourceUtilizationClass("disk_usage:D:", 90)).toBe("metric-critical");
+    expect(getResourceUtilizationClass("volume_usage:/volume1", 90)).toBe("metric-critical");
   });
 
   it("does not color unrelated or invalid metrics", () => {

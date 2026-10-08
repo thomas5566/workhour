@@ -27,7 +27,8 @@ export function getCriticalProblemCount(problems = []) {
 
 export function getResourceUtilizationClass(key, value) {
   const isUtilizationMetric = ["cpu", "memory", "storage_utilization"].includes(key)
-    || String(key).startsWith("disk_usage:");
+    || String(key).startsWith("disk_usage:")
+    || String(key).startsWith("volume_usage:");
   if (!isUtilizationMetric) return "";
 
   const utilization = Number(value);

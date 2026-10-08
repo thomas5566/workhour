@@ -36,10 +36,29 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
                     "hostgroups": [{"name": "Network devices"}], "interfaces": [],
                 },
             ], 1
+        common = {"lastclock": str(now), "status": "0", "state": "0", "units": ""}
         return [
-            {"hostid": "200", "lastclock": str(now), "status": "0", "state": "0"},
-            {"hostid": "200", "lastclock": str(now), "status": "0", "state": "1"},
-            {"hostid": "201", "lastclock": str(now), "status": "0", "state": "0"},
+            {**common, "hostid": "200", "name": "Model serial number",
+             "key_": "synoSystem.serialNumber", "lastvalue": "SERIAL-200"},
+            {**common, "hostid": "200", "name": "Version",
+             "key_": "synoSystem.version", "lastvalue": "DSM 7.2.2"},
+            {**common, "hostid": "200", "name": "System Status",
+             "key_": "synoSystem.systemStatus", "lastvalue": "1"},
+            {**common, "hostid": "200", "name": "Power Status",
+             "key_": "synoSystem.powerStatus", "lastvalue": "2"},
+            {**common, "hostid": "200", "name": "System Uptime",
+             "key_": "synoSystem.sysUpTime", "lastvalue": "900000"},
+            {**common, "hostid": "200", "name": "Storage Used on /volume1 (%)",
+             "key_": "host.hrStorage.hrStorageTable.hrStorageEntry.hrStorageUsed[40,pct]",
+             "lastvalue": "42", "units": "%"},
+            {**common, "hostid": "200", "name": "Drive 1 Status",
+             "key_": "synoDisk.diskTable.diskEntry.diskStatus.[0]", "lastvalue": "4"},
+            {**common, "hostid": "200", "name": "Ignored secret-like item",
+             "key_": "vendor.private.value", "lastvalue": "must-not-leak"},
+            {**common, "hostid": "200", "name": "Unsupported",
+             "key_": "unsupported", "lastvalue": "", "state": "1"},
+            {**common, "hostid": "201", "name": "Version",
+             "key_": "synoSystem.version", "lastvalue": "DSM 6.2"},
         ], 1
 
     problem = MonitoringProblem(
@@ -54,7 +73,21 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
     assert [device.name for device in result] == ["NAS-A", "NAS-B"]
     assert result[0].status == "ok"
     assert result[0].metrics == {
-        "monitored_items": 1, "unsupported_items": 1, "active_alerts": 0,
+        "serial_number": "SERIAL-200",
+        "dsm_version": "DSM 7.2.2",
+        "system_status": "Normal",
+        "power_status": "Failed",
+        "uptime_seconds": 9000,
+        "volume_usage:/volume1": 42,
+        "disk_status:Drive 1": "System Partition Failed",
+        "monitored_items": 8,
+        "unsupported_items": 1,
+        "active_alerts": 0,
+    }
+    assert "must-not-leak" not in result[0].metrics.values()
+    assert set(result[0].metric_sampled_at) == {
+        "serial_number", "dsm_version", "system_status", "power_status",
+        "uptime_seconds", "volume_usage:/volume1", "disk_status:Drive 1",
     }
     assert result[1].status == "degraded"
     assert result[1].metrics["active_alerts"] == 1
@@ -63,7 +96,8 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
     assert host_params["selectHostGroups"] == ["name"]
     item_params = next(params for method, params in calls if method == "item.get")
     assert item_params["hostids"] == ["201", "200"]
-    assert "lastvalue" not in item_params["output"]
+    assert "lastvalue" in item_params["output"]
+    assert item_params["selectValueMap"] == ["name", "mappings"]
 
 
 def test_synology_hosts_are_not_duplicated_in_vm_server_list() -> None:
@@ -72,3 +106,14 @@ def test_synology_hosts_are_not_duplicated_in_vm_server_list() -> None:
     assert not monitoring._is_synology_nas_host({
         "hostgroups": [{"name": "Network devices"}],
     })
+
+
+def test_synology_ignores_internal_subvolume_usage() -> None:
+    assert monitoring._synology_metric_name(
+        "Storage Used on /volume1/@docker/btrfs (%)",
+        "host.hrStorage.hrStorageTable.hrStorageEntry.hrStorageUsed[99,pct]",
+    ) is None
+    assert monitoring._synology_metric_name(
+        "Storage Used on /volume2 (%)",
+        "host.hrStorage.hrStorageTable.hrStorageEntry.hrStorageUsed[41,pct]",
+    ) == "volume_usage:/volume2"

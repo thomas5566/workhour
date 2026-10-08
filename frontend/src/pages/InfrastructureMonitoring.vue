@@ -151,6 +151,44 @@
       <div v-if="!summary.servers.length" class="page-empty">Zabbix 中沒有 VM Server 監控資料。</div>
     </section>
 
+    <section v-if="activeTab === 'synology-nas'" class="firewall-section" aria-labelledby="synology-nas-title">
+      <header class="section-heading">
+        <div>
+          <p class="eyebrow">NETWORK ATTACHED STORAGE</p>
+          <h2 id="synology-nas-title">Synology NAS 健康狀態</h2>
+        </div>
+        <span>{{ (summary.synology_nas || []).length }} 台設備</span>
+      </header>
+      <div v-if="summary.synology_nas_error" class="monitoring-alert" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div><strong>無法取得 Synology NAS 資料</strong><p>{{ summary.synology_nas_error }}</p></div>
+      </div>
+      <div class="firewall-grid">
+        <article v-for="nas in summary.synology_nas || []" :key="nas.host_id" class="firewall-card">
+          <header>
+            <div>
+              <h3>{{ nas.name }}</h3>
+              <small>{{ nas.ip_address || "未提供管理 IP" }}</small>
+            </div>
+            <span class="status-pill" :class="`status-${nas.status}`">
+              {{ statusLabel(nas.status) }}
+            </span>
+          </header>
+          <p>{{ nas.message }}</p>
+          <MonitoringSampleTime :sampled-at="nas.last_updated_at" :reference-time="summary.checked_at" label="Zabbix 最新指標取樣" />
+          <div class="firewall-metrics">
+            <div v-for="(value, key) in nas.metrics" :key="key">
+              <span>{{ metricLabel(key) }}</span>
+              <strong>{{ displayValue(value, key) }}</strong>
+            </div>
+          </div>
+        </article>
+      </div>
+      <div v-if="!summary.synology_nas_error && !(summary.synology_nas || []).length" class="page-empty">
+        Zabbix API 尚未取得「Synology NAS」Host group 資料，請確認 API 使用者具有 Read 權限。
+      </div>
+    </section>
+
     <BranchPeplinkMonitoring v-if="activeTab === 'branch-peplinks'" :devices="summary.branch_peplinks || []" :error="summary.branch_peplinks_error || ''" />
     <MssqlMonitoring v-if="activeTab === 'mssql'" :servers="summary.mssql || []" :error="summary.mssql_error || ''" />
     <AlertLogHistory v-if="activeTab === 'logs'" />
@@ -316,6 +354,7 @@ export default {
         { id: "peplinks", label: "Peplink", icon: "fas fa-network-wired", count: this.summary.peplinks.length },
         { id: "branch-peplinks", label: "分店Peplink", icon: "fas fa-store", count: (this.summary.branch_peplinks || []).length },
         { id: "servers", label: "VM Server", icon: "fas fa-server", count: this.summary.servers.length },
+        { id: "synology-nas", label: "Synology NAS", icon: "fas fa-hard-drive", count: (this.summary.synology_nas || []).length },
         { id: "mssql", label: "MSSQL", icon: "fas fa-database", count: (this.summary.mssql || []).length },
         { id: "nutanix", label: "Nutanix", icon: "fas fa-cubes", count: this.summary.nutanix.length },
         { id: "problems", label: "警告事件", icon: "fas fa-exclamation-triangle", count: this.summary.problems.length },
@@ -360,6 +399,8 @@ export default {
         enabled_hosts: "啟用主機",
         available_agents: "Agent 可用",
         active_problems: "目前問題（本頁規則）",
+        active_alerts: "未結警告事件",
+        monitored_items: "正常監控項目",
         supported_items: "正常監控項目",
         unsupported_items: "不支援監控項目",
         storage_containers: "Storage Container",

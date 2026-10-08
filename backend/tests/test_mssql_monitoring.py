@@ -93,6 +93,7 @@ def test_api_failure_does_not_report_healthy_empty_result(monkeypatch, settings)
     for name in ["get_fortigate_health", "get_peplink_health", "get_server_health",
                  "get_nutanix_health", "get_warning_problems"]:
         monkeypatch.setattr(monitoring, name, lambda _: [])
+    monkeypatch.setattr(monitoring, "get_synology_nas_health", lambda _settings, _problems: [])
     monkeypatch.setattr(monitoring, "check_zabbix", lambda _: monitoring.IntegrationHealth(
         name="zabbix", configured=True, status="ok", message="ok"))
 

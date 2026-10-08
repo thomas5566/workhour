@@ -111,6 +111,8 @@ class MonitoringSummary(BaseModel):
     branch_peplinks: list[BranchPeplinkHealth] = Field(default_factory=list)
     branch_peplinks_error: str | None = None
     servers: list[ServerHealth] = Field(default_factory=list)
+    synology_nas: list[NetworkDeviceHealth] = Field(default_factory=list)
+    synology_nas_error: str | None = None
     nutanix: list[NetworkDeviceHealth] = Field(default_factory=list)
     mssql: list[MssqlHealth] = Field(default_factory=list)
     mssql_error: str | None = None

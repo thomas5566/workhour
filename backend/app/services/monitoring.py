@@ -345,6 +345,14 @@ def _is_nutanix_host(host: dict[str, Any]) -> bool:
     return "nutanix" in " ".join(identifiers).lower()
 
 
+def _is_synology_nas_host(host: dict[str, Any]) -> bool:
+    """Match the dedicated Zabbix Host group without relying on host naming."""
+    return any(
+        str(group.get("name", "")).strip().casefold() == "synology nas"
+        for group in host.get("hostgroups", [])
+    )
+
+
 def get_server_health(settings: Settings) -> list[ServerHealth]:
     """Return non-FortiGate hosts with fresh, supported Zabbix agent metrics."""
     if not settings.ZABBIX_URL or not settings.ZABBIX_TOKEN:
@@ -369,6 +377,7 @@ def get_server_health(settings: Settings) -> list[ServerHealth]:
                 for device_type in ("fortigate", "peplink")
             )
             and not _is_nutanix_host(host)
+            and not _is_synology_nas_host(host)
             and not _is_branch_peplink(host)
         ]
         host_ids = [str(host["hostid"]) for host in server_hosts]
@@ -436,6 +445,91 @@ def get_server_health(settings: Settings) -> list[ServerHealth]:
         return results
     except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError):
         return []
+
+
+def get_synology_nas_health(
+    settings: Settings,
+    problems: list[MonitoringProblem],
+) -> list[NetworkDeviceHealth]:
+    """Discover every visible Synology NAS and expose template-agnostic health.
+
+    Item values vary between Synology templates, so the API deliberately exposes
+    only availability, sample freshness, item support counts, and associated
+    Zabbix alerts. Raw SNMP values and macros never leave Zabbix.
+    """
+    if not settings.ZABBIX_URL or not settings.ZABBIX_TOKEN:
+        return []
+
+    hosts, _ = _zabbix_call(settings, "host.get", {
+        "output": ["hostid", "host", "name", "status"],
+        "selectInterfaces": ["ip", "type", "available"],
+        "selectHostGroups": ["name"],
+    })
+    nas_hosts = [host for host in hosts if _is_synology_nas_host(host)]
+    host_ids = [str(host["hostid"]) for host in nas_hosts]
+    if not host_ids:
+        return []
+
+    items, _ = _zabbix_call(settings, "item.get", {
+        "output": ["hostid", "lastclock", "status", "state"],
+        "hostids": host_ids,
+        "filter": {"status": "0"},
+        "monitored": True,
+    })
+    supported = {host_id: 0 for host_id in host_ids}
+    unsupported = {host_id: 0 for host_id in host_ids}
+    latest_clock = {host_id: 0 for host_id in host_ids}
+    for item in items:
+        host_id = str(item.get("hostid", ""))
+        if host_id not in supported:
+            continue
+        if str(item.get("state", "0")) == "0":
+            supported[host_id] += 1
+            latest_clock[host_id] = max(
+                latest_clock[host_id], int(item.get("lastclock") or 0)
+            )
+        else:
+            unsupported[host_id] += 1
+
+    results: list[NetworkDeviceHealth] = []
+    for host in nas_hosts:
+        host_id = str(host["hostid"])
+        related = [problem for problem in problems if host_id in problem.host_ids]
+        highest = max((problem.severity for problem in related), default=0)
+        interfaces = host.get("interfaces", [])
+        interface = next((row for row in interfaces if row.get("ip")), None)
+        # Zabbix availability 2 means unavailable; 0 may be unknown during startup.
+        interface_available = not interface or str(interface.get("available", "0")) != "2"
+        sampled_at = (
+            datetime.fromtimestamp(latest_clock[host_id], UTC)
+            if latest_clock[host_id] > 0 else None
+        )
+        fresh = _sample_is_fresh(sampled_at)
+        healthy = (
+            str(host.get("status")) == "0"
+            and interface_available
+            and supported[host_id] > 0
+            and fresh
+            and highest == 0
+        )
+        results.append(NetworkDeviceHealth(
+            host_id=host_id,
+            name=str(host.get("name") or host.get("host") or host_id),
+            ip_address=str(interface.get("ip")) if interface else None,
+            status="ok" if healthy else "degraded",
+            message=(
+                "Synology NAS monitoring data is current"
+                if healthy
+                else "Synology NAS has an active alert or monitoring data is unavailable or stale"
+            ),
+            last_updated_at=sampled_at,
+            metrics={
+                "monitored_items": supported[host_id],
+                "unsupported_items": unsupported[host_id],
+                "active_alerts": len(related),
+            },
+        ))
+    return sorted(results, key=lambda device: device.name.casefold())
 
 
 NUTANIX_METRIC_NAMES = {
@@ -1078,7 +1172,9 @@ def get_high_problems(settings: Settings) -> list[MonitoringProblem]:
 def get_warning_problems(settings: Settings) -> list[MonitoringProblem]:
     """Return active Warning-or-higher Zabbix problems and their source hosts."""
     try:
-        return _get_zabbix_problems(settings, WARNING_SEVERITIES, limit=100)
+        # Do not cap the snapshot: a busy device group must not push NAS alerts
+        # out of the shared warning table.
+        return _get_zabbix_problems(settings, WARNING_SEVERITIES)
     except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError):
         return []
 
@@ -1293,6 +1389,12 @@ def build_monitoring_summary(settings: Settings) -> MonitoringSummary:
     servers = get_server_health(settings)
     nutanix = get_nutanix_health(settings)
     problems = apply_branch_wan_rules(get_warning_problems(settings), branch_peplinks)
+    synology_nas_error = None
+    try:
+        synology_nas = get_synology_nas_health(settings, problems)
+    except (HTTPError, URLError, TimeoutError, ValueError) as error:
+        synology_nas = []
+        synology_nas_error = _connection_failure_message("Synology NAS monitoring", error)
     for integration in integrations:
         if integration.name == "zabbix" and integration.status == "ok":
             integration.metrics["active_problems"] = len(problems)
@@ -1304,13 +1406,17 @@ def build_monitoring_summary(settings: Settings) -> MonitoringSummary:
         mssql = []
         mssql_error = _connection_failure_message("MSSQL monitoring", error)
     states = {integration.status for integration in integrations}
-    resources = [*firewalls, *servers, *peplinks, *branch_peplinks, *nutanix, *mssql]
+    resources = [
+        *firewalls, *servers, *peplinks, *branch_peplinks,
+        *synology_nas, *nutanix, *mssql,
+    ]
     if (
         "degraded" in states
         or any(resource.status == "degraded" for resource in resources)
         or problems
         or mssql_error
         or branch_peplinks_error
+        or synology_nas_error
     ):
         overall = "degraded"
     elif states == {"unconfigured"}:
@@ -1326,6 +1432,8 @@ def build_monitoring_summary(settings: Settings) -> MonitoringSummary:
         branch_peplinks=branch_peplinks,
         branch_peplinks_error=branch_peplinks_error,
         servers=servers,
+        synology_nas=synology_nas,
+        synology_nas_error=synology_nas_error,
         nutanix=nutanix,
         mssql=mssql,
         mssql_error=mssql_error,

@@ -311,8 +311,11 @@ def test_warning_problems_include_source_host(monkeypatch) -> None:
         _env_file=None,
     )
 
-    def fake_call(_: Settings, method: str, __: dict[str, Any]) -> tuple[Any, int]:
+    problem_params: dict[str, Any] = {}
+
+    def fake_call(_: Settings, method: str, params: dict[str, Any]) -> tuple[Any, int]:
         if method == "problem.get":
+            problem_params.update(params)
             return [{
                 "eventid": "99", "objectid": "55", "name": "Service stopped",
                 "severity": "3", "clock": "1700000000", "acknowledged": "0",
@@ -328,6 +331,7 @@ def test_warning_problems_include_source_host(monkeypatch) -> None:
     assert result[0].host_name == "VM 01"
     assert result[0].severity_label == "Average"
     assert result[0].acknowledged is False
+    assert "limit" not in problem_params
 
 
 def test_high_problem_collection_is_unbounded_and_includes_all_hosts(monkeypatch) -> None:

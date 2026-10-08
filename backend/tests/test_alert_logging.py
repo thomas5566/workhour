@@ -15,12 +15,12 @@ def test_collector_persists_a_complete_high_alert_snapshot(monkeypatch) -> None:
     session_factory = sessionmaker(bind=engine)
     problem = MonitoringProblem(
         event_id="9001",
-        host_name="Any Zabbix Host",
+        host_name="NAS-01",
         severity=4,
         severity_label="High",
         occurred_at=datetime(2026, 10, 2, 1, 0, tzinfo=UTC),
         acknowledged=False,
-        message="CPU utilization is high",
+        message="Storage pool is degraded",
     )
 
     monkeypatch.setattr(alert_logging.settings, "ZABBIX_URL", "https://zabbix.test")
@@ -43,7 +43,7 @@ def test_collector_persists_a_complete_high_alert_snapshot(monkeypatch) -> None:
         record = db.scalar(select(MonitoringAlertLog))
         assert record is not None
         assert record.event_id == "9001"
-        assert record.host_name == "Any Zabbix Host"
+        assert record.host_name == "NAS-01"
 
     engine.dispose()
 

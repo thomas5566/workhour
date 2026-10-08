@@ -14,6 +14,8 @@ const emptySummary = () => ({
   branch_peplinks: [],
   branch_peplinks_error: null,
   servers: [],
+  synology_nas: [],
+  synology_nas_error: null,
   nutanix: [],
   mssql: [],
   mssql_error: null,

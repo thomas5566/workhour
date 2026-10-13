@@ -593,9 +593,9 @@ h1 { margin: 0; font-size: clamp(1.75rem, 3vw, 2.4rem); font-weight: 750; }
 .status-ok { color: #087f5b; background-color: #12a873; }
 .status-degraded { color: #b54708; background-color: #f59e0b; }
 .status-unconfigured { color: #64748b; background-color: #94a3b8; }
-.monitoring-tabs { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; padding: 6px; border: 1px solid #dce4ee; border-radius: 12px; background: white; }
+.monitoring-tabs { display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; padding: 6px; border: 1px solid #dce4ee; border-radius: 12px; background: white; }
 .monitoring-tab-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.monitoring-alert-tabs { justify-content: flex-end; padding-top: 6px; border-top: 1px solid #edf0f4; }
+.monitoring-alert-tabs { justify-content: flex-start; }
 .monitoring-tabs button { display: flex; align-items: center; gap: 8px; padding: 10px 15px; white-space: nowrap; color: #526174; border: 0; border-radius: 8px; background: transparent; }
 .monitoring-tabs button.active { color: white; background: #1769e0; box-shadow: 0 5px 12px rgba(23, 105, 224, .2); }
 .monitoring-tabs button span { min-width: 22px; padding: 2px 6px; border-radius: 999px; color: #526174; background: #e8eef5; font-size: .72rem; }

@@ -1174,12 +1174,9 @@ def _branch_metric_alerts(device: BranchPeplinkHealth) -> list[tuple[str, list[s
     for key, value in device.metrics.items():
         if device.metric_states.get(key) != "ok" or value is None:
             continue
-        if key in {"cpu", "memory"} and isinstance(value, (int, float)) and value >= 80:
-            item_keys = (["system.cpu.util", "system.cpu.util[,idle]"] if key == "cpu"
-                         else ["vm.memory.util"])
-            alerts.append((key, item_keys, 4 if value >= 90 else 2,
-                           f"{'CPU' if key == 'cpu' else 'Memory'} 使用率 {value}%"))
-        elif key == "uptime_seconds" and isinstance(value, (int, float)) and value > 90 * 86400:
+        # CPU and memory stay visible as operational metrics, but are deliberately
+        # excluded from Peplink alerting because their short spikes are too noisy.
+        if key == "uptime_seconds" and isinstance(value, (int, float)) and value > 90 * 86400:
             alerts.append((key, ["system.uptime"], 2,
                            f"運行時間超過 90 天（{value / 86400:.2f} 天）"))
         elif key.endswith((" 狀態", " 健康檢查")):
@@ -1415,6 +1412,25 @@ def apply_branch_wan_rules(
     except the explicitly excluded Zabbix FET Link down event name.
     """
     by_id = {device.host_id: device for device in devices}
+    resource_item_keys = {
+        "system.cpu.util",
+        "system.cpu.util[,idle]",
+        "vm.memory.util",
+    }
+
+    def peplink_resource_problem(
+        problem: MonitoringProblem,
+        device: BranchPeplinkHealth | None,
+    ) -> bool:
+        """Suppress CPU/memory alarms for both branch and original Peplink hosts."""
+        if not problem.item_keys or not set(problem.item_keys).issubset(resource_item_keys):
+            return False
+        if device is not None:
+            return True
+        host_names = [name.strip() for name in problem.host_name.split(",") if name.strip()]
+        return bool(host_names) and all(
+            name.casefold().startswith("peplink") for name in host_names
+        )
 
     def excluded(device: BranchPeplinkHealth, key: str) -> bool:
         wan = _branch_wan_name(key)
@@ -1438,6 +1454,8 @@ def apply_branch_wan_rules(
         ):
             continue
         device = by_id.get(problem.host_ids[0]) if len(problem.host_ids) == 1 else None
+        if peplink_resource_problem(problem, device):
+            continue
         if device and problem.item_keys and all(excluded(device, key) for key in problem.item_keys):
             continue
         visible.append(problem)

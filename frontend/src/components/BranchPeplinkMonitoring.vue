@@ -6,7 +6,7 @@
     </header>
     <p>自動同步「Peplink」群組與 Peplink-數字主機；新設備於背景更新後加入，搜尋與分頁保留。</p>
     <p>FET／Cellular：Standby 綠色、Disable 紅色但不列入警告；WAN Disconnect 會列入警告事件。</p>
-    <p>CPU／Memory ≥80% 為 Warning、≥90% 為 Critical；運行時間超過 90 天為 Warning。告警會同步列入警告事件，Wi-Fi WAN／VLAN WAN 不顯示。</p>
+    <p>CPU／Memory 僅顯示取樣數值、不產生警告；運行時間超過 90 天為 Warning。WAN 告警會同步列入警告事件，Wi-Fi WAN／VLAN WAN 不顯示。</p>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <p v-else-if="!devices.length" class="empty">沒有可讀取的分店設備。請確認 Zabbix API 帳號對「Peplink」Host group 有 Read 權限。</p>
     <div class="filters">
@@ -60,8 +60,6 @@
 </template>
 
 <script>
-import { getResourceUtilizationClass } from '@/utils/monitoringAlerts';
-
 export default {
   name: 'BranchPeplinkMonitoring',
   props: {
@@ -101,11 +99,12 @@ export default {
     },
     resourceClass(device, key) {
       if (this.stateLabel(device, key)) return 'neutral';
+      if (['cpu', 'memory'].includes(key)) return 'neutral';
       const severity = device.metric_severities?.[key] || 0;
       if (severity >= 4) return 'metric-critical';
       if (severity >= 2) return 'metric-warning';
       if (key === 'uptime_seconds') return device.metrics[key] > 90 * 86400 ? 'metric-warning' : 'metric-healthy';
-      return getResourceUtilizationClass(key, device.metrics[key]);
+      return 'metric-healthy';
     },
     wanNames(device) {
       return [...new Set(Object.keys(device.metrics).filter(key => / (狀態|健康檢查)$/.test(key))

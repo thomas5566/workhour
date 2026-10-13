@@ -18,6 +18,10 @@ describe("Synology NAS monitoring tab", () => {
       label: "Synology NAS",
       count: 2,
     });
+    expect(InfrastructureMonitoring.computed.deviceTabs.call({ tabs }).map((tab) => tab.id))
+      .not.toContain("problems");
+    expect(InfrastructureMonitoring.computed.alertTabs.call({ tabs }).map((tab) => tab.id))
+      .toEqual(["problems", "logs"]);
   });
 
   it("formats the approved NAS fields and dynamic disk metrics", () => {
@@ -40,5 +44,13 @@ describe("Synology NAS monitoring tab", () => {
       .toBe("metric-critical");
     expect(methods.metricStatusClass("system_fan_status", "Failed"))
       .toBe("metric-disconnected");
+  });
+
+  it("does not color Peplink CPU or memory as warning metrics", () => {
+    const method = InfrastructureMonitoring.methods.peplinkMetricStatusClass;
+    const context = { metricStatusClass: () => "metric-critical" };
+    expect(method.call(context, "cpu", 98)).toBe("");
+    expect(method.call(context, "memory", 95)).toBe("");
+    expect(method.call(context, "disk_usage:C", 95)).toBe("metric-critical");
   });
 });

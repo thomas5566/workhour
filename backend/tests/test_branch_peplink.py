@@ -150,7 +150,7 @@ def test_disabled_backup_filter_is_scoped_and_never_hides_unrelated_incidents(mo
     devices = monitoring.get_branch_peplink_health(settings())
     problems = [native_problem("wanState[FET]", "1"),
                 native_problem("wanHealthCheckState[Cellular]", "2"),
-                native_problem("system.cpu.util", "3"),
+                native_problem("system.uptime", "3"),
                 native_problem("wanState[FET]", "4", ["other"]),
                 native_problem("wanState[FET]", "5", ["1", "other"])]
     result = monitoring.apply_branch_wan_rules(problems, devices)
@@ -205,20 +205,17 @@ def test_uptime_warning_boundary(monkeypatch, seconds, count):
         assert devices[0].alert_severity == 2
 
 
-@pytest.mark.parametrize("value,severity", [(79.99, 0), (80, 2), (89.99, 2), (90, 4)])
-def test_resource_alerts_match_colors_and_recover(monkeypatch, value, severity):
+@pytest.mark.parametrize("value", [79.99, 80, 89.99, 90, 100])
+def test_cpu_and_memory_remain_visible_without_alerts(monkeypatch, value):
     items = [item("system.cpu.util", str(value)), item("vm.memory.util", str(value))]
     mock_api(monkeypatch, [host("Peplink-01")], items)
     devices = monitoring.get_branch_peplink_health(settings())
     problems = monitoring.apply_branch_wan_rules([], devices)
-    assert len(problems) == (2 if severity else 0)
-    assert devices[0].alert_severity == severity
-    assert all(p.severity == severity and p.source == "workhour" for p in problems)
-    for row in items:
-        row["lastvalue"] = "20"
-    recovered = monitoring.get_branch_peplink_health(settings())
-    assert monitoring.apply_branch_wan_rules([], recovered) == []
-    assert recovered[0].alert_severity == 0
+    assert problems == []
+    assert devices[0].metrics["cpu"] == value
+    assert devices[0].metrics["memory"] == value
+    assert devices[0].metric_severities == {}
+    assert devices[0].alert_severity == 0
 
 
 @pytest.mark.parametrize("state", ["1", "8"])
@@ -239,15 +236,23 @@ def test_backup_fail_excluded_only_with_fresh_disabled_or_standby(monkeypatch, s
     assert monitoring.apply_branch_wan_rules([native], devices) == [native]
 
 
-def test_resource_dedup_and_native_high_annotates_card(monkeypatch):
+def test_native_peplink_cpu_and_memory_problems_are_hidden(monkeypatch):
     mock_api(monkeypatch, [host("Peplink-01")], [item("system.cpu.util", "95")])
     devices = monitoring.get_branch_peplink_health(settings())
     native = native_problem("system.cpu.util")
     native.severity = 5
     native.severity_label = "Disaster"
-    assert monitoring.apply_branch_wan_rules([native], devices) == [native]
-    assert devices[0].metric_severities["cpu"] == 5
-    assert devices[0].alert_severity == 5
+    assert monitoring.apply_branch_wan_rules([native], devices) == []
+    assert devices[0].metric_severities == {}
+    assert devices[0].alert_severity == 0
+
+    original_tab = native_problem("vm.memory.util", identifier="2", host_ids=["200"])
+    original_tab.host_name = "Peplink-A1"
+    assert monitoring.apply_branch_wan_rules([original_tab], []) == []
+
+    non_peplink = native_problem("system.cpu.util", identifier="3", host_ids=["300"])
+    non_peplink.host_name = "VM-01"
+    assert monitoring.apply_branch_wan_rules([non_peplink], []) == [non_peplink]
 
 
 def test_invalid_stale_disabled_metrics_do_not_generate_alerts(monkeypatch):
@@ -292,13 +297,13 @@ def test_zabbix_fet_link_down_hidden_without_host_discovery(message):
     ("Memory usage high", "zabbix"),
 ])
 def test_fet_name_filter_preserves_other_events(message, source):
-    problem = native_problem("system.cpu.util")
+    problem = native_problem("system.uptime")
     problem.message = message
     problem.source = source
     assert monitoring.apply_branch_wan_rules([problem], []) == [problem]
 
 
-def test_hidden_fet_event_does_not_raise_card_severity_but_local_rules_remain(monkeypatch):
+def test_hidden_fet_event_does_not_raise_card_severity_or_restore_resource_alerts(monkeypatch):
     items = [item("wanState[FET]", "3"), item("vm.memory.util", "85")]
     mock_api(monkeypatch, [host("Peplink-01")], items)
     problem = native_problem("wanState[FET]")
@@ -307,11 +312,11 @@ def test_hidden_fet_event_does_not_raise_card_severity_but_local_rules_remain(mo
     problem.severity_label = "High"
     devices = monitoring.get_branch_peplink_health(settings())
     result = monitoring.apply_branch_wan_rules([problem], devices)
-    assert len(result) == 1 and "Memory" in result[0].message
-    assert devices[0].alert_severity == 2
-    assert all(p.source == "workhour" for p in result)
+    assert result == []
+    assert devices[0].alert_severity == 0
     items[0]["lastvalue"] = "2"
     devices = monitoring.get_branch_peplink_health(settings())
     result = monitoring.apply_branch_wan_rules([problem], devices)
-    assert len(result) == 2
-    assert all(p.source == "workhour" and p.severity == 2 for p in result)
+    assert len(result) == 1
+    assert result[0].source == "workhour" and result[0].severity == 2
+    assert "FET" in result[0].message

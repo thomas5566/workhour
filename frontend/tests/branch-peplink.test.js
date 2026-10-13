@@ -90,14 +90,28 @@ describe('branch Peplink page', () => {
     expect(wrapper.findAll('.resources > div')[2].classes()).toContain('metric-healthy');
     wrapper.unmount();
   });
-  it('shows critical badge and keeps disconnect red with a Warning event', () => {
+  it('keeps CPU and memory values neutral even when utilization is high', () => {
+    const row = device(1);
+    row.metrics.cpu = 99;
+    row.metrics.memory = 95;
+    row.metric_states.memory = 'ok';
+    const wrapper = mount(BranchPeplinkMonitoring, { props: { devices: [row] } });
+    expect(wrapper.findAll('.resources > div')[0].classes()).toContain('neutral');
+    expect(wrapper.findAll('.resources > div')[1].classes()).toContain('neutral');
+    expect(wrapper.find('article header').text()).not.toContain('Critical');
+    expect(wrapper.find('article header').text()).not.toContain('Warning');
+    expect(wrapper.findAll('.resources > div')[0].text()).not.toContain('Warning');
+    expect(wrapper.findAll('.resources > div')[1].text()).not.toContain('Warning');
+    wrapper.unmount();
+  });
+  it('shows critical badge and keeps disconnect red with a WAN event', () => {
     const row = device(1);
     row.alert_severity = 4;
-    row.metric_severities = { cpu: 4, 'WAN 1 狀態': 2 };
+    row.metric_severities = { 'WAN 1 狀態': 4 };
     row.metrics['WAN 1 狀態'] = 'Disconnect';
     const wrapper = mount(BranchPeplinkMonitoring, { props: { devices: [row] } });
     expect(wrapper.find('article header .bad').text()).toBe('Critical');
-    expect(wrapper.findAll('.resources > div')[0].classes()).toContain('metric-critical');
+    expect(wrapper.findAll('.resources > div')[0].classes()).toContain('neutral');
     expect(wrapper.find('td.bad').text()).toContain('Disconnect');
     wrapper.unmount();
   });

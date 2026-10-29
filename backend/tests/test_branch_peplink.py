@@ -182,7 +182,7 @@ def test_native_problem_retains_exact_trigger_associations(monkeypatch):
     def call(_, method, params):
         if method == "problem.get":
             return [{"eventid": "1", "objectid": "10", "severity": "2", "clock": "1700000000"}], 0
-        assert params["selectItems"] == ["key_"]
+        assert params["selectItems"] == ["key_", "status"]
         return [{"triggerid": "10", "hosts": [{"hostid": "1", "name": "Peplink-01"}],
                  "items": [{"key_": "wanState[WAN]"}]}], 0
     monkeypatch.setattr(monitoring, "_zabbix_call", call)

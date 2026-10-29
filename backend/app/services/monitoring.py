@@ -1343,22 +1343,35 @@ def _get_zabbix_problems(
             settings,
             "trigger.get",
             {
-                "output": ["triggerid"],
+                "output": ["triggerid", "status"],
                 "triggerids": trigger_ids,
                 "selectHosts": ["hostid", "name"],
-                "selectItems": ["key_"],
+                "selectItems": ["key_", "status"],
             },
         )
         if trigger_ids
         else ([], 0)
     )
+    # Zabbix keeps an unresolved problem event when an LLD-created trigger is
+    # disabled after its resource disappears.  Such events have no active item
+    # left to produce an OK value, so presenting them as current incidents is
+    # misleading.  Keep only triggers and referenced items that are enabled.
+    active_triggers = {
+        str(trigger.get("triggerid")): trigger
+        for trigger in triggers
+        if str(trigger.get("status", "0")) == "0"
+        and all(
+            str(item.get("status", "0")) == "0"
+            for item in trigger.get("items", [])
+        )
+    }
     hosts_by_trigger = {
         str(trigger.get("triggerid")): ", ".join(
             str(host.get("name")) for host in trigger.get("hosts", [])
         )
-        for trigger in triggers
+        for trigger in active_triggers.values()
     }
-    triggers_by_id = {str(row["triggerid"]): row for row in triggers}
+    triggers_by_id = active_triggers
     return [
         MonitoringProblem(
             event_id=str(problem.get("eventid")),
@@ -1384,6 +1397,7 @@ def _get_zabbix_problems(
             ],
         )
         for problem in problems
+        if str(problem.get("objectid")) in triggers_by_id
     ]
 
 

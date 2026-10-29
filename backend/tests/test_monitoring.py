@@ -1,6 +1,8 @@
 from datetime import UTC, datetime
 from typing import Any
 
+import pytest
+
 from app.core.config import Settings
 from app.services import monitoring
 
@@ -332,6 +334,38 @@ def test_warning_problems_include_source_host(monkeypatch) -> None:
     assert result[0].severity_label == "Average"
     assert result[0].acknowledged is False
     assert "limit" not in problem_params
+
+
+@pytest.mark.parametrize(
+    ("trigger_status", "item_status"),
+    [("1", "0"), ("0", "1")],
+)
+def test_warning_problems_exclude_disabled_trigger_resources(
+    monkeypatch, trigger_status: str, item_status: str,
+) -> None:
+    settings = Settings(
+        **BASE_SETTINGS,
+        ZABBIX_URL="https://zabbix.example.com/api_jsonrpc.php",
+        ZABBIX_TOKEN="private-zabbix-token",
+        _env_file=None,
+    )
+
+    def fake_call(_: Settings, method: str, params: dict[str, Any]) -> tuple[Any, int]:
+        if method == "problem.get":
+            return [{
+                "eventid": "99", "objectid": "55", "name": "Stale link down",
+                "severity": "3", "clock": "1700000000", "acknowledged": "0",
+            }], 2
+        return [{
+            "triggerid": "55",
+            "status": trigger_status,
+            "hosts": [{"hostid": "8", "name": "FortiGate"}],
+            "items": [{"key_": "net.if.status[ifOperStatus.1]", "status": item_status}],
+        }], 2
+
+    monkeypatch.setattr(monitoring, "_zabbix_call", fake_call)
+
+    assert monitoring.get_warning_problems(settings) == []
 
 
 def test_high_problem_collection_is_unbounded_and_includes_all_hosts(monkeypatch) -> None:

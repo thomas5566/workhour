@@ -667,6 +667,41 @@ async def test_expense_task_crud_and_permissions(api_engine) -> None:
 
 
 @pytest.mark.anyio
+async def test_public_registration_validates_account_and_department(
+    authenticated_api_engine,
+) -> None:
+    with Session(authenticated_api_engine) as session:
+        session.add(Department(id=1, department_name="IT"))
+        session.commit()
+
+    account = {
+        "username": "pending-user",
+        "fullname": "Pending User",
+        "password": "pending-user-password",
+        "department_id": 1,
+    }
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        created = await client.post("/api/user/register", json=account)
+        duplicate = await client.post("/api/user/register", json=account)
+        invalid_department = await client.post(
+            "/api/user/register",
+            json={**account, "username": "unknown-department", "department_id": 999},
+        )
+
+    assert created.status_code == 201
+    assert created.json()["is_active"] is False
+    assert "password" not in created.json()
+    assert duplicate.status_code == 409
+    assert duplicate.json() == {"detail": "Username already registered"}
+    assert invalid_department.status_code == 422
+    assert invalid_department.json() == {"detail": "Department does not exist"}
+
+
+@pytest.mark.anyio
 async def test_user_creation_requires_administrator_token(
     authenticated_api_engine,
 ) -> None:
@@ -905,6 +940,7 @@ async def test_database_constraint_conflict_returns_sanitized_409(
     monkeypatch,
 ) -> None:
     with Session(api_engine) as session:
+        session.add(Department(id=1, department_name="Security Test"))
         session.add(
             User(
                 username="duplicate-user",

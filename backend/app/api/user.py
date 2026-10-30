@@ -26,6 +26,8 @@ router = APIRouter(
 def _create_user_account(
     user_item: users.UserCreate,
     db: DatabaseSession,
+    *,
+    is_active: bool = True,
 ):
     """Create a regular account for both managed and self-registration flows."""
     db_user = user_crud.get_user_by_username(db, username=user_item.username)
@@ -34,6 +36,7 @@ def _create_user_account(
             status_code=status.HTTP_409_CONFLICT,
             detail="Username already registered",
         )
+    _validate_user_department(db, user_item.department_id)
     hashed_password = Hasher.get_password_hash(
         user_item.password.get_secret_value()
     )
@@ -41,6 +44,7 @@ def _create_user_account(
         db=db,
         user_item=user_item,
         hashed_password=hashed_password,
+        is_active=is_active,
     )
 
 
@@ -60,12 +64,7 @@ def read_registration_departments(db: DatabaseSession):
 )
 def register_user(user_item: users.UserCreate, db: DatabaseSession):
     # Public registration creates an inactive account pending administrator approval.
-    return user_crud.create_user(
-        db,
-        user_item,
-        Hasher.get_password_hash(user_item.password.get_secret_value()),
-        is_active=False,
-    )
+    return _create_user_account(user_item, db, is_active=False)
 
 
 @router.post("/", response_model=users.User)

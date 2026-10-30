@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from time import perf_counter
 from typing import Any
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from app.core.config import Settings
@@ -38,6 +39,10 @@ def _request_json(
     payload: dict[str, Any] | None = None,
 ) -> tuple[Any, int]:
     """Perform a small read-only request without leaking response or token data."""
+    parsed_url = urlsplit(url)
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+        raise ValueError("Only HTTP(S) monitoring endpoints are supported")
+
     headers = {"Accept": "application/json"}
     data = None
     if token:
@@ -48,7 +53,13 @@ def _request_json(
 
     request = Request(url, data=data, headers=headers, method="POST" if data else "GET")
     started = perf_counter()
-    with urlopen(request, timeout=timeout, context=ssl.create_default_context()) as response:
+    # URL scheme and authority were validated above; Bandit cannot infer that
+    # guard across the Request wrapper.
+    with urlopen(  # nosec B310
+        request,
+        timeout=timeout,
+        context=ssl.create_default_context(),
+    ) as response:
         body = json.load(response)
     return body, round((perf_counter() - started) * 1000)
 

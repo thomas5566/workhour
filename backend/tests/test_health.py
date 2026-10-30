@@ -50,6 +50,9 @@ async def test_security_headers_cover_success_and_error_responses(
     assert response.headers["permissions-policy"] == (
         "camera=(), geolocation=(), microphone=()"
     )
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["cross-origin-opener-policy"] == "same-origin"
+    assert response.headers["x-permitted-cross-domain-policies"] == "none"
     assert UUID(response.headers["x-request-id"]).version == 4
 
 
@@ -76,6 +79,35 @@ async def test_request_ids_are_server_generated_unique_and_cors_visible() -> Non
     assert first_request_id != second_request_id
     assert first_request_id != "untrusted-client-value"
     assert first.headers["access-control-expose-headers"] == "X-Request-ID"
+
+
+@pytest.mark.anyio
+async def test_cors_allows_only_declared_methods_and_headers() -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        allowed = await client.options(
+            "/api/user/login",
+            headers={
+                "Origin": "http://localhost:8080",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "authorization,content-type",
+            },
+        )
+        rejected = await client.options(
+            "/api/user/login",
+            headers={
+                "Origin": "http://localhost:8080",
+                "Access-Control-Request-Method": "PATCH",
+            },
+        )
+
+    assert allowed.status_code == 200
+    assert allowed.headers["access-control-allow-origin"] == "http://localhost:8080"
+    assert "access-control-allow-credentials" not in allowed.headers
+    assert rejected.status_code == 400
 
 
 @pytest.mark.anyio

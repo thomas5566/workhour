@@ -57,6 +57,17 @@ jobs:
       - name: Lint backend
         run: python -m ruff check .
 
+      - name: Audit Python dependencies
+        run: python -m pip_audit -r requirements.txt
+
+      - name: Scan backend source for security issues
+        run: python -m bandit -q -r app
+
+      - name: Detect newly committed secrets
+        working-directory: .
+        shell: bash
+        run: git ls-files -z | xargs -0 detect-secrets-hook --baseline .secrets.baseline
+
       - name: Compile backend
         run: python -m compileall -q app migrations tests
 

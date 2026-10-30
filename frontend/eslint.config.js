@@ -2,7 +2,7 @@ import js from "@eslint/js";
 import pluginVue from "eslint-plugin-vue";
 
 export default [
-  { ignores: ["dist/**", "node_modules/**", "login-form-15/**", "src/vendor/**", "src/static/**"] },
+  { ignores: ["dist/**", "node_modules/**", "src/static/**"] },
   js.configs.recommended,
   ...pluginVue.configs["flat/essential"],
   {

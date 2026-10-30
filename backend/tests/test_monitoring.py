@@ -12,6 +12,22 @@ BASE_SETTINGS = {
 }
 
 
+def test_monitoring_request_rejects_non_http_urls(monkeypatch) -> None:
+    called = False
+
+    def fake_urlopen(*_args: Any, **_kwargs: Any):
+        nonlocal called
+        called = True
+        raise AssertionError("network call must not be attempted")
+
+    monkeypatch.setattr(monitoring, "urlopen", fake_urlopen)
+
+    with pytest.raises(ValueError, match=r"HTTP\(S\)"):
+        monitoring._request_json("file:///etc/passwd", timeout=1)
+
+    assert called is False
+
+
 def test_unconfigured_monitoring_is_explicit_and_safe() -> None:
     summary = monitoring.build_monitoring_summary(
         Settings(**BASE_SETTINGS, _env_file=None)

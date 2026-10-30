@@ -63,6 +63,9 @@ def apply_standard_response_headers(
     response.headers["Permissions-Policy"] = (
         "camera=(), geolocation=(), microphone=()"
     )
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
     response.headers["X-Request-ID"] = request_id
     return response
 
@@ -102,9 +105,11 @@ def create_app() -> FastAPI:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.BACKEND_CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        # Authentication uses an Authorization bearer header rather than
+        # cookies, so cross-origin credential sharing is unnecessary.
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Accept", "Authorization", "Content-Type"],
         expose_headers=["X-Request-ID"],
     )
 

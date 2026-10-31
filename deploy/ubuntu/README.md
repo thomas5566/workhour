@@ -60,6 +60,35 @@ alone does not establish that application tables/data were migrated.
   writes unless reconciled. A cutover rollback must account for that data.
 - Keep an off-VM backup; a backup on the same VM alone is insufficient.
 
+## Device credential key rotation
+
+Never replace `DEVICE_CREDENTIAL_KEY` before re-encrypting the stored server and
+camera credentials. The rotation command validates every value and rolls the
+transaction back if any value is plaintext, corrupt, or encrypted with another
+key. It prints counts only, never keys or credential values.
+
+Run a dry run against the currently deployed image first:
+
+```bash
+cd /opt/workhour/deploy/ubuntu
+NEW_DEVICE_CREDENTIAL_KEY="$(
+  docker compose --env-file .env -f compose.yml exec -T app \
+    python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'
+)"
+export NEW_DEVICE_CREDENTIAL_KEY
+docker compose --env-file .env -f compose.yml run --rm --no-deps \
+  -e NEW_DEVICE_CREDENTIAL_KEY app \
+  python -m app.scripts.rotate_device_credential_key
+```
+
+Before `--apply`, create and copy an off-VM database backup, retain the old key
+in the approved secret store, and stop the API so no credential write can race
+the rotation. Apply the rotation, replace only the key value in `.env`, then
+start the API and verify both masked lists and an authorized reveal operation.
+If startup verification fails, run the same command in reverse (new key as the
+current key, retained old key as `NEW_DEVICE_CREDENTIAL_KEY`) before restoring
+the old `.env`. Unset the shell variable after verification.
+
 ## CI/CD next phase (not yet enabled)
 
 Keep pull-request tests on GitHub-hosted runners. The deployment must release the

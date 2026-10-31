@@ -8,7 +8,7 @@ from app.services import monitoring
 
 BASE_SETTINGS = {
     "DATABASE_URL": "sqlite+pysqlite:///:memory:",
-    "SECRET_KEY": "test-secret-key-that-is-at-least-32-characters",
+    "SECRET_KEY": "test-secret-key-that-is-at-least-32-characters",  # pragma: allowlist secret
 }
 
 

@@ -239,10 +239,10 @@ async def test_administrator_reveals_device_credentials_only_on_explicit_request
     assert server_response.json()["server_pass"] == "••••••••"
     assert camera_response.json()["admin_pass"] == "••••••••"
     assert camera_response.json()["user_pass"] == "••••••••"
-    assert server_reveal.json() == {"password": "server-secret"}
+    assert server_reveal.json() == {"password": "server-secret"}  # pragma: allowlist secret
     assert camera_reveal.json() == {
-        "admin_password": "admin-secret",
-        "user_password": "viewer-secret",
+        "admin_password": "admin-secret",  # pragma: allowlist secret
+        "user_password": "viewer-secret",  # pragma: allowlist secret
     }
     assert server_reveal.headers["cache-control"] == "no-store"
     assert camera_reveal.headers["cache-control"] == "no-store"
@@ -603,10 +603,12 @@ async def test_general_it_and_admin_permission_matrix(api_engine) -> None:
     assert it_server_list.status_code == 200
     assert it_server_update.status_code == 200
     assert it_personal.status_code == 200
-    assert it_server_reveal.json() == {"password": "server-password"}
+    assert it_server_reveal.json() == {  # pragma: allowlist secret
+        "password": "server-password"  # pragma: allowlist secret
+    }
     assert it_camera_reveal.json() == {
-        "admin_password": "it-admin-secret",
-        "user_password": "it-viewer-secret",
+        "admin_password": "it-admin-secret",  # pragma: allowlist secret
+        "user_password": "it-viewer-secret",  # pragma: allowlist secret
     }
     assert it_server_reveal.headers["cache-control"] == "no-store"
     assert it_camera_reveal.headers["cache-control"] == "no-store"
@@ -677,7 +679,7 @@ async def test_public_registration_validates_account_and_department(
     account = {
         "username": "pending-user",
         "fullname": "Pending User",
-        "password": "pending-user-password",
+        "password": "pending-user-password",  # pragma: allowlist secret
         "department_id": 1,
     }
     transport = httpx.ASGITransport(app=app)
@@ -750,15 +752,24 @@ async def test_user_creation_requires_administrator_token(
     ) as client:
         manager_login = await client.post(
             "/api/user/login",
-            data={"username": "manager", "password": "manager-password"},
+            data={  # pragma: allowlist secret
+                "username": "manager",
+                "password": "manager-password",  # pragma: allowlist secret
+            },
         )
         staff_login = await client.post(
             "/api/user/login",
-            data={"username": "staff", "password": "staff-password"},
+            data={  # pragma: allowlist secret
+                "username": "staff",
+                "password": "staff-password",  # pragma: allowlist secret
+            },
         )
         report_login = await client.post(
             "/api/user/login",
-            data={"username": "report-manager", "password": "report-password"},
+            data={  # pragma: allowlist secret
+                "username": "report-manager",
+                "password": "report-password",  # pragma: allowlist secret
+            },
         )
         assert manager_login.status_code == 200
         assert staff_login.status_code == 200
@@ -767,7 +778,7 @@ async def test_user_creation_requires_administrator_token(
         account = {
             "username": "new-user",
             "fullname": "New User",
-            "password": "new-user-password",
+            "password": "new-user-password",  # pragma: allowlist secret
             "department_id": 2,
         }
         manager_response = await client.post(
@@ -809,7 +820,7 @@ async def test_user_creation_requires_administrator_token(
 async def test_login_lockout_handles_naive_database_timestamps(
     authenticated_api_engine,
 ) -> None:
-    password = "correct-password"
+    password = "correct-password"  # pragma: allowlist secret
     with Session(authenticated_api_engine) as session:
         session.add(
             User(
@@ -829,7 +840,10 @@ async def test_login_lockout_handles_naive_database_timestamps(
         for _ in range(5):
             response = await client.post(
                 "/api/user/login",
-                data={"username": "lockout-user", "password": "wrong-password"},
+                data={  # pragma: allowlist secret
+                    "username": "lockout-user",
+                    "password": "wrong-password",  # pragma: allowlist secret
+                },
             )
             assert response.status_code == 401
 
@@ -893,7 +907,10 @@ async def test_login_treats_sql_injection_payloads_as_bound_values(
         ) as client:
             username_response = await client.post(
                 "/api/user/login",
-                data={"username": username_payload, "password": "anything"},
+                data={  # pragma: allowlist secret
+                    "username": username_payload,
+                    "password": "anything",  # pragma: allowlist secret
+                },
             )
             password_response = await client.post(
                 "/api/user/login",
@@ -945,7 +962,7 @@ async def test_database_constraint_conflict_returns_sanitized_409(
             User(
                 username="duplicate-user",
                 fullname="Existing User",
-                password="existing-secret-hash",
+                password="existing-secret-hash",  # pragma: allowlist secret
                 is_active=True,
             )
         )
@@ -964,7 +981,7 @@ async def test_database_constraint_conflict_returns_sanitized_409(
             json={
                 "username": "duplicate-user",
                 "fullname": "Conflicting User",
-                "password": "request-secret-password",
+                "password": "request-secret-password",  # pragma: allowlist secret
                 "department_id": 1,
             },
         )
@@ -1074,11 +1091,17 @@ async def test_workhour_routes_enforce_authenticated_owner(
     ) as client:
         owner_login = await client.post(
             "/api/user/login",
-            data={"username": "owner", "password": "owner-password"},
+            data={  # pragma: allowlist secret
+                "username": "owner",
+                "password": "owner-password",  # pragma: allowlist secret
+            },
         )
         other_login = await client.post(
             "/api/user/login",
-            data={"username": "other-user", "password": "other-password"},
+            data={  # pragma: allowlist secret
+                "username": "other-user",
+                "password": "other-password",  # pragma: allowlist secret
+            },
         )
         assert owner_login.status_code == 200
         assert other_login.status_code == 200
@@ -1181,11 +1204,17 @@ async def test_expenditure_routes_enforce_authenticated_owner(
     ) as client:
         owner_login = await client.post(
             "/api/user/login",
-            data={"username": "expense-owner", "password": "owner-password"},
+            data={  # pragma: allowlist secret
+                "username": "expense-owner",
+                "password": "owner-password",  # pragma: allowlist secret
+            },
         )
         other_login = await client.post(
             "/api/user/login",
-            data={"username": "expense-other", "password": "other-password"},
+            data={  # pragma: allowlist secret
+                "username": "expense-other",
+                "password": "other-password",  # pragma: allowlist secret
+            },
         )
         assert owner_login.status_code == 200
         assert other_login.status_code == 200

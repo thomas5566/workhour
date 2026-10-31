@@ -87,7 +87,7 @@ def test_expenditure_rejects_invalid_values(payload: dict[str, object]) -> None:
             {
                 "username": "operator",
                 "fullname": "Operator",
-                "password": "secure-password",
+                "password": "secure-password",  # pragma: allowlist secret
                 "department_id": 0,
             },
         ),

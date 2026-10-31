@@ -24,7 +24,7 @@ from app.schemas.users import User
 def test_password_hash_round_trip() -> None:
     hashed_password = Hasher.get_password_hash("correct horse battery staple")
 
-    assert hashed_password != "correct horse battery staple"
+    assert hashed_password != "correct horse battery staple"  # pragma: allowlist secret
     assert Hasher.verify_password(
         "correct horse battery staple",
         hashed_password,
@@ -183,7 +183,7 @@ async def test_login_returns_bearer_token_without_password(monkeypatch) -> None:
                 "/api/user/login",
                 data={
                     "username": "thomas",
-                    "password": "correct horse battery staple",
+                    "password": "correct horse battery staple",  # pragma: allowlist secret
                 },
             )
     finally:
@@ -266,7 +266,7 @@ async def test_login_rejects_inactive_user(monkeypatch) -> None:
                 "/api/user/login",
                 data={
                     "username": "disabled",
-                    "password": "correct horse battery staple",
+                    "password": "correct horse battery staple",  # pragma: allowlist secret
                 },
             )
     finally:

@@ -8,9 +8,15 @@ from app.services import monitoring
 
 
 def settings():
-    return Settings(DATABASE_URL="sqlite://", SECRET_KEY="test-secret-key-at-least-32-characters",
-                    ZABBIX_URL="http://zabbix.example/api_jsonrpc.php", ZABBIX_TOKEN="test-token",
-                    _env_file=None)
+    return Settings(
+        DATABASE_URL="sqlite://",
+        SECRET_KEY=(
+            "test-secret-key-at-least-32-characters"  # pragma: allowlist secret
+        ),
+        ZABBIX_URL="http://zabbix.example/api_jsonrpc.php",
+        ZABBIX_TOKEN="test-token",
+        _env_file=None,
+    )
 
 
 def host(name, identifier="1", visible=None, enabled=True):

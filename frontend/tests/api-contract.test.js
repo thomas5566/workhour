@@ -5,6 +5,7 @@ import {
   deleteFetnetListAPI,
   deleteIpCamListAPI,
   deleteServerListAPI,
+  getAllServerListsAPI,
   getBranchListAPI,
   getAllWorkListsByShopIdAPI,
   getAllWorkListsByUserIdAPI,
@@ -65,5 +66,26 @@ describe("FastAPI client contract", () => {
     ]);
     expect(monitoringOptions).toEqual([{ background: true, silent: true }]);
     expect(alertLogQueries).toEqual([{ message: "CPU", limit: 100 }]);
+  });
+
+  it("loads every server inventory page for full-list keyword search", async () => {
+    const queries = [];
+    http.defaults.adapter = async (config) => {
+      queries.push(config.params);
+      const skip = config.params.skip;
+      const data = skip === 0
+        ? Array.from({ length: 1000 }, (_, index) => ({ id: index + 1 }))
+        : [{ id: 1001 }];
+      return { data, status: 200, statusText: "OK", headers: {}, config };
+    };
+
+    const serverLists = await getAllServerListsAPI();
+
+    expect(serverLists).toHaveLength(1001);
+    expect(serverLists.at(-1)).toEqual({ id: 1001 });
+    expect(queries).toEqual([
+      { skip: 0, limit: 1000 },
+      { skip: 1000, limit: 1000 },
+    ]);
   });
 });

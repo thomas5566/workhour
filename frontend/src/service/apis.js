@@ -381,11 +381,37 @@ export function deleteDepartmentAPI(id) {
   });
 }
 
-export function getServerListAPI() {
+const SERVER_LIST_PAGE_SIZE = 1000;
+
+export function getServerListAPI(params = {}) {
   return axios({
     url: "/serverlist/",
     method: "get",
+    params,
   });
+}
+
+// The backend intentionally bounds every collection request. Fetch each page
+// so the inventory view and its client-side keyword search cover every device.
+export async function getAllServerListsAPI(branchId = null) {
+  const serverLists = [];
+  let skip = 0;
+
+  while (true) {
+    const response = branchId === null
+      ? await getServerListAPI({ skip, limit: SERVER_LIST_PAGE_SIZE })
+      : await getServerListByBranchIdAPI(branchId, {
+          skip,
+          limit: SERVER_LIST_PAGE_SIZE,
+        });
+    const page = Array.isArray(response.data) ? response.data : [];
+    serverLists.push(...page);
+
+    if (page.length < SERVER_LIST_PAGE_SIZE) {
+      return serverLists;
+    }
+    skip += page.length;
+  }
 }
 
 export function createServerListAPI(data) {
@@ -403,10 +429,11 @@ export function deleteServerListAPI(serverlist_id) {
   });
 }
 
-export function getServerListByBranchIdAPI(branch_id) {
+export function getServerListByBranchIdAPI(branch_id, pagination = {}) {
   return axios({
-    url: "/serverlist/serverlist-branchid?branch_id=" + branch_id,
+    url: "/serverlist/serverlist-branchid",
     method: "get",
+    params: { branch_id, ...pagination },
   });
 }
 

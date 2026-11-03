@@ -103,8 +103,7 @@
 import {
   getBranchListAPI,
   deleteServerListAPI,
-  getServerListAPI,
-  getServerListByBranchIdAPI,
+  getAllServerListsAPI,
   revealServerPasswordAPI
 } from "../../service/apis.js";
 
@@ -137,27 +136,16 @@ export default {
       return this.$store.getters.isAuthenticated;
     },
     filteredServerLists() {
-      // KeyWord Search
-      let server_lists = this.server_lists;
-      const searchKeyWord = (server) => {
-        const hasServerIpFilter = server.server_ip.includes(this.searchKeyWord);
-        const hasServerNameFilter = server.server_name.toLowerCase().includes(this.searchKeyWord.toLowerCase());
-        const hasServerLocationFilter = server.server_location.toLowerCase().includes(this.searchKeyWord.toLowerCase());
+      const query = String(this.searchKeyWord || "").trim().toLocaleLowerCase();
+      if (!query) return this.server_lists;
 
-        if (hasServerIpFilter == true) {
-          return hasServerIpFilter
-        } else if (hasServerNameFilter == true) {
-          return hasServerNameFilter
-        } else if (hasServerLocationFilter == true) {
-          return hasServerLocationFilter
-        }
-      }
-
-      if (this.searchKeyWord) {
-        server_lists = server_lists.filter(searchKeyWord);
-      }
-
-      return server_lists;
+      return this.server_lists.filter((server) => [
+        server.server_location,
+        server.server_name,
+        server.server_ip,
+        server.server_acc,
+        server.server_remark,
+      ].some((value) => String(value || "").toLocaleLowerCase().includes(query)));
     },
   },
   mounted: function () {
@@ -180,17 +168,19 @@ export default {
         });
     },
     async get_server_lists() {
-      await getServerListAPI().then((response) => (this.server_lists = response.data))
-        .catch((err) => {
-          console.error(err)
-        });
+      try {
+        this.server_lists = await getAllServerListsAPI();
+      } catch (err) {
+        console.error(err);
+      }
     },
     async get_server_lists_by_branchId(branch_id) {
       this.server_lists = [];
-      await getServerListByBranchIdAPI(branch_id).then((response) => (this.server_lists = response.data))
-        .catch((err) => {
-          console.error(err)
-        });
+      try {
+        this.server_lists = await getAllServerListsAPI(branch_id);
+      } catch (err) {
+        console.error(err);
+      }
     },
     onSelectedChange(selected_branch_id) {
       if (selected_branch_id === "0") {

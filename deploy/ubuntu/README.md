@@ -71,14 +71,18 @@ Run a dry run against the currently deployed image first:
 
 ```bash
 cd /opt/workhour/deploy/ubuntu
+release_sha="$(cat /opt/workhour/runner-state/deployed-sha)"
+backend_image="workhour-backend:${release_sha}"
 NEW_DEVICE_CREDENTIAL_KEY="$(
-  docker compose --env-file .env -f compose.yml exec -T app \
+  BACKEND_IMAGE="$backend_image" \
+    docker compose --env-file .env -f compose.yml exec -T app \
     python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'
 )"
 export NEW_DEVICE_CREDENTIAL_KEY
-docker compose --env-file .env -f compose.yml run --rm --no-deps \
-  -e NEW_DEVICE_CREDENTIAL_KEY app \
-  python -m app.scripts.rotate_device_credential_key
+BACKEND_IMAGE="$backend_image" \
+  docker compose --env-file .env -f compose.yml run --rm --no-deps \
+    -e NEW_DEVICE_CREDENTIAL_KEY app \
+    python -m app.scripts.rotate_device_credential_key
 ```
 
 Before `--apply`, create and copy an off-VM database backup, retain the old key

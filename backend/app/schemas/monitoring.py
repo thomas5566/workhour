@@ -48,6 +48,13 @@ class NetworkDeviceHealth(BaseModel):
     last_updated_at: datetime | None = None
     metric_sampled_at: dict[str, datetime | None] = Field(default_factory=dict)
     metric_item_keys: dict[str, list[str]] = Field(default_factory=dict)
+    # Internal comparison baseline used by event rules.  It is intentionally
+    # excluded from API responses so historical sensor values are not exposed
+    # as additional UI metrics.
+    metric_previous_values: dict[str, int | float | str | None] = Field(
+        default_factory=dict,
+        exclude=True,
+    )
     unsupported_item_details: list[str] = Field(default_factory=list)
     metrics: dict[str, int | float | str | bool | None] = Field(default_factory=dict)
 

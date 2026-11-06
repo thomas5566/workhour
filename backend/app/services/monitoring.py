@@ -383,6 +383,7 @@ SYNOLOGY_DISK_BAD_SECTOR_PREFIX = "synoDisk.diskTable.diskEntry.diskBadSector."
 SYNOLOGY_RAID_STATUS_PREFIX = "synoRaid.raidTable.raidEntry.raidStatus."
 SYNOLOGY_DISK_TEMPERATURE_WARNING = 50
 SYNOLOGY_DISK_TEMPERATURE_HIGH = 60
+SYNOLOGY_BAD_SECTOR_HISTORY_SECONDS = 7 * 24 * 60 * 60
 
 
 def _synology_metric_name(item_name: str, item_key: str) -> str | None:
@@ -469,6 +470,70 @@ def _synology_metric_value(
     if metric.startswith(("disk_temperature:", "disk_bad_sectors:")):
         return _metric_value(raw_value, str(item.get("units", "")))
     return raw_value
+
+
+def _synology_previous_bad_sector_values(
+    settings: Settings,
+    items: list[dict[str, Any]],
+) -> dict[str, dict[str, int | float]]:
+    """Return the sample immediately before each current bad-sector value.
+
+    A non-zero bad-sector count is cumulative and may remain unchanged for the
+    life of a disk.  Comparing Zabbix history prevents that stable value from
+    being reported as a new incident every time the item is sampled.
+    """
+    tracked: dict[str, tuple[str, str, int, int]] = {}
+    item_ids_by_history_type: dict[int, list[str]] = {}
+    for item in items:
+        item_key = str(item.get("key_", ""))
+        if not item_key.startswith(SYNOLOGY_DISK_BAD_SECTOR_PREFIX):
+            continue
+        item_id = str(item.get("itemid", ""))
+        host_id = str(item.get("hostid", ""))
+        metric = _synology_metric_name(str(item.get("name", "")), item_key)
+        current_clock = int(item.get("lastclock") or 0)
+        if not item_id or not host_id or not metric or current_clock <= 0:
+            continue
+        history_type = int(item.get("value_type") or 3)
+        tracked[item_id] = (host_id, metric, current_clock, history_type)
+        item_ids_by_history_type.setdefault(history_type, []).append(item_id)
+
+    previous_by_host: dict[str, dict[str, int | float]] = {}
+    time_from = int(datetime.now(UTC).timestamp()) - SYNOLOGY_BAD_SECTOR_HISTORY_SECONDS
+    for history_type, item_ids in item_ids_by_history_type.items():
+        try:
+            history, _ = _zabbix_call(settings, "history.get", {
+                "output": ["itemid", "clock", "value"],
+                "history": history_type,
+                "itemids": item_ids,
+                "time_from": time_from,
+                "sortfield": "clock",
+                "sortorder": "DESC",
+            })
+        except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError):
+            # Sensor cards can still show the current value if history is
+            # temporarily unavailable.  Fail closed by creating no increase
+            # event until a comparison sample can be verified.
+            continue
+        for row in history:
+            item_id = str(row.get("itemid", ""))
+            tracked_item = tracked.get(item_id)
+            if tracked_item is None:
+                continue
+            host_id, metric, current_clock, _ = tracked_item
+            if metric in previous_by_host.get(host_id, {}):
+                continue
+            try:
+                sample_clock = int(row.get("clock") or 0)
+                sample_value = float(row.get("value"))
+            except (TypeError, ValueError):
+                continue
+            if sample_clock >= current_clock or not math.isfinite(sample_value):
+                continue
+            previous_by_host.setdefault(host_id, {})[metric] = (
+                int(sample_value) if sample_value.is_integer() else sample_value
+            )
+    return previous_by_host
 
 
 def get_server_health(settings: Settings) -> list[ServerHealth]:
@@ -585,14 +650,15 @@ def get_synology_nas_health(
 
     items, _ = _zabbix_call(settings, "item.get", {
         "output": [
-            "hostid", "name", "key_", "lastvalue", "units", "lastclock",
-            "status", "state",
+            "itemid", "hostid", "name", "key_", "lastvalue", "units",
+            "lastclock", "status", "state", "value_type",
         ],
         "hostids": host_ids,
         "filter": {"status": "0"},
         "monitored": True,
         "selectValueMap": ["name", "mappings"],
     })
+    previous_bad_sectors = _synology_previous_bad_sector_values(settings, items)
     supported = {host_id: 0 for host_id in host_ids}
     unsupported = {host_id: 0 for host_id in host_ids}
     latest_clock = {host_id: 0 for host_id in host_ids}
@@ -666,6 +732,7 @@ def get_synology_nas_health(
             last_updated_at=sampled_at,
             metric_sampled_at=samples_by_host[host_id],
             metric_item_keys=item_keys_by_host[host_id],
+            metric_previous_values=previous_bad_sectors.get(host_id, {}),
             metrics=metrics,
         ))
     return sorted(results, key=lambda device: device.name.casefold())
@@ -714,11 +781,19 @@ def _synology_metric_alerts(
         elif metric.startswith("disk_bad_sectors:"):
             try:
                 bad_sectors = int(float(value))
+                previous_bad_sectors = int(float(device.metric_previous_values[metric]))
             except (TypeError, ValueError):
                 continue
-            if bad_sectors > 0:
+            except KeyError:
+                # The first available sample establishes a baseline.  Without
+                # a previous value, an increase cannot be proven.
+                continue
+            if bad_sectors > previous_bad_sectors:
                 severity = 4
-                message = f"{label} 壞軌數量 {bad_sectors}"
+                message = (
+                    f"{label} 壞軌數量由 {previous_bad_sectors} "
+                    f"增加至 {bad_sectors}"
+                )
         elif metric in {"cpu_fan_status", "system_fan_status"} and normalized != "normal":
             severity = 4
             fan_name = "CPU Fan" if metric == "cpu_fan_status" else "System Fan"

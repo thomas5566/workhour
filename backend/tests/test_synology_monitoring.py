@@ -36,6 +36,11 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
                     "hostgroups": [{"name": "Network devices"}], "interfaces": [],
                 },
             ], 1
+        if method == "history.get":
+            return [
+                {"itemid": "211", "clock": str(now), "value": "2"},
+                {"itemid": "211", "clock": str(now - 3600), "value": "1"},
+            ], 1
         common = {"lastclock": str(now), "status": "0", "state": "0", "units": ""}
         return [
             {**common, "hostid": "200", "name": "Model serial number",
@@ -61,6 +66,7 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
              "key_": "synoDisk.diskTable.diskEntry.diskTemperature.[0]",
              "lastvalue": "55", "units": "C"},
             {**common, "hostid": "200", "name": "Drive 1 Bad sectors count",
+             "itemid": "211", "value_type": "3",
              "key_": "synoDisk.diskTable.diskEntry.diskBadSector.[0]", "lastvalue": "2"},
             {**common, "hostid": "200", "name": "Volume 1 RAID Status",
              "key_": "synoRaid.raidTable.raidEntry.raidStatus.[0]", "lastvalue": "11"},
@@ -115,7 +121,12 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
     item_params = next(params for method, params in calls if method == "item.get")
     assert item_params["hostids"] == ["201", "200"]
     assert "lastvalue" in item_params["output"]
+    assert "itemid" in item_params["output"]
     assert item_params["selectValueMap"] == ["name", "mappings"]
+    history_params = next(params for method, params in calls if method == "history.get")
+    assert history_params["itemids"] == ["211"]
+    assert history_params["history"] == 3
+    assert "metric_previous_values" not in result[0].model_dump()
 
     problems = monitoring.apply_synology_nas_rules([], [result[0]])
     assert [(row.severity, row.event_id) for row in problems] == [
@@ -126,6 +137,34 @@ def test_synology_nas_hosts_are_discovered_by_group_and_include_alerts(monkeypat
     ]
     assert result[0].status == "degraded"
     assert result[0].metrics["active_alerts"] == 4
+
+
+def test_synology_bad_sector_alert_requires_an_increase() -> None:
+    sampled_at = datetime.now(UTC)
+    metric = "disk_bad_sectors:Disk 5"
+    item_key = "synoDisk.diskTable.diskEntry.diskBadSector.[4]"
+
+    def device(previous: int | None) -> monitoring.NetworkDeviceHealth:
+        return monitoring.NetworkDeviceHealth(
+            host_id="10862",
+            name="NAS-50T",
+            status="ok",
+            message="current",
+            metrics={metric: 16},
+            metric_sampled_at={metric: sampled_at},
+            metric_item_keys={metric: [item_key]},
+            metric_previous_values={} if previous is None else {metric: previous},
+        )
+
+    assert monitoring.apply_synology_nas_rules([], [device(None)]) == []
+    assert monitoring.apply_synology_nas_rules([], [device(16)]) == []
+
+    increased = monitoring.apply_synology_nas_rules([], [device(15)])
+    assert len(increased) == 1
+    assert increased[0].severity == 4
+    assert increased[0].message == (
+        "Disk 5 壞軌數量由 15 增加至 16（本頁規則；目前取樣）"
+    )
 
 
 def test_synology_native_problem_prevents_duplicate_local_alert() -> None:
